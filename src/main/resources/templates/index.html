@@ -5,6 +5,63 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title th:text="${appName}">MiniDev</title>
     <link rel="stylesheet" th:href="@{/css/index.css}">
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const form = document.getElementById('chat-form');
+            const input = document.getElementById('message-input');
+            const output = document.getElementById('chat-output');
+            const conversationHistory = [];
+
+            form.addEventListener('submit', async function(e) {
+                e.preventDefault();
+                const message = input.value.trim();
+                if (!message) return;
+
+                output.innerHTML += '<div class="user-msg">&gt; You: ' + message + '</div>';
+                input.value = '';
+                output.innerHTML += '<div class="waiting-msg">&gt; Waiting...</div>';
+
+                try {
+                    const response = await fetch('/api/chat', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            message: message,
+                            history: [...conversationHistory]
+                        })
+                    });
+
+                    const data = await response.json();
+                    const waitingMsg = Array.from(output.querySelectorAll('.waiting-msg')).pop();
+                    if (waitingMsg) waitingMsg.remove();
+
+                    if (data.success) {
+                        output.innerHTML += '<div class="ai-msg">&gt; AI: ' + data.content + '</div>';
+
+                        conversationHistory.push({
+                            role: 'user',
+                            content: message,
+                            timestamp: new Date().toISOString()
+                        });
+                        conversationHistory.push({
+                            role: 'assistant',
+                            content: data.content,
+                            timestamp: new Date().toISOString()
+                        });
+                    } else {
+                        output.innerHTML += '<div class="error-msg">&gt; Error: ' + data.errorMessage + '</div>';
+                    }
+                } catch (error) {
+                    const waitingMsg = Array.from(output.querySelectorAll('.waiting-msg')).pop();
+                    if (waitingMsg) waitingMsg.remove();
+                    output.innerHTML += '<div class="error-msg">&gt; Error: ' + error.message + '</div>';
+                }
+
+                output.scrollTop = output.scrollHeight;
+            });
+
+        });
+    </script>
 </head>
 <body>
 <main class="page-shell">
@@ -31,11 +88,17 @@
 
                 <div class="content-side">
                     <div class="side-panel">
-                        <div class="panel-title">Preview</div>
+                        <div class="panel-title">LLM Test</div>
                         <div class="screen">
-                            <div>&gt; MiniDev booting...</div>
-                            <div>&gt; theme loaded</div>
-                            <div>&gt; ready</div>
+                            <div id="chat-output">
+                                <div>&gt; MiniDev booting...</div>
+                                <div>&gt; theme loaded</div>
+                                <div>&gt; ready</div>
+                            </div>
+                            <form id="chat-form" style="margin-top: 10px;">
+                                <input type="text" id="message-input" placeholder="Type a message..." style="width: 100%; padding: 5px; font-family: monospace; background: #000; color: #0f0; border: 1px solid #0f0;">
+                                <button type="submit" style="margin-top: 5px; width: 100%; padding: 5px; font-family: monospace; background: #0f0; color: #000; border: none; cursor: pointer;">Send</button>
+                            </form>
                         </div>
                     </div>
                 </div>
