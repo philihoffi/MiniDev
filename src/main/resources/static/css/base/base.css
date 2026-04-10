@@ -1,0 +1,26 @@
+:root {
+    --bg-page: #008080;
+    --bg-window: #d4d0c8;
+    --bg-inner: #c0c0c0;
+    --bg-panel: #efefef;
+    --bg-screen: #000000;
+    --bg-label: #ffffcc;
+
+    --color-text: #111111;
+    --color-title-text: #ffffff;
+    --color-screen-text: #24ff6d;
+
+    --border-dark: #000000;
+    --border-shadow: #808080;
+    --border-light: #ffffff;
+
+    --font-mono: "Lucida Console", "Courier New", monospace;
+    --font-screen: "Courier New", monospace;
+}
+
+body {
+    margin: 0;
+    background: var(--bg-page);
+    color: var(--color-text);
+    font-family: var(--font-mono);
+}

@@ -1,0 +1,11 @@
+/* Central CSS Management - Imports all modules */
+
+@import "base/base.css";
+@import "layout/layout.css";
+@import "components/components.css";
+
+/* Chat specific overrides or additions if needed */
+.user-msg { color: #ffffff; }
+.ai-msg { color: var(--color-screen-text); }
+.error-msg { color: #ff0000; }
+.waiting-msg { font-style: italic; opacity: 0.8; }

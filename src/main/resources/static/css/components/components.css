@@ -1,0 +1,125 @@
+.window-frame {
+    border: 2px solid var(--border-dark);
+    background: var(--bg-window);
+    box-shadow: 3px 3px 0 var(--border-shadow);
+}
+
+.window-body {
+    padding: 18px;
+    background: var(--bg-inner);
+}
+
+.title-bar {
+    padding: 8px 10px;
+    background: #000080;
+    color: var(--color-title-text);
+    font-weight: 700;
+    letter-spacing: 0.02em;
+}
+
+.view-label {
+    display: inline-block;
+    margin-bottom: 10px;
+    padding: 3px 8px;
+    border: 1px solid var(--border-dark);
+    background: var(--bg-label);
+    font-size: 12px;
+    text-transform: uppercase;
+}
+
+.side-panel {
+    padding: 10px;
+    border: 2px solid var(--border-shadow);
+    background: var(--bg-panel);
+}
+
+.panel-title {
+    margin-bottom: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+}
+
+.screen {
+    min-height: 160px;
+    padding: 12px;
+    border: 2px solid #4f4f4f;
+    background: var(--bg-screen);
+    color: var(--color-screen-text);
+    font-family: var(--font-screen);
+    line-height: 1.6;
+}
+
+.status-bar {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 6px 8px;
+    border-top: 1px solid var(--border-shadow);
+    background: var(--bg-window);
+    font-size: 12px;
+}
+
+h1 {
+    margin: 0 0 8px;
+    font-size: clamp(2rem, 5vw, 3.2rem);
+    line-height: 1;
+}
+
+.tagline {
+    margin: 0 0 12px;
+    font-size: 1rem;
+}
+
+.copy {
+    margin: 0;
+    line-height: 1.5;
+}
+
+.action-row {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin-top: 16px;
+}
+
+.action-button {
+    min-width: 90px;
+    padding: 7px 12px;
+    border: 2px outset var(--border-light);
+    border-radius: 0;
+    background: var(--bg-window);
+    color: var(--border-dark);
+    box-shadow: none;
+    font: inherit;
+    text-transform: uppercase;
+    cursor: pointer;
+}
+
+.action-button:hover {
+    background: #e6e1d8;
+    border-color: var(--border-light) #6f6f6f #6f6f6f var(--border-light);
+}
+
+.action-button:active {
+    background: #c8c4bc;
+    border: 2px inset var(--border-light);
+}
+
+.action-button:focus-visible {
+    outline: 1px dotted var(--border-dark);
+    outline-offset: -4px;
+}
+
+@media (max-width: 767px) {
+    .window-frame {
+        box-shadow: none;
+    }
+
+    .window-body {
+        padding: 14px;
+    }
+
+    .status-bar {
+        flex-direction: column;
+    }
+}

@@ -22,7 +22,7 @@ class PageControllerTest {
         assertEquals("Initial View", model.getAttribute("viewTitle"));
         assertEquals("Tiny autonomous game developer", model.getAttribute("tagline"));
         assertTrue(new ClassPathResource("templates/index.html").exists());
-        assertTrue(new ClassPathResource("static/css/index.css").exists());
+        assertTrue(new ClassPathResource("static/css/main.css").exists());
     }
 
 }
