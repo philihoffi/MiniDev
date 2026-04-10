@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title th:text="${appName}">MiniDev</title>
+    <link rel="stylesheet" th:href="@{/css/index.css}">
+</head>
+<body>
+<main class="page-shell">
+    <section class="window-frame">
+        <div class="title-bar" th:text="${appName} + '.exe'">MiniDev.exe</div>
+
+        <div class="window-body">
+            <div class="content-grid">
+                <div class="content-main">
+                    <span class="view-label" th:text="${viewTitle}">Initial View</span>
+                    <h1 th:text="${appName}">MiniDev</h1>
+                    <p class="tagline" th:text="${tagline}">Tiny autonomous game developer</p>
+                    <p class="copy">
+                        A small landing page that serves as a style sample. No real app logic yet,
+                        just layout, typography, and a first UI direction.
+                    </p>
+
+                    <div class="action-row">
+                        <button type="button" class="action-button">Start</button>
+                        <button type="button" class="action-button">Build</button>
+                        <button type="button" class="action-button">Inspect</button>
+                    </div>
+                </div>
+
+                <div class="content-side">
+                    <div class="side-panel">
+                        <div class="panel-title">Preview</div>
+                        <div class="screen">
+                            <div>&gt; MiniDev booting...</div>
+                            <div>&gt; theme loaded</div>
+                            <div>&gt; ready</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="status-bar">
+            <span>THYMELEAF + LOCAL CSS</span>
+            <span>INITIAL VIEW</span>
+        </div>
+    </section>
+</main>
+</body>
+</html>
