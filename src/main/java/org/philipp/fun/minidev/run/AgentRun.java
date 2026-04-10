@@ -1,6 +1,7 @@
 package org.philipp.fun.minidev.run;
 
 import java.time.Instant;
+import java.util.Arrays;
 import java.util.Objects;
 import java.util.UUID;
 
@@ -26,8 +27,8 @@ public final class AgentRun {
         this(runId, RunState.IDLE, Objects.requireNonNull(createdAt, "createdAt must not be null"), createdAt);
     }
 
-    public static AgentRun create() {
-        return new AgentRun(UUID.randomUUID(), Instant.now());
+    public AgentRun() {
+        this(UUID.randomUUID(), Instant.now());
     }
 
     public boolean transitionTo(RunState nextState, Instant changedAt) {
@@ -82,6 +83,32 @@ public final class AgentRun {
         PUBLISHING,
         DONE,
         FAILED,
-        PAUSED
+        PAUSED;
+
+        public boolean canTransitionTo(RunState target) {
+            return Arrays.asList(getPossibleTransitions()).contains(target);
+        }
+
+        public boolean isActive() {
+            return this == PLANNING || this == CODING || this == REVIEWING
+                || this == TESTING || this == FIXING;
+        }
+
+        public boolean isTerminal() {
+            return this == DONE || this == FAILED;
+        }
+
+        public RunState[] getPossibleTransitions() {
+            return switch (this) {
+                case IDLE -> new RunState[]{PLANNING, FAILED};
+                case PLANNING -> new RunState[]{CODING, FAILED, PAUSED};
+                case CODING, FIXING -> new RunState[]{REVIEWING, FAILED, PAUSED};
+                case REVIEWING -> new RunState[]{TESTING, FIXING, FAILED, PAUSED};
+                case TESTING -> new RunState[]{PUBLISHING, FIXING, PAUSED};
+                case PUBLISHING -> new RunState[]{DONE, FAILED};
+                case PAUSED -> new RunState[]{PLANNING, CODING, REVIEWING, TESTING, FIXING};
+                case DONE, FAILED -> new RunState[]{IDLE};
+            };
+        }
     }
 }
