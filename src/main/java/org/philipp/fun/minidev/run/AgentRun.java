@@ -1,5 +1,6 @@
 package org.philipp.fun.minidev.run;
 
+import java.nio.file.Path;
 import java.time.Instant;
 import java.util.Arrays;
 import java.util.Objects;
@@ -12,23 +13,32 @@ public final class AgentRun {
 
     private RunState state;
     private Instant updatedAt;
+    private GameMetadata gameMetadata;
 
-    public AgentRun(UUID runId, RunState state, Instant createdAt, Instant updatedAt) {
+    public AgentRun(UUID runId, RunState state, Instant createdAt, Instant updatedAt, GameMetadata gameMetadata) {
         this.runId = Objects.requireNonNull(runId, "runId must not be null");
         this.state = Objects.requireNonNull(state, "state must not be null");
         this.createdAt = Objects.requireNonNull(createdAt, "createdAt must not be null");
         this.updatedAt = Objects.requireNonNull(updatedAt, "updatedAt must not be null");
+        this.gameMetadata = gameMetadata;
         if (updatedAt.isBefore(createdAt)) {
             throw new IllegalArgumentException("updatedAt must not be before createdAt");
         }
     }
 
-    public AgentRun(UUID runId, Instant createdAt) {
-        this(runId, RunState.IDLE, Objects.requireNonNull(createdAt, "createdAt must not be null"), createdAt);
+    public AgentRun(String storageBasePath) {
+        UUID runId = UUID.randomUUID();
+        GameMetadata gameMetadata = new GameMetadata(
+                "Untitled Game",
+                "",
+                Arrays.asList("Define game concept", "Implement game mechanics", "Create assets", "Test and polish"),
+                Path.of(storageBasePath, "run-" + runId)
+        );
+        this(runId, RunState.IDLE, Instant.now(), Instant.now(), gameMetadata);
     }
 
     public AgentRun() {
-        this(UUID.randomUUID(), Instant.now());
+        this(UUID.randomUUID(), RunState.IDLE, Instant.now(), Instant.now(), null);
     }
 
     public boolean transitionTo(RunState nextState, Instant changedAt) {
@@ -62,6 +72,14 @@ public final class AgentRun {
         return updatedAt;
     }
 
+    public GameMetadata getGameMetadata() {
+        return gameMetadata;
+    }
+
+    public void setGameMetadata(GameMetadata gameMetadata) {
+        this.gameMetadata = gameMetadata;
+    }
+
     @Override
     public String toString() {
         return "AgentRun{"
@@ -69,6 +87,7 @@ public final class AgentRun {
                 + ", state=" + state
                 + ", createdAt=" + createdAt
                 + ", updatedAt=" + updatedAt
+                + ", gameMetadata=" + gameMetadata
                 + '}';
     }
 

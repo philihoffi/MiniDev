@@ -6,7 +6,9 @@ import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.CsvSource;
 import org.junit.jupiter.params.provider.MethodSource;
 
+import java.nio.file.Path;
 import java.time.Instant;
+import java.util.List;
 import java.util.UUID;
 import java.util.stream.Stream;
 
@@ -20,41 +22,45 @@ class AgentRunTest {
         UUID runId = UUID.randomUUID();
         Instant createdAt = Instant.EPOCH;
         Instant updatedAt = createdAt.plusSeconds(30);
+        GameMetadata metadata = new GameMetadata("Test Game", "Concept", List.of("Task 1"), Path.of("test-path"));
 
-        AgentRun run = new AgentRun(runId, AgentRun.RunState.PLANNING, createdAt, updatedAt);
+        AgentRun run = new AgentRun(runId, AgentRun.RunState.PLANNING, createdAt, updatedAt, metadata);
 
         assertAll(
                 () -> assertEquals(runId, run.getRunId()),
                 () -> assertEquals(AgentRun.RunState.PLANNING, run.getState()),
                 () -> assertEquals(createdAt, run.getCreatedAt()),
-                () -> assertEquals(updatedAt, run.getUpdatedAt())
+                () -> assertEquals(updatedAt, run.getUpdatedAt()),
+                () -> assertEquals(metadata, run.getGameMetadata())
         );
     }
 
     @Test
     void convenienceConstructorInitializesIdleStateAndUsesCreatedAtAsUpdatedAt() {
-        UUID runId = UUID.randomUUID();
-        Instant createdAt = Instant.EPOCH;
-
-        AgentRun run = new AgentRun(runId, createdAt);
-
-        assertAll(
-                () -> assertEquals(runId, run.getRunId()),
-                () -> assertEquals(AgentRun.RunState.IDLE, run.getState()),
-                () -> assertEquals(createdAt, run.getCreatedAt()),
-                () -> assertEquals(createdAt, run.getUpdatedAt())
-        );
-    }
-
-    @Test
-    void createBuildsIdleRunWithGeneratedIdAndMatchingTimestamps() {
-        AgentRun run = new AgentRun();
+        String storagePath = "test-storage";
+        AgentRun run = new AgentRun(storagePath);
 
         assertAll(
                 () -> assertNotNull(run.getRunId()),
                 () -> assertEquals(AgentRun.RunState.IDLE, run.getState()),
                 () -> assertNotNull(run.getCreatedAt()),
-                () -> assertEquals(run.getCreatedAt(), run.getUpdatedAt())
+                () -> assertEquals(run.getCreatedAt(), run.getUpdatedAt()),
+                () -> assertNotNull(run.getGameMetadata()),
+                () -> assertEquals("Untitled Game", run.getGameMetadata().name()),
+                () -> assertTrue(run.getGameMetadata().files().toString().contains(storagePath))
+        );
+    }
+
+    @Test
+    void createBuildsIdleRunWithGeneratedIdAndMatchingTimestamps() {
+        AgentRun run = new AgentRun("test-storage");
+
+        assertAll(
+                () -> assertNotNull(run.getRunId()),
+                () -> assertEquals(AgentRun.RunState.IDLE, run.getState()),
+                () -> assertNotNull(run.getCreatedAt()),
+                () -> assertEquals(run.getCreatedAt(), run.getUpdatedAt()),
+                () -> assertNotNull(run.getGameMetadata())
         );
     }
 
@@ -64,10 +70,10 @@ class AgentRunTest {
         Instant timestamp = Instant.EPOCH;
 
         assertAll(
-                () -> assertThrows(NullPointerException.class, () -> new AgentRun(null, AgentRun.RunState.IDLE, timestamp, timestamp)),
-                () -> assertThrows(NullPointerException.class, () -> new AgentRun(runId, null, timestamp, timestamp)),
-                () -> assertThrows(NullPointerException.class, () -> new AgentRun(runId, AgentRun.RunState.IDLE, null, timestamp)),
-                () -> assertThrows(NullPointerException.class, () -> new AgentRun(runId, AgentRun.RunState.IDLE, timestamp, null))
+                () -> assertThrows(NullPointerException.class, () -> new AgentRun(null, AgentRun.RunState.IDLE, timestamp, timestamp, null)),
+                () -> assertThrows(NullPointerException.class, () -> new AgentRun(runId, null, timestamp, timestamp, null)),
+                () -> assertThrows(NullPointerException.class, () -> new AgentRun(runId, AgentRun.RunState.IDLE, null, timestamp, null)),
+                () -> assertThrows(NullPointerException.class, () -> new AgentRun(runId, AgentRun.RunState.IDLE, timestamp, null, null))
         );
     }
 
@@ -79,23 +85,21 @@ class AgentRunTest {
 
         IllegalArgumentException exception = assertThrows(
                 IllegalArgumentException.class,
-                () -> new AgentRun(runId, AgentRun.RunState.IDLE, createdAt, updatedAt)
+                () -> new AgentRun(runId, AgentRun.RunState.IDLE, createdAt, updatedAt, null)
         );
 
         assertEquals("updatedAt must not be before createdAt", exception.getMessage());
     }
 
     @Test
-    void convenienceConstructorRejectsNullCreatedAt() {
-        UUID runId = UUID.randomUUID();
-
-        assertThrows(NullPointerException.class, () -> new AgentRun(runId, null));
+    void storagePathConstructorRejectsNull() {
+        assertThrows(NullPointerException.class, () -> new AgentRun((String) null));
     }
 
     @Test
     void transitionToUpdatesStateAndUpdatedAt() {
-        Instant createdAt = Instant.EPOCH;
-        AgentRun run = new AgentRun(UUID.randomUUID(), createdAt);
+        AgentRun run = new AgentRun("test-storage");
+        Instant createdAt = run.getCreatedAt();
         Instant changedAt = createdAt.plusSeconds(45);
 
         boolean transitioned = run.transitionTo(AgentRun.RunState.CODING, changedAt);
@@ -109,8 +113,8 @@ class AgentRunTest {
 
     @Test
     void transitionToRejectsInvalidArguments() {
-        Instant createdAt = Instant.EPOCH;
-        AgentRun run = new AgentRun(UUID.randomUUID(), createdAt);
+        AgentRun run = new AgentRun("test-storage");
+        Instant createdAt = run.getCreatedAt();
 
         assertAll(
                 () -> assertThrows(NullPointerException.class, () -> run.transitionTo(null, createdAt.plusSeconds(1))),
@@ -121,7 +125,7 @@ class AgentRunTest {
     @Test
     void transitionToRejectsTimestampBeforeCurrentUpdatedAt() {
         Instant createdAt = Instant.EPOCH;
-        AgentRun run = new AgentRun(UUID.randomUUID(), AgentRun.RunState.PLANNING, createdAt, createdAt.plusSeconds(10));
+        AgentRun run = new AgentRun(UUID.randomUUID(), AgentRun.RunState.PLANNING, createdAt, createdAt.plusSeconds(10), null);
 
         IllegalArgumentException exception = assertThrows(
                 IllegalArgumentException.class,
@@ -133,15 +137,15 @@ class AgentRunTest {
 
     @Test
     void transitionToWithoutTimestampUsesCurrentTime() {
-        Instant createdAt = Instant.EPOCH;
-        AgentRun run = new AgentRun(UUID.randomUUID(), createdAt);
+        AgentRun run = new AgentRun("test-storage");
+        Instant initialUpdatedAt = run.getUpdatedAt();
 
         boolean transitioned = run.transitionTo(AgentRun.RunState.DONE);
 
         assertAll(
                 () -> assertTrue(transitioned),
                 () -> assertEquals(AgentRun.RunState.DONE, run.getState()),
-                () -> assertTrue(run.getUpdatedAt().isAfter(createdAt))
+                () -> assertTrue(!run.getUpdatedAt().isBefore(initialUpdatedAt))
         );
     }
 

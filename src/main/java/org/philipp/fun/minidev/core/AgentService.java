@@ -2,13 +2,21 @@ package org.philipp.fun.minidev.core;
 
 import org.philipp.fun.minidev.run.AgentRun;
 import org.philipp.fun.minidev.run.AgentRun.RunState;
+import org.philipp.fun.minidev.run.GameMetadata;
 import org.philipp.fun.minidev.web.NotificationSseService;
 import org.philipp.fun.minidev.web.TerminalSseService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.scheduling.annotation.Async;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.Map;
 import java.util.UUID;
@@ -21,10 +29,17 @@ public class AgentService {
     private final Map<UUID, AgentRun> activeRuns = new ConcurrentHashMap<>();
     private final NotificationSseService notificationSseService;
     private final TerminalSseService terminalSseService;
+    private final String storageBasePath;
 
-    public AgentService(NotificationSseService notificationSseService, TerminalSseService terminalSseService) {
+    private static final ObjectMapper objectMapper = new ObjectMapper();
+
+    public AgentService(
+            NotificationSseService notificationSseService,
+            TerminalSseService terminalSseService,
+            @Value("${minidev.storage.base-path}") String storageBasePath) {
         this.notificationSseService = notificationSseService;
         this.terminalSseService = terminalSseService;
+        this.storageBasePath = storageBasePath;
     }
 
     public UUID startNewRun() {
@@ -108,16 +123,33 @@ public class AgentService {
     private void performPlanning(AgentRun run) {
         String msg = "Planning game architecture...\nBrainstorming features...";
         terminalSseService.sendTerminalText(msg, "agent-work", 50);
+
+        GameMetadata metadata = new GameMetadata(
+                "Untitled Game ",
+                "TODO",
+                List.of("TODO"),
+                Paths.get(storageBasePath, "run-" + run.getRunId())
+        );
+        run.setGameMetadata(metadata);
+
+
+        log.info("Initialized metadata for run {}: {}", run.getRunId(), metadata);
     }
 
     private void performCoding(AgentRun run) {
         String msg = "Writing HTML...\nGenerating CSS styles...\nImplementing JavaScript logic...";
         terminalSseService.sendTerminalText(msg, "agent-work", 50);
+
+        log.info("Coding phase for run {}", run.getRunId());
+
+        saveMetadata(run);
     }
 
     private void performReviewing(AgentRun run) {
         String msg = "Reviewing code for bugs...\nChecking standards...";
         terminalSseService.sendTerminalText(msg, "agent-work", 50);
+
+        saveMetadata(run);
     }
 
     private void performTesting(AgentRun run) {
@@ -128,11 +160,40 @@ public class AgentService {
     private void performFixing(AgentRun run) {
         String msg = "Fixing identified issues...";
         terminalSseService.sendTerminalText(msg, "agent-work", 50);
+
+        saveMetadata(run);
     }
 
     private void performPublishing(AgentRun run) {
         String msg = "Publishing game to storage...";
         terminalSseService.sendTerminalText(msg, "agent-work", 50);
+
+        saveMetadata(run);
+    }
+
+    private void saveMetadata(AgentRun run) {
+        run.getGameMetadata().files().toFile().mkdirs();
+
+        Path metadataPath = run.getGameMetadata().files().resolve("metadata.json");
+        try {
+            Files.createDirectories(metadataPath.getParent());
+            objectMapper.writeValue(metadataPath.toFile(), run.getGameMetadata());
+            log.info("Saved metadata for run {} to {}", run.getRunId(), metadataPath);
+        } catch (IOException e) {
+            log.error("Failed to save metadata for run {}", run.getRunId(), e);
+        }
+    }
+
+    public GameMetadata loadMetadata(UUID runId) {
+        Path metadataPath = Paths.get(storageBasePath, "run-" + runId, "metadata.json");
+        try {
+            if (Files.exists(metadataPath)) {
+                return objectMapper.readValue(metadataPath.toFile(), GameMetadata.class);
+            }
+        } catch (IOException e) {
+            log.error("Failed to load metadata for run {}", runId, e);
+        }
+        return null;
     }
 
     private void performDone(AgentRun run) {
