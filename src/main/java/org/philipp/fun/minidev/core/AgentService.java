@@ -213,10 +213,61 @@ public class AgentService {
     }
 
     private void performCoding(AgentRun run) {
-        String msg = "Writing HTML...\nGenerating CSS styles...\nImplementing JavaScript logic...";
-        terminalSseService.sendTerminalText(msg, SseEventType.AGENT_WORK, 50);
+        GameMetadata metadata = run.getGameMetadata();
+        if (metadata == null) {
+            log.error("No metadata found for run {}", run.getRunId());
+            run.transitionTo(RunState.FAILED);
+            return;
+        }
 
         log.info("Coding phase for run {}", run.getRunId());
+
+        Map<String, String> contextFiles = new java.util.HashMap<>();
+
+        terminalSseService.sendTerminalText("Writing HTML...\n", SseEventType.AGENT_WORK, 50);
+        StringBuilder contextBuilder = new StringBuilder();
+        if (!contextFiles.isEmpty()) {
+            contextBuilder.append("\nReference existing files for consistency:\n");
+            contextFiles.forEach((name, content) -> {
+                contextBuilder.append("--- FILE: ").append(name).append(" ---\n");
+                contextBuilder.append(content).append("\n");
+            });
+        }
+
+        LlmRequest request = new LlmRequest(
+                List.of(
+                        LlmRequest.Message.system(String.format("""
+                                You are a professional web developer building a game called '%s' The game should be built with HTML, CSS, and vanilla JavaScript. JS and CSS should be embedded in the HTML.
+                                The game concept is: %s
+                                
+                                Instructions: %s
+                                %s
+                                
+                                Respond ONLY with the raw code content. No markdown code blocks, no explanations.
+                                """, metadata.name(), metadata.concept(), "Write the HTML content for the game index page. Only return the code block with the HTML.", contextBuilder.toString())),
+                        LlmRequest.Message.user("Please generate the code.")
+                )
+        );
+        LlmResponse response = llmClient.chat(request);
+
+        String code = "";
+        if (response.success()) {
+            code = response.content().trim();
+        } else {
+            log.error("Failed to generate code {}", response.errorMessage());
+            run.transitionTo(RunState.FAILED);
+            notificationSseService.sendNotification("Failed to generate code: " + response.errorMessage());
+            return;
+        }
+        try {
+            Files.createDirectories(metadata.htmlPath().getParent());
+            Files.writeString(metadata.htmlPath(), code);
+            log.info("Saved file to {}", metadata.htmlPath());
+        } catch (IOException e) {
+            log.error("Failed to save file to {}", metadata.htmlPath(), e);
+        }
+
+        contextFiles.put("index.html", code);
 
         saveMetadata(run);
     }
