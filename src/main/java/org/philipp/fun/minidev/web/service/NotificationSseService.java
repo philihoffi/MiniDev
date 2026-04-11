@@ -10,6 +10,6 @@ public class NotificationSseService extends AbstractSseService {
     }
 
     public void sendNotification(String message) {
-        sendText(message, "UserMessage",0);
+        sendText(message, SseEventType.USER_MESSAGE, 0);
     }
 }

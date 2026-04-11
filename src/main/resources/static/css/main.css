@@ -4,8 +4,14 @@
 @import "layout/layout.css";
 @import "components/components.css";
 
-/* Chat specific overrides or additions if needed */
-.user-msg { color: #ffffff; }
-.ai-msg { color: var(--color-screen-text); }
-.error-msg { color: #ff0000; }
-.waiting-msg { font-style: italic; opacity: 0.8; }
+/* Terminal specific styles */
+.terminal-block {
+    margin-bottom: 10px;
+    white-space: pre-wrap;
+    font-family: monospace;
+}
+.agent-work {
+    border-left: 2px solid var(--color-screen-text, #0f0);
+    padding-left: 10px;
+    color: var(--color-screen-text, #0f0);
+}

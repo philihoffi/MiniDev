@@ -8,6 +8,7 @@ import org.philipp.fun.minidev.run.AgentRun.RunState;
 import org.philipp.fun.minidev.run.GameMetadata;
 import org.philipp.fun.minidev.web.service.NotificationSseService;
 import org.philipp.fun.minidev.web.service.TerminalSseService;
+import org.philipp.fun.minidev.web.service.AbstractSseService.SseEventType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -131,7 +132,7 @@ public class AgentService {
 
     private void performPlanning(AgentRun run) {
         String msg = "Planning game architecture...\nBrainstorming features...";
-        terminalSseService.sendTerminalText(msg, "agent-work", 50);
+        terminalSseService.sendTerminalText(msg, SseEventType.AGENT_WORK, 50);
 
         // Create LLM request to generate game concept
         LlmRequest request = new LlmRequest(
@@ -213,7 +214,7 @@ public class AgentService {
 
     private void performCoding(AgentRun run) {
         String msg = "Writing HTML...\nGenerating CSS styles...\nImplementing JavaScript logic...";
-        terminalSseService.sendTerminalText(msg, "agent-work", 50);
+        terminalSseService.sendTerminalText(msg, SseEventType.AGENT_WORK, 50);
 
         log.info("Coding phase for run {}", run.getRunId());
 
@@ -222,26 +223,26 @@ public class AgentService {
 
     private void performReviewing(AgentRun run) {
         String msg = "Reviewing code for bugs...\nChecking standards...";
-        terminalSseService.sendTerminalText(msg, "agent-work", 50);
+        terminalSseService.sendTerminalText(msg, SseEventType.AGENT_WORK, 50);
 
         saveMetadata(run);
     }
 
     private void performTesting(AgentRun run) {
         String msg = "Running tests...\nAll tests passed!";
-        terminalSseService.sendTerminalText(msg, "agent-work", 50);
+        terminalSseService.sendTerminalText(msg, SseEventType.AGENT_WORK, 50);
     }
 
     private void performFixing(AgentRun run) {
         String msg = "Fixing identified issues...";
-        terminalSseService.sendTerminalText(msg, "agent-work", 50);
+        terminalSseService.sendTerminalText(msg, SseEventType.AGENT_WORK, 50);
 
         saveMetadata(run);
     }
 
     private void performPublishing(AgentRun run) {
         String msg = "Publishing game to storage...";
-        terminalSseService.sendTerminalText(msg, "agent-work", 50);
+        terminalSseService.sendTerminalText(msg, SseEventType.AGENT_WORK, 50);
 
         saveMetadata(run);
     }
@@ -272,7 +273,7 @@ public class AgentService {
 
     private void performDone(AgentRun run) {
         String msg = "Work complete!";
-        terminalSseService.sendTerminalText(msg, "agent-work", 50);
+        terminalSseService.sendTerminalText(msg, SseEventType.AGENT_WORK, 50);
     }
 
     public AgentRun getRun(UUID runId) {

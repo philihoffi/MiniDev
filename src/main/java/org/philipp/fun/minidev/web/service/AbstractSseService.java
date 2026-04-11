@@ -13,6 +13,40 @@ import java.util.Random;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 public abstract class AbstractSseService {
+    
+    public enum SseEventName {
+        PING("ping"),
+        MESSAGE("message"),
+        START("start"),
+        END("end"),
+        CLEAR("clear"),
+        DELETE("delete");
+
+        private final String value;
+
+        SseEventName(String value) {
+            this.value = value;
+        }
+
+        public String getValue() {
+            return value;
+        }
+    }
+
+    public enum SseEventType {
+        USER_MESSAGE("UserMessage"),
+        AGENT_WORK("agent-work");
+
+        private final String value;
+
+        SseEventType(String value) {
+            this.value = value;
+        }
+
+        public String getValue() {
+            return value;
+        }
+    }
 
     protected final Logger log = LoggerFactory.getLogger(getClass());
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
@@ -49,11 +83,11 @@ public abstract class AbstractSseService {
         log.info("New SSE subscriber for stream {}. Total emitters: {}", getStreamId(), emitters.size());
 
         try {
-            emitter.send(SseEmitter.event().name("ping").data(OBJECT_MAPPER.writeValueAsString("connected")));
+            emitter.send(SseEmitter.event().name(SseEventName.PING.getValue()).data(OBJECT_MAPPER.writeValueAsString("connected")));
 
             if (!lastTextTokens.isEmpty()) {
                 for (String token : lastTextTokens) {
-                    emitter.send(SseEmitter.event().name("message").data(OBJECT_MAPPER.writeValueAsString(token)));
+                    emitter.send(SseEmitter.event().name(SseEventName.MESSAGE.getValue()).data(OBJECT_MAPPER.writeValueAsString(token)));
                 }
             }
         } catch (IOException e) {
@@ -64,10 +98,10 @@ public abstract class AbstractSseService {
         return emitter;
     }
 
-    protected synchronized void sendText(String text, String eventType, int delayMillis) {
-        log.info("Sending text to {}: eventType={}, length={}", getStreamId(), eventType, text.length());
+    protected synchronized void sendText(String text, SseEventType eventType, int delayMillis) {
+        log.info("Sending text to {}: eventType={}, length={}", getStreamId(), eventType != null ? eventType.getValue() : "null", text.length());
         if (eventType != null) {
-            broadcast("start", eventType);
+            broadcast(SseEventName.START, eventType.getValue());
         }
         lastTextTokens.add(text);
 
@@ -81,17 +115,17 @@ public abstract class AbstractSseService {
                 }
             }
             String character = Character.toString(cp);
-            broadcast("message", character);
+            broadcast(SseEventName.MESSAGE, character);
         });
 
         if (eventType != null) {
-            broadcast("end", eventType);
+            broadcast(SseEventName.END, eventType.getValue());
         }
     }
 
     protected synchronized void sendClearCommand() {
         lastTextTokens.clear();
-        broadcast("clear", "");
+        broadcast(SseEventName.CLEAR, "");
     }
 
     protected synchronized void deleteLastToken(int delayMillis) {
@@ -99,7 +133,7 @@ public abstract class AbstractSseService {
             String token = lastTextTokens.removeLast();
             StringBuilder sb = new StringBuilder(token);
             String reversed = sb.reverse().toString();
-            
+
             reversed.codePoints().forEach(cp -> {
                 if (delayMillis > 0) {
                     try {
@@ -110,12 +144,12 @@ public abstract class AbstractSseService {
                     }
                 }
                 String character = Character.toString(cp);
-                broadcast("delete", character);
+                broadcast(SseEventName.DELETE, character);
             });
         }
     }
 
-    protected synchronized void broadcast(String name, String data) {
+    protected synchronized void broadcast(SseEventName eventName, String data) {
 
         String jsonData;
         try {
@@ -128,7 +162,7 @@ public abstract class AbstractSseService {
         List<SseEmitter> failedEmitters = new CopyOnWriteArrayList<>();
         emitters.forEach(emitter -> {
             try {
-                emitter.send(SseEmitter.event().name(name).data(jsonData));
+                emitter.send(SseEmitter.event().name(eventName.getValue()).data(jsonData));
             } catch (IOException e) {
                 if (e.getMessage() != null && e.getMessage().contains("softwaregesteuert")) {
                     log.debug("SSE client disconnected for stream {}: {}", getStreamId(), e.getMessage());
