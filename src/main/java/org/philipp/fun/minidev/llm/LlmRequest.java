@@ -7,10 +7,20 @@ import java.util.List;
 public record LlmRequest(
         @NotNull List<Message> messages,
         Double temperature,
-        Integer maxTokens
+        Integer maxTokens,
+        boolean jsonMode,
+        Object jsonSchema
 ) {
     public LlmRequest(List<Message> messages) {
-        this(messages, null, null);
+        this(messages, null, null, false, null);
+    }
+
+    public LlmRequest(List<Message> messages, boolean jsonMode) {
+        this(messages, null, null, jsonMode, null);
+    }
+
+    public LlmRequest(List<Message> messages, Object jsonSchema) {
+        this(messages, null, null, true, jsonSchema);
     }
 
     public record Message(

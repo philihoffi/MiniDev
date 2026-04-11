@@ -1,0 +1,23 @@
+package org.philipp.fun.minidev.core.phase.publishing;
+
+import org.philipp.fun.minidev.core.phase.PhaseHandler;
+import org.philipp.fun.minidev.run.AgentRun;
+import org.philipp.fun.minidev.web.service.TerminalSseService;
+import org.philipp.fun.minidev.web.service.AbstractSseService.SseEventType;
+import org.springframework.stereotype.Component;
+
+@Component
+public class PublishingPhaseHandler implements PhaseHandler {
+
+    private final TerminalSseService terminalSseService;
+
+    public PublishingPhaseHandler(TerminalSseService terminalSseService) {
+        this.terminalSseService = terminalSseService;
+    }
+
+    @Override
+    public void execute(AgentRun run) {
+        String msg = "Publishing game to storage...";
+        terminalSseService.sendTerminalText(msg, SseEventType.AGENT_WORK, 50);
+    }
+}

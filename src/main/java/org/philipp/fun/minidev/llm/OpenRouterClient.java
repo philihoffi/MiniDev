@@ -42,11 +42,26 @@ public class OpenRouterClient implements LlmClient {
                     .map(m -> new OpenRouterRequest.Message(m.role(), m.content()))
                     .toList();
 
+            OpenRouterRequest.ResponseFormat responseFormat = null;
+            if (request.jsonSchema() != null) {
+                responseFormat = new OpenRouterRequest.ResponseFormat(
+                        "json_schema",
+                        new OpenRouterRequest.ResponseFormat.JsonSchema(
+                                "structured_output",
+                                true,
+                                request.jsonSchema()
+                        )
+                );
+            } else if (request.jsonMode()) {
+                responseFormat = OpenRouterRequest.ResponseFormat.JSON;
+            }
+
             OpenRouterRequest requestBody = new OpenRouterRequest(
                     messages,
                     "openrouter/auto",
                     request.temperature(),
-                    request.maxTokens()
+                    request.maxTokens(),
+                    responseFormat
             );
 
             String requestJson = OBJECT_MAPPER.writeValueAsString(requestBody);
