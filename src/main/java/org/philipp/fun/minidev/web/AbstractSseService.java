@@ -58,7 +58,10 @@ public abstract class AbstractSseService {
         return emitter;
     }
 
-    public synchronized void sendText(String text) {
+    protected synchronized void sendText(String text, String eventType) {
+        if (eventType != null) {
+            broadcast("start", eventType);
+        }
         lastTextTokens.add(text);
         text.chars().forEach(c -> {
             try {
@@ -69,14 +72,17 @@ public abstract class AbstractSseService {
             }
             broadcast("message", (char) c);
         });
+        if (eventType != null) {
+            broadcast("end", eventType);
+        }
     }
 
-    public synchronized void sendClearCommand() {
+    protected synchronized void sendClearCommand() {
         lastTextTokens.clear();
         broadcast("clear", "");
     }
 
-    public synchronized void deleteLastToken() {
+    protected synchronized void deleteLastToken() {
         if (!lastTextTokens.isEmpty()) {
             String token = lastTextTokens.removeLast();
             token.chars().forEach(c -> {
