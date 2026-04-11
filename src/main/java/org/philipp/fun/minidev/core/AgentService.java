@@ -169,6 +169,7 @@ public class AgentService {
 
         run.setGameMetadata(metadata);
         log.info("Initialized metadata for run {}: {}", run.getRunId(), metadata);
+        saveMetadata(run);
     }
 
     private GameMetadata parseGameMetadata(String llmResponse, UUID runId) {
@@ -222,6 +223,8 @@ public class AgentService {
 
         log.info("Coding phase for run {}", run.getRunId());
 
+        String todosFormatted = String.join("\n", metadata.todos().stream().map(t -> "- " + t).toList());
+
         Map<String, String> contextFiles = new java.util.HashMap<>();
 
         terminalSseService.sendTerminalText("Writing HTML...\n", SseEventType.AGENT_WORK, 50);
@@ -240,11 +243,14 @@ public class AgentService {
                                 You are a professional web developer building a game called '%s' The game should be built with HTML, CSS, and vanilla JavaScript. JS and CSS should be embedded in the HTML.
                                 The game concept is: %s
                                 
+                                To-Do List for implementation:
+                                %s
+                                
                                 Instructions: %s
                                 %s
                                 
                                 Respond ONLY with the raw code content. No markdown code blocks, no explanations.
-                                """, metadata.name(), metadata.concept(), "Write the HTML content for the game index page. Only return the code block with the HTML.", contextBuilder.toString())),
+                                """, metadata.name(), metadata.concept(), todosFormatted, "Write the HTML content for the game index page. Only return the code block with the HTML.", contextBuilder.toString())),
                         LlmRequest.Message.user("Please generate the code.")
                 )
         );
