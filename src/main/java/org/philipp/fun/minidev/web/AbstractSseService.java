@@ -1,19 +1,20 @@
 package org.philipp.fun.minidev.web;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
 import java.io.IOException;
 import java.util.List;
-import java.util.Map;
 import java.util.Random;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 public abstract class AbstractSseService {
 
     protected final Logger log = LoggerFactory.getLogger(getClass());
+    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
     private final List<SseEmitter> emitters = new CopyOnWriteArrayList<>();
     private final List<String> lastTextTokens = new CopyOnWriteArrayList<>();
@@ -43,11 +44,11 @@ public abstract class AbstractSseService {
         log.info("New SSE subscriber for stream {}. Total emitters: {}", getStreamId(), emitters.size());
 
         try {
-            emitter.send(SseEmitter.event().name("ping").data("connected"));
+            emitter.send(SseEmitter.event().name("ping").data(OBJECT_MAPPER.writeValueAsString("connected")));
 
             if (!lastTextTokens.isEmpty()) {
                 for (String token : lastTextTokens) {
-                    emitter.send(SseEmitter.event().name("message").data(token));
+                    emitter.send(SseEmitter.event().name("message").data(OBJECT_MAPPER.writeValueAsString(token)));
                 }
             }
         } catch (IOException e) {
@@ -64,7 +65,8 @@ public abstract class AbstractSseService {
             broadcast("start", eventType);
         }
         lastTextTokens.add(text);
-        text.chars().forEach(c -> {
+
+        text.codePoints().forEach(cp -> {
             if (delayMillis > 0) {
                 try {
                     Thread.sleep(random.nextInt(delayMillis));
@@ -73,15 +75,16 @@ public abstract class AbstractSseService {
                     throw new RuntimeException(e);
                 }
             }
-            broadcast("message", (char) c);
+            String character = Character.toString(cp);
+            broadcast("message", character);
         });
+
         if (eventType != null) {
             broadcast("end", eventType);
         }
     }
 
     protected synchronized void sendClearCommand() {
-
         lastTextTokens.clear();
         broadcast("clear", "");
     }
@@ -89,7 +92,10 @@ public abstract class AbstractSseService {
     protected synchronized void deleteLastToken(int delayMillis) {
         if (!lastTextTokens.isEmpty()) {
             String token = lastTextTokens.removeLast();
-            token.chars().forEach(c -> {
+            StringBuilder sb = new StringBuilder(token);
+            String reversed = sb.reverse().toString();
+            
+            reversed.codePoints().forEach(cp -> {
                 if (delayMillis > 0) {
                     try {
                         Thread.sleep(random.nextInt(delayMillis));
@@ -98,22 +104,27 @@ public abstract class AbstractSseService {
                         throw new RuntimeException(e);
                     }
                 }
-                broadcast("delete", (char) c);
+                String character = Character.toString(cp);
+                broadcast("delete", character);
             });
         }
-    }
-
-    protected void broadcast(String name, char data) {
-        broadcast(name, String.valueOf(data));
     }
 
     protected synchronized void broadcast(String name, String data) {
         log.info("Broadcasting SSE event to {}: name={}, data={}", getStreamId(), name, data);
 
+        String jsonData;
+        try {
+            jsonData = OBJECT_MAPPER.writeValueAsString(data);
+        } catch (JsonProcessingException e) {
+            log.error("Failed to serialize SSE data to JSON for stream {}", getStreamId(), e);
+            return;
+        }
+
         List<SseEmitter> failedEmitters = new CopyOnWriteArrayList<>();
         emitters.forEach(emitter -> {
             try {
-                emitter.send(SseEmitter.event().name(name).data(data));
+                emitter.send(SseEmitter.event().name(name).data(jsonData));
             } catch (IOException e) {
                 log.warn("Failed to send event to emitter in stream {}, removing it: {}", getStreamId(), e.getMessage());
                 failedEmitters.add(emitter);

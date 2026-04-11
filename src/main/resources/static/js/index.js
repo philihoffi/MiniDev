@@ -57,50 +57,73 @@ document.addEventListener('DOMContentLoaded', function() {
     let currentItem = null;
 
     const eventSource = new EventSource('/api/events/NOTIFICATIONS');
+    const terminalSource = new EventSource('/api/events/TERMINAL');
 
-    eventSource.addEventListener('start', (e) => {
-        banner.style.display = 'flex';
-        
-        // Create new notification item
-        const item = document.createElement('div');
-        item.className = 'notification-item';
-        
-        const label = document.createElement('span');
-        label.className = 'notification-label';
-        label.textContent = 'NOTIFICATION:';
-        
-        const text = document.createElement('span');
-        text.className = 'notification-text';
-        
-        item.appendChild(label);
-        item.appendChild(text);
-        container.appendChild(item);
-        
-        currentItem = text;
-    });
+    const handleSse = (source, targetElement) => {
+        let activeElement = targetElement;
 
-    eventSource.addEventListener('message', (e) => {
-        if (currentItem) {
-            currentItem.textContent += e.data;
-        }
-    });
+        source.addEventListener('start', (e) => {
+            if (source === eventSource) {
+                banner.style.display = 'flex';
+                const item = document.createElement('div');
+                item.className = 'notification-item';
+                const label = document.createElement('span');
+                label.className = 'notification-label';
+                label.textContent = 'NOTIFICATION:';
+                const text = document.createElement('span');
+                text.className = 'notification-text';
+                item.appendChild(label);
+                item.appendChild(text);
+                container.appendChild(item);
+                activeElement = text;
+            }
+        });
 
-    eventSource.addEventListener('end', (e) => {
-        const itemToRemove = currentItem ? currentItem.parentElement : null;
-        currentItem = null;
-        
-        if (itemToRemove) {
-            setTimeout(() => {
-                itemToRemove.remove();
-                if (container.children.length === 0) {
-                    banner.style.display = 'none';
+        source.addEventListener('message', (e) => {
+            if (activeElement) {
+                try {
+                    activeElement.textContent += JSON.parse(e.data);
+                    if (source === terminalSource) activeElement.scrollTop = activeElement.scrollHeight;
+                } catch (err) {
+                    activeElement.textContent += e.data;
                 }
-            }, 30000); // Remove after one full loop cycle (approx)
-        }
-    });
+            }
+        });
 
-    eventSource.onerror = (e) => {
-        console.error("SSE Error: ", e);
+        source.addEventListener('delete', (e) => {
+            if (activeElement) {
+                try {
+                    const data = JSON.parse(e.data);
+                    const currentText = activeElement.textContent;
+                    if (currentText.endsWith(data)) {
+                        activeElement.textContent = currentText.substring(0, currentText.length - data.length);
+                    }
+                } catch (err) {}
+            }
+        });
+
+        source.addEventListener('clear', (e) => {
+            if (activeElement) activeElement.textContent = '';
+        });
+
+        source.addEventListener('end', (e) => {
+            if (source === eventSource) {
+                const itemToRemove = activeElement ? activeElement.parentElement : null;
+                if (itemToRemove) {
+                    setTimeout(() => {
+                        itemToRemove.remove();
+                        if (container.children.length === 0) banner.style.display = 'none';
+                    }, 30000);
+                }
+            }
+            if (source === terminalSource) activeElement = targetElement;
+            else activeElement = null;
+        });
+
+        source.onerror = (e) => console.error("SSE Error: ", e);
     };
+
+    handleSse(eventSource, null);
+    handleSse(terminalSource, document.getElementById('chat-output'));
 
 });
