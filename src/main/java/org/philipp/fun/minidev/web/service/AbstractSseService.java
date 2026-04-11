@@ -52,10 +52,13 @@ public abstract class AbstractSseService {
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
     private final List<SseEmitter> emitters = new CopyOnWriteArrayList<>();
-    private final List<String> lastTextTokens = new CopyOnWriteArrayList<>();
+    private final List<HistoryEvent> history = new CopyOnWriteArrayList<>();
     private final Random random = new Random();
 
+    private record HistoryEvent(SseEventName name, String data, SseEventType type) {}
+
     public abstract String getStreamId();
+    protected abstract boolean isHistoryEnabled();
 
     public SseEmitter subscribe() {
         SseEmitter emitter = new SseEmitter(Long.MAX_VALUE);
@@ -85,9 +88,11 @@ public abstract class AbstractSseService {
         try {
             emitter.send(SseEmitter.event().name(SseEventName.PING.getValue()).data(OBJECT_MAPPER.writeValueAsString("connected")));
 
-            if (!lastTextTokens.isEmpty()) {
-                for (String token : lastTextTokens) {
-                    emitter.send(SseEmitter.event().name(SseEventName.MESSAGE.getValue()).data(OBJECT_MAPPER.writeValueAsString(token)));
+            if (!history.isEmpty()) {
+                for (HistoryEvent event : history) {
+                    emitter.send(SseEmitter.event()
+                            .name(event.name().getValue())
+                            .data(OBJECT_MAPPER.writeValueAsString(event.data())));
                 }
             }
         } catch (IOException e) {
@@ -102,8 +107,10 @@ public abstract class AbstractSseService {
         log.info("Sending text to {}: eventType={}, length={}", getStreamId(), eventType != null ? eventType.getValue() : "null", text.length());
         if (eventType != null) {
             broadcast(SseEventName.START, eventType.getValue());
+            if (isHistoryEnabled()) {
+                history.add(new HistoryEvent(SseEventName.START, eventType.getValue(), eventType));
+            }
         }
-        lastTextTokens.add(text);
 
         text.codePoints().forEach(cp -> {
             if (delayMillis > 0) {
@@ -116,37 +123,24 @@ public abstract class AbstractSseService {
             }
             String character = Character.toString(cp);
             broadcast(SseEventName.MESSAGE, character);
+            if (isHistoryEnabled()) {
+                history.add(new HistoryEvent(SseEventName.MESSAGE, character, eventType));
+            }
         });
 
         if (eventType != null) {
             broadcast(SseEventName.END, eventType.getValue());
+            if (isHistoryEnabled()) {
+                history.add(new HistoryEvent(SseEventName.END, eventType.getValue(), eventType));
+            }
         }
     }
 
     protected synchronized void sendClearCommand() {
-        lastTextTokens.clear();
-        broadcast(SseEventName.CLEAR, "");
-    }
-
-    protected synchronized void deleteLastToken(int delayMillis) {
-        if (!lastTextTokens.isEmpty()) {
-            String token = lastTextTokens.removeLast();
-            StringBuilder sb = new StringBuilder(token);
-            String reversed = sb.reverse().toString();
-
-            reversed.codePoints().forEach(cp -> {
-                if (delayMillis > 0) {
-                    try {
-                        Thread.sleep(random.nextInt(delayMillis));
-                    } catch (InterruptedException e) {
-                        Thread.currentThread().interrupt();
-                        throw new RuntimeException(e);
-                    }
-                }
-                String character = Character.toString(cp);
-                broadcast(SseEventName.DELETE, character);
-            });
+        if (isHistoryEnabled()) {
+            history.clear();
         }
+        broadcast(SseEventName.CLEAR, "");
     }
 
     protected synchronized void broadcast(SseEventName eventName, String data) {

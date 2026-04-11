@@ -8,4 +8,9 @@ public class SystemSseService extends AbstractSseService {
     public String getStreamId() {
         return "SYSTEM";
     }
+
+    @Override
+    protected boolean isHistoryEnabled() {
+        return true;
+    }
 }

@@ -9,6 +9,11 @@ public class NotificationSseService extends AbstractSseService {
         return "NOTIFICATIONS";
     }
 
+    @Override
+    protected boolean isHistoryEnabled() {
+        return false;
+    }
+
     public void sendNotification(String message) {
         sendText(message, SseEventType.USER_MESSAGE, 0);
     }

@@ -8,6 +8,12 @@ public class TerminalSseService extends AbstractSseService {
     public String getStreamId() {
         return "TERMINAL";
     }
+
+    @Override
+    protected boolean isHistoryEnabled() {
+        return true;
+    }
+
     public void sendTerminalText(String text, SseEventType eventType, int delayMillis) {
         sendText(text, eventType, delayMillis);
     }
