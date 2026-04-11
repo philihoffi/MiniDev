@@ -38,6 +38,7 @@ public class AgentService {
 
     private final Map<UUID, AgentRun> activeRuns = new ConcurrentHashMap<>();
     private final NotificationSseService notificationSseService;
+    private final TerminalSseService terminalSseService;
 
     private final Map<RunState, PhaseHandler> phaseHandlers;
 
@@ -45,6 +46,7 @@ public class AgentService {
 
     public AgentService(
             NotificationSseService notificationSseService,
+            TerminalSseService terminalSseService,
             PlanningPhaseHandler planningPhaseHandler,
             CodingPhaseHandler codingPhaseHandler,
             ReviewingPhaseHandler reviewingPhaseHandler,
@@ -53,6 +55,7 @@ public class AgentService {
             PublishingPhaseHandler publishingPhaseHandler,
             ObjectMapper objectMapper) {
         this.notificationSseService = notificationSseService;
+        this.terminalSseService = terminalSseService;
 
         this.phaseHandlers = Map.of(
                 RunState.PLANNING, planningPhaseHandler,
@@ -123,10 +126,14 @@ public class AgentService {
             case CODING -> RunState.REVIEWING;
             case REVIEWING -> {
                 GameMetadata metadata = run.getGameMetadata();
-                if (metadata != null && !metadata.todos().isEmpty() && run.getFixingIterations() < MAX_FIXING_ITERATIONS) {//TODO better solution to determine if fixing is needed
+                if(metadata != null && !metadata.todos().isEmpty() && run.getFixingIterations() >= MAX_FIXING_ITERATIONS){
+                    metadata.todos().clear();
+                    this.terminalSseService.sendTerminalText("Fuck it I'm done", SseEventType.AGENT_WORK, 0);
+                }
+
+                if (metadata != null && !metadata.todos().isEmpty()) {//TODO better solution to determine if fixing is needed
                     yield RunState.FIXING;
                 } else {
-                    metadata.todos().clear();
                     yield RunState.TESTING;
                 }
             }
