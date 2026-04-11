@@ -8,4 +8,8 @@ public class NotificationSseService extends AbstractSseService {
     public String getStreamId() {
         return "NOTIFICATIONS";
     }
+
+    public void sendNotification(String message) {
+        sendText(message, "UserMessage",0);
+    }
 }

@@ -20,14 +20,17 @@ public class ChatController {
 
     private static final Logger log = LoggerFactory.getLogger(ChatController.class);
     private final LlmClient llmClient;
+    private final NotificationSseService notificationSseService;
 
-    public ChatController(LlmClient llmClient) {
+    public ChatController(LlmClient llmClient, NotificationSseService notificationSseService) {
         this.llmClient = llmClient;
+        this.notificationSseService = notificationSseService;
     }
 
     @PostMapping("/chat")
     public LlmResponse chat(@RequestBody ChatApiRequest request) {
         log.info("Received chat request for message: {}", request.message());
+        notificationSseService.sendNotification("Incoming chat message: " + request.message());
         if (request.message() == null || request.message().isBlank()) {
             log.warn("Chat request failed: Message is empty");
             return LlmResponse.failure("Message is required");

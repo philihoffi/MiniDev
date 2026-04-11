@@ -14,7 +14,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
 public abstract class AbstractSseService {
 
     protected final Logger log = LoggerFactory.getLogger(getClass());
-    
+
     private final List<SseEmitter> emitters = new CopyOnWriteArrayList<>();
     private final List<String> lastTextTokens = new CopyOnWriteArrayList<>();
     private final Random random = new Random();
@@ -58,18 +58,20 @@ public abstract class AbstractSseService {
         return emitter;
     }
 
-    protected synchronized void sendText(String text, String eventType) {
+    protected synchronized void sendText(String text, String eventType, int delayMillis) {
         log.info("Sending text to {}: eventType={}, length={}", getStreamId(), eventType, text.length());
         if (eventType != null) {
             broadcast("start", eventType);
         }
         lastTextTokens.add(text);
         text.chars().forEach(c -> {
-            try {
-                Thread.sleep(random.nextInt(100));
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
-                throw new RuntimeException(e);
+            if (delayMillis > 0) {
+                try {
+                    Thread.sleep(random.nextInt(delayMillis));
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                    throw new RuntimeException(e);
+                }
             }
             broadcast("message", (char) c);
         });
@@ -79,19 +81,22 @@ public abstract class AbstractSseService {
     }
 
     protected synchronized void sendClearCommand() {
+
         lastTextTokens.clear();
         broadcast("clear", "");
     }
 
-    protected synchronized void deleteLastToken() {
+    protected synchronized void deleteLastToken(int delayMillis) {
         if (!lastTextTokens.isEmpty()) {
             String token = lastTextTokens.removeLast();
             token.chars().forEach(c -> {
-                try {
-                    Thread.sleep(random.nextInt(100));
-                } catch (InterruptedException e) {
-                    Thread.currentThread().interrupt();
-                    throw new RuntimeException(e);
+                if (delayMillis > 0) {
+                    try {
+                        Thread.sleep(random.nextInt(delayMillis));
+                    } catch (InterruptedException e) {
+                        Thread.currentThread().interrupt();
+                        throw new RuntimeException(e);
+                    }
                 }
                 broadcast("delete", (char) c);
             });
