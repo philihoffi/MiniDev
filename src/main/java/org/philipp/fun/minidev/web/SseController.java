@@ -7,23 +7,31 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
+import java.util.List;
+import java.util.Map;
+import java.util.function.Function;
+import java.util.stream.Collectors;
+
 @RestController
 @RequestMapping("/api/events")
 public class SseController {
 
-    private final SseService sseService;
+    private final Map<String, AbstractSseService> sseServices;
 
-    public SseController(SseService sseService) {
-        this.sseService = sseService;
+    public SseController(List<AbstractSseService> services) {
+        this.sseServices = services.stream()
+                .collect(Collectors.toMap(
+                        service -> service.getStreamId().toUpperCase(),
+                        Function.identity()
+                ));
     }
 
     @GetMapping(value = "/{streamId}", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
     public SseEmitter subscribe(@PathVariable String streamId) {
-        try {
-            SseService.StreamType topic = SseService.StreamType.valueOf(streamId.toUpperCase());
-            return sseService.subscribe(topic);
-        } catch (IllegalArgumentException e) {
-            return null;
+        AbstractSseService service = sseServices.get(streamId.toUpperCase());
+        if (service != null) {
+            return service.subscribe();
         }
+        return null;
     }
 }
