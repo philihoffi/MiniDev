@@ -1,5 +1,8 @@
 package org.philipp.fun.minidev.core;
 
+import org.philipp.fun.minidev.llm.LlmClient;
+import org.philipp.fun.minidev.llm.LlmRequest;
+import org.philipp.fun.minidev.llm.LlmResponse;
 import org.philipp.fun.minidev.run.AgentRun;
 import org.philipp.fun.minidev.run.AgentRun.RunState;
 import org.philipp.fun.minidev.run.GameMetadata;
@@ -16,10 +19,13 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.Map;
 import java.util.UUID;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 @Service
 public class AgentService {
@@ -29,6 +35,7 @@ public class AgentService {
     private final Map<UUID, AgentRun> activeRuns = new ConcurrentHashMap<>();
     private final NotificationSseService notificationSseService;
     private final TerminalSseService terminalSseService;
+    private final LlmClient llmClient;
     private final String storageBasePath;
 
     private static final ObjectMapper objectMapper = new ObjectMapper();
@@ -36,9 +43,11 @@ public class AgentService {
     public AgentService(
             NotificationSseService notificationSseService,
             TerminalSseService terminalSseService,
+            LlmClient llmClient,
             @Value("${minidev.storage.base-path}") String storageBasePath) {
         this.notificationSseService = notificationSseService;
         this.terminalSseService = terminalSseService;
+        this.llmClient = llmClient;
         this.storageBasePath = storageBasePath;
     }
 
@@ -124,16 +133,81 @@ public class AgentService {
         String msg = "Planning game architecture...\nBrainstorming features...";
         terminalSseService.sendTerminalText(msg, "agent-work", 50);
 
-        GameMetadata metadata = new GameMetadata(
-                "Untitled Game ",
-                "TODO",
-                List.of("TODO"),
-                Paths.get(storageBasePath, "run-" + run.getRunId())
+        // Create LLM request to generate game concept
+        LlmRequest request = new LlmRequest(
+            List.of(
+                LlmRequest.Message.system("""
+                    You are a creative game designer. Generate a simple browser game concept.
+
+                    Respond in this EXACT format:
+                    NAME: [catchy game name]
+                    CONCEPT: [brief description of the game]
+                    TODOS:
+                    - [todo item 1]
+                    - [todo item 2]
+                    - [todo item 3]
+                    - [todo item n]
+                    """),
+                LlmRequest.Message.user("Create a fun, simple browser game that can be built with HTML, CSS, and vanilla JavaScript.")
+            )
         );
+
+
+        LlmResponse response = llmClient.chat(request);
+
+        GameMetadata metadata = null;
+        if (response.success()) {
+            metadata = parseGameMetadata(response.content(), run.getRunId());
+            log.info("Generated game concept: {}", metadata.name());
+        } else {
+            log.error("Failed to generate game concept: {}", response.errorMessage());
+            run.transitionTo(RunState.FAILED);
+            notificationSseService.sendNotification("Failed to generate game concept: " + response.errorMessage());
+            return;
+        }
+
         run.setGameMetadata(metadata);
-
-
         log.info("Initialized metadata for run {}: {}", run.getRunId(), metadata);
+    }
+
+    private GameMetadata parseGameMetadata(String llmResponse, UUID runId) {
+        String name = extractField(llmResponse, "NAME:", "Untitled Game");
+        String concept = extractField(llmResponse, "CONCEPT:", "A simple browser game");
+        List<String> todos = extractTodos(llmResponse);
+
+        return new GameMetadata(
+            name,
+            concept,
+            todos,
+            Paths.get(storageBasePath, name+"-" + runId)
+        );
+    }
+
+    private String extractField(String text, String marker, String defaultValue) {
+        Pattern pattern = Pattern.compile(marker + "\\s*(.+?)(?=\\n[A-Z]+:|\\nTODOS:|$)", Pattern.DOTALL);
+        Matcher matcher = pattern.matcher(text);
+        if (matcher.find()) {
+            return matcher.group(1).trim();
+        }
+        return defaultValue;
+    }
+
+    private List<String> extractTodos(String text) {
+        List<String> todos = new ArrayList<>();
+        Pattern pattern = Pattern.compile("^\\s*-\\s*(.+)$", Pattern.MULTILINE);
+        Matcher matcher = pattern.matcher(text);
+
+        while (matcher.find()) {
+            todos.add(matcher.group(1).trim());
+        }
+
+        if (todos.isEmpty()) {
+            todos.add("Implement game logic");
+            todos.add("Design game UI");
+            todos.add("Test and polish");
+        }
+
+        return todos;
     }
 
     private void performCoding(AgentRun run) {
