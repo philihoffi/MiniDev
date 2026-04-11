@@ -59,6 +59,7 @@ public abstract class AbstractSseService {
     }
 
     protected synchronized void sendText(String text, String eventType) {
+        log.info("Sending text to {}: eventType={}, length={}", getStreamId(), eventType, text.length());
         if (eventType != null) {
             broadcast("start", eventType);
         }

@@ -1,5 +1,7 @@
 package org.philipp.fun.minidev.web;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.philipp.fun.minidev.llm.LlmClient;
 import org.philipp.fun.minidev.llm.LlmRequest;
 import org.philipp.fun.minidev.llm.LlmResponse;
@@ -16,6 +18,7 @@ import java.util.List;
 @RequestMapping("/api")
 public class ChatController {
 
+    private static final Logger log = LoggerFactory.getLogger(ChatController.class);
     private final LlmClient llmClient;
 
     public ChatController(LlmClient llmClient) {
@@ -24,7 +27,9 @@ public class ChatController {
 
     @PostMapping("/chat")
     public LlmResponse chat(@RequestBody ChatApiRequest request) {
+        log.info("Received chat request for message: {}", request.message());
         if (request.message() == null || request.message().isBlank()) {
+            log.warn("Chat request failed: Message is empty");
             return LlmResponse.failure("Message is required");
         }
 
@@ -50,10 +55,19 @@ public class ChatController {
             totalTokens += msg.content().length();
         }
         if (totalTokens > 4096) {
+            log.warn("Chat request blocked: Token limit exceeded ({} tokens)", totalTokens);
             return LlmResponse.failure("This API Endpoint is for demo purposes only. Messages cannot exceed 4096 Characters.");
         }
 
         LlmRequest llmRequest = new LlmRequest(messages);
-        return llmClient.chat(llmRequest);
+        LlmResponse response = llmClient.chat(llmRequest);
+        
+        if (response.success()) {
+            log.info("Chat response successful from model: {}", response.model());
+        } else {
+            log.error("Chat response failed: {}", response.errorMessage());
+        }
+        
+        return response;
     }
 }

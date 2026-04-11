@@ -50,15 +50,18 @@ public class OpenRouterClient implements LlmClient {
             );
 
             String requestJson = OBJECT_MAPPER.writeValueAsString(requestBody);
-            log.info("Sending request to OpenRouter: {}", requestJson);
+            log.info("Sending chat request to OpenRouter. Model: {}, Messages: {}", requestBody.model(), messages.size());
+            log.debug("Request body: {}", requestJson);
             String responseBody = restClient.post()
                     .body(requestJson)
                     .retrieve()
                     .body(String.class);
 
             if (responseBody == null) {
+                log.warn("Received empty response from OpenRouter API");
                 return LlmResponse.failure("Empty response from OpenRouter");
             }
+            log.debug("Received response from OpenRouter: {}", responseBody);
 
             OpenRouterResponse response = OBJECT_MAPPER.readValue(responseBody, OpenRouterResponse.class);
 
