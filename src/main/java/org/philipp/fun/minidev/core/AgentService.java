@@ -174,17 +174,18 @@ public class AgentService {
         String name = extractField(llmResponse, "NAME:", "Untitled Game");
         String concept = extractField(llmResponse, "CONCEPT:", "A simple browser game");
         List<String> todos = extractTodos(llmResponse);
+        Path gameDirectory = Paths.get(storageBasePath, "run-" + runId);
 
         return new GameMetadata(
             name,
             concept,
             todos,
-            Paths.get(storageBasePath, name+"-" + runId)
+            gameDirectory
         );
     }
 
     private String extractField(String text, String marker, String defaultValue) {
-        Pattern pattern = Pattern.compile(marker + "\\s*(.+?)(?=\\n[A-Z]+:|\\nTODOS:|$)", Pattern.DOTALL);
+        Pattern pattern = Pattern.compile(Pattern.quote(marker) + "\\s*(.+?)(?=\\n[A-Z]+:|\\nTODOS:|$)", Pattern.DOTALL);
         Matcher matcher = pattern.matcher(text);
         if (matcher.find()) {
             return matcher.group(1).trim();
@@ -246,11 +247,10 @@ public class AgentService {
     }
 
     private void saveMetadata(AgentRun run) {
-        run.getGameMetadata().files().toFile().mkdirs();
-
-        Path metadataPath = run.getGameMetadata().files().resolve("metadata.json");
+        Path files = run.getGameMetadata().files();
+        Path metadataPath = files.resolve("metadata.json");
         try {
-            Files.createDirectories(metadataPath.getParent());
+            Files.createDirectories(files);
             objectMapper.writeValue(metadataPath.toFile(), run.getGameMetadata());
             log.info("Saved metadata for run {} to {}", run.getRunId(), metadataPath);
         } catch (IOException e) {
