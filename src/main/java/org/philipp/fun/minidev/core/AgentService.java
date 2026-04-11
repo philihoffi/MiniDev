@@ -279,10 +279,66 @@ public class AgentService {
     }
 
     private void performReviewing(AgentRun run) {
-        String msg = "Reviewing code for bugs...\nChecking standards...";
-        terminalSseService.sendTerminalText(msg, SseEventType.AGENT_WORK, 50);
+        GameMetadata metadata = run.getGameMetadata();
+        if (metadata == null) {
+            log.error("No metadata found for run {}", run.getRunId());
+            run.transitionTo(RunState.FAILED);
+            return;
+        }
 
-        saveMetadata(run);
+        log.info("Reviewing phase for run {}", run.getRunId());
+        terminalSseService.sendTerminalText("Reviewing code and updating To-Dos...\n", SseEventType.AGENT_WORK, 50);
+
+        String code = "";
+        try {
+            if (Files.exists(metadata.htmlPath())) {
+                code = Files.readString(metadata.htmlPath());
+            }
+        } catch (IOException e) {
+            log.error("Failed to read code for review from {}", metadata.htmlPath(), e);
+        }
+
+        String todosFormatted = String.join("\n", metadata.todos().stream().map(t -> "- " + t).toList());
+
+        LlmRequest request = new LlmRequest(
+                List.of(
+                        LlmRequest.Message.system(String.format("""
+                                You are a professional code reviewer. You are reviewing the progress of a game called '%s'.
+                                The game concept is: %s
+                                
+                                Current To-Do List:
+                                %s
+                                
+                                Current Implementation (HTML/JS/CSS):
+                                --- START CODE ---
+                                %s
+                                --- END CODE ---
+                                
+                                Task:
+                                1. Check which To-Dos from the list have already been implemented in the code.
+                                2. Create an updated To-Do List.
+                                3. Remove To-Dos that are fully completed.
+                                4. Keep To-Dos that are not yet or only partially implemented.
+                                5. Add new To-Dos if you see necessary steps for completion or improvement (bug fixes, polish, etc.) based on the concept.
+                                
+                                Respond ONLY with the updated To-Do list as a bulleted list (using '-'). No other text.
+                                """, metadata.name(), metadata.concept(), todosFormatted, code)),
+                        LlmRequest.Message.user("Please provide the updated To-Do list.")
+                )
+        );
+
+        LlmResponse response = llmClient.chat(request);
+
+        if (response.success()) {
+            run.getGameMetadata().todos().clear();
+            run.getGameMetadata().todos().addAll(extractTodos(response.content().trim()));
+            log.info("Updated To-Dos for run {}: {}", run.getRunId(), run.getGameMetadata().todos());
+            saveMetadata(run);
+            terminalSseService.sendTerminalText("To-Do list updated based on review.\n", SseEventType.AGENT_WORK, 50);
+        } else {
+            log.error("Failed to review code: {}", response.errorMessage());
+            notificationSseService.sendNotification("Review failed: " + response.errorMessage());
+        }
     }
 
     private void performTesting(AgentRun run) {
