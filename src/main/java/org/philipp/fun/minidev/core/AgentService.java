@@ -126,11 +126,13 @@ public class AgentService {
                 if (metadata != null && !metadata.todos().isEmpty() && run.getFixingIterations() < MAX_FIXING_ITERATIONS) {//TODO better solution to determine if fixing is needed
                     yield RunState.FIXING;
                 } else {
+                    metadata.todos().clear();
                     yield RunState.TESTING;
                 }
             }
             case TESTING -> {
-                if (Math.random() < 0.3 && run.getFixingIterations() < MAX_FIXING_ITERATIONS) {//TODO better solution to determine if fixing is needed
+                GameMetadata metadata = run.getGameMetadata();
+                if (metadata != null && !metadata.todos().isEmpty() && run.getFixingIterations() < MAX_FIXING_ITERATIONS) {
                     yield RunState.FIXING;
                 } else {
                     yield RunState.PUBLISHING;
