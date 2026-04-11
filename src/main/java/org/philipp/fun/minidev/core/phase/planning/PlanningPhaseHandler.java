@@ -24,6 +24,7 @@ import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -110,7 +111,7 @@ public class PlanningPhaseHandler implements PhaseHandler {
     private List<GameIdeaCandidate> generateCandidates(List<String> previousIdeas) {
         String previousIdeasContext = previousIdeas.isEmpty() ? "None." : String.join("\n---\n", previousIdeas);
 
-        var schema = java.util.Map.of(
+        Map<String, Object> schema = java.util.Map.of(
                 "type", "object",
                 "properties", java.util.Map.of(
                         "ideas", java.util.Map.of(
@@ -160,8 +161,8 @@ public class PlanningPhaseHandler implements PhaseHandler {
 
         try {
             String content = cleanJsonResponse(response.content());
-            var root = objectMapper.readTree(content);
-            var ideasNode = root.get("ideas");
+            com.fasterxml.jackson.databind.JsonNode root = objectMapper.readTree(content);
+            com.fasterxml.jackson.databind.JsonNode ideasNode = root.get("ideas");
             return objectMapper.readValue(ideasNode.toString(), new TypeReference<List<GameIdeaCandidate>>() {});
         } catch (Exception e) {
             log.error("Failed to parse game candidates: {}", e.getMessage());

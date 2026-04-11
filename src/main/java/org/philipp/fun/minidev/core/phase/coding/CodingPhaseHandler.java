@@ -82,7 +82,7 @@ public class CodingPhaseHandler implements PhaseHandler {
     }
 
     private String generateTechnicalConcept(GameMetadata metadata, String todosFormatted) {
-        var schema = Map.of(
+        Map<String, Object> schema = Map.of(
                 "type", "object",
                 "properties", Map.of(
                         "technicalDesign", Map.of("type", "string"),
@@ -120,7 +120,7 @@ public class CodingPhaseHandler implements PhaseHandler {
         }
 
         try {
-            var node = objectMapper.readTree(cleanJsonResponse(response.content()));
+            com.fasterxml.jackson.databind.JsonNode node = objectMapper.readTree(cleanJsonResponse(response.content()));
             return String.format("""
                     TECHNICAL DESIGN: %s
                     STATE MANAGEMENT: %s
@@ -139,7 +139,7 @@ public class CodingPhaseHandler implements PhaseHandler {
     }
 
     private String generateGameCode(GameMetadata metadata, String todosFormatted, String techConcept) {
-        var schema = Map.of(
+        Map<String, Object> schema = Map.of(
                 "type", "object",
                 "properties", Map.of(
                         "code", Map.of("type", "string"),
@@ -180,7 +180,7 @@ public class CodingPhaseHandler implements PhaseHandler {
         }
 
         try {
-            var node = objectMapper.readTree(cleanJsonResponse(response.content()));
+            com.fasterxml.jackson.databind.JsonNode node = objectMapper.readTree(cleanJsonResponse(response.content()));
             return node.get("code").asText().trim();
         } catch (Exception e) {
             log.error("Failed to parse game code JSON: {}", e.getMessage());
