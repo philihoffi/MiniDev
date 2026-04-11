@@ -1,6 +1,7 @@
 package org.philipp.fun.minidev.web;
 
 import org.junit.jupiter.api.Test;
+import org.philipp.fun.minidev.web.controller.PageController;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.ui.ConcurrentModel;
 import org.springframework.ui.Model;

@@ -1,4 +1,4 @@
-package org.philipp.fun.minidev.web;
+package org.philipp.fun.minidev.web.service;
 
 import org.springframework.stereotype.Service;
 

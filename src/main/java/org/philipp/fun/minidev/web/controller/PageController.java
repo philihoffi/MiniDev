@@ -1,4 +1,4 @@
-package org.philipp.fun.minidev.web;
+package org.philipp.fun.minidev.web.controller;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Controller;

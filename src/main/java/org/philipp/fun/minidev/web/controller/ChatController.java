@@ -1,4 +1,4 @@
-package org.philipp.fun.minidev.web;
+package org.philipp.fun.minidev.web.controller;
 
 import org.philipp.fun.minidev.core.AgentService;
 import org.slf4j.Logger;
