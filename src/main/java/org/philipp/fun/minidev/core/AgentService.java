@@ -32,6 +32,12 @@ import java.util.regex.Pattern;
 public class AgentService {
 
     private static final Logger log = LoggerFactory.getLogger(AgentService.class);
+    private static final int MAX_FIXING_ITERATIONS = 3;
+    private static final List<String> DEFAULT_PLANNING_TODOS = List.of(
+            "Implement game logic",
+            "Design game UI",
+            "Test and polish"
+    );
 
     private final Map<UUID, AgentRun> activeRuns = new ConcurrentHashMap<>();
     private final NotificationSseService notificationSseService;
@@ -72,7 +78,7 @@ public class AgentService {
         try {
             RunState currentState = run.getState();
             while (currentState != RunState.DONE && currentState != RunState.FAILED) {
-                RunState nextState = getNextSimulatedState(currentState);
+                RunState nextState = getNextState(run);
                 
                 if (run.getState().canTransitionTo(nextState)) {
                     run.transitionTo(nextState);
@@ -98,14 +104,22 @@ public class AgentService {
         }
     }
 
-    private RunState getNextSimulatedState(RunState current) {
+    private RunState getNextState(AgentRun run) {
+        RunState current = run.getState();
         return switch (current) {
             case IDLE -> RunState.PLANNING;
             case PLANNING -> RunState.CODING;
             case CODING -> RunState.REVIEWING;
-            case REVIEWING -> RunState.TESTING;
+            case REVIEWING -> {
+                GameMetadata metadata = run.getGameMetadata();
+                if (metadata != null && !metadata.todos().isEmpty() && run.getFixingIterations() < MAX_FIXING_ITERATIONS) {//TODO better solution to determine if fixing is needed
+                    yield RunState.FIXING;
+                } else {
+                    yield RunState.TESTING;
+                }
+            }
             case TESTING -> {
-                if (Math.random() < 0.3) {
+                if (Math.random() < 0.3 && run.getFixingIterations() < MAX_FIXING_ITERATIONS) {//TODO better solution to determine if fixing is needed
                     yield RunState.FIXING;
                 } else {
                     yield RunState.PUBLISHING;
@@ -175,7 +189,7 @@ public class AgentService {
     private GameMetadata parseGameMetadata(String llmResponse, UUID runId) {
         String name = extractField(llmResponse, "NAME:", "Untitled Game");
         String concept = extractField(llmResponse, "CONCEPT:", "A simple browser game");
-        List<String> todos = extractTodos(llmResponse);
+        List<String> todos = extractTodos(llmResponse, DEFAULT_PLANNING_TODOS);
         Path gameDirectory = Paths.get(storageBasePath, "run-" + runId);
 
         return new GameMetadata(
@@ -195,7 +209,7 @@ public class AgentService {
         return defaultValue;
     }
 
-    private List<String> extractTodos(String text) {
+    private List<String> extractTodos(String text, List<String> fallbackTodos) {
         List<String> todos = new ArrayList<>();
         Pattern pattern = Pattern.compile("^\\s*-\\s*(.+)$", Pattern.MULTILINE);
         Matcher matcher = pattern.matcher(text);
@@ -205,9 +219,7 @@ public class AgentService {
         }
 
         if (todos.isEmpty()) {
-            todos.add("Implement game logic");
-            todos.add("Design game UI");
-            todos.add("Test and polish");
+            return new ArrayList<>(fallbackTodos);
         }
 
         return todos;
@@ -319,7 +331,7 @@ public class AgentService {
                                 2. Create an updated To-Do List.
                                 3. Remove To-Dos that are fully completed.
                                 4. Keep To-Dos that are not yet or only partially implemented.
-                                5. Add new To-Dos if you see necessary steps for completion or improvement (bug fixes, polish, etc.) based on the concept.
+                                5. Do not add brand-new To-Dos. Only keep or remove items from the current list.
                                 
                                 Respond ONLY with the updated To-Do list as a bulleted list (using '-'). No other text.
                                 """, metadata.name(), metadata.concept(), todosFormatted, code)),
@@ -331,10 +343,10 @@ public class AgentService {
 
         if (response.success()) {
             run.getGameMetadata().todos().clear();
-            run.getGameMetadata().todos().addAll(extractTodos(response.content().trim()));
+            run.getGameMetadata().todos().addAll(extractTodos(response.content().trim(), List.of()));
             log.info("Updated To-Dos for run {}: {}", run.getRunId(), run.getGameMetadata().todos());
             saveMetadata(run);
-            terminalSseService.sendTerminalText("To-Do list updated based on review.\n", SseEventType.AGENT_WORK, 50);
+            terminalSseService.sendTerminalText("To-Do list updated based on review.", SseEventType.AGENT_WORK, 50);
         } else {
             log.error("Failed to review code: {}", response.errorMessage());
             notificationSseService.sendNotification("Review failed: " + response.errorMessage());
@@ -347,8 +359,70 @@ public class AgentService {
     }
 
     private void performFixing(AgentRun run) {
-        String msg = "Fixing identified issues...";
-        terminalSseService.sendTerminalText(msg, SseEventType.AGENT_WORK, 50);
+        GameMetadata metadata = run.getGameMetadata();
+        if (metadata == null) {
+            log.error("No metadata found for run {}", run.getRunId());
+            run.transitionTo(RunState.FAILED);
+            return;
+        }
+
+        log.info("Fixing phase for run {}", run.getRunId());
+        run.incrementFixingIterations();
+        terminalSseService.sendTerminalText("Fixing identified issues and implementing missing To-Dos...\n", SseEventType.AGENT_WORK, 50);
+
+        String currentCode = "";
+        try {
+            if (Files.exists(metadata.htmlPath())) {
+                currentCode = Files.readString(metadata.htmlPath());
+            }
+        } catch (IOException e) {
+            log.error("Failed to read code for fixing from {}", metadata.htmlPath(), e);
+        }
+
+        String todosFormatted = String.join("\n", metadata.todos().stream().map(t -> "- " + t).toList());
+
+        LlmRequest request = new LlmRequest(
+                List.of(
+                        LlmRequest.Message.system(String.format("""
+                                You are a professional web developer. Your task is to fix issues and implement missing features in a game called '%s'.
+                                The game concept is: %s
+                                
+                                Current To-Do List of remaining tasks:
+                                %s
+                                
+                                Current Implementation (HTML/JS/CSS):
+                                --- START CODE ---
+                                %s
+                                --- END CODE ---
+                                
+                                Instructions:
+                                1. Review the current implementation and the To-Do list.
+                                2. Update the code to address the remaining To-Dos.
+                                3. Fix any bugs or inconsistencies you find.
+                                4. Ensure the game remains a single HTML file with embedded CSS and JS.
+                                
+                                Respond ONLY with the complete, updated raw code content. No markdown code blocks, no explanations.
+                                """, metadata.name(), metadata.concept(), todosFormatted, currentCode)),
+                        LlmRequest.Message.user("Please provide the updated code.")
+                )
+        );
+
+        LlmResponse response = llmClient.chat(request);
+
+        if (response.success()) {
+            String updatedCode = response.content().trim();
+            try {
+                Files.createDirectories(metadata.htmlPath().getParent());
+                Files.writeString(metadata.htmlPath(), updatedCode);
+                log.info("Saved fixed code to {}", metadata.htmlPath());
+                terminalSseService.sendTerminalText("Issues fixed and code updated.\n", SseEventType.AGENT_WORK, 50);
+            } catch (IOException e) {
+                log.error("Failed to save fixed code to {}", metadata.htmlPath(), e);
+            }
+        } else {
+            log.error("Failed to generate fixed code: {}", response.errorMessage());
+            notificationSseService.sendNotification("Fixing failed: " + response.errorMessage());
+        }
 
         saveMetadata(run);
     }
