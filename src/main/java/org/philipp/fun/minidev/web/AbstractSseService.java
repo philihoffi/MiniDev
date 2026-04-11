@@ -2,6 +2,7 @@ package org.philipp.fun.minidev.web;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import jakarta.annotation.PreDestroy;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
@@ -36,7 +37,11 @@ public abstract class AbstractSseService {
         });
 
         emitter.onError((ex) -> {
-            log.error("SSE emitter error for stream {}: {}", getStreamId(), ex.getMessage());
+            if (ex instanceof IOException && (ex.getMessage() != null && ex.getMessage().contains("softwaregesteuert"))) {
+                log.debug("SSE client disconnected for stream {}: {}", getStreamId(), ex.getMessage());
+            } else {
+                log.warn("SSE emitter error for stream {}: {}", getStreamId(), ex.getMessage());
+            }
             removeEmitter(emitter);
         });
 
@@ -52,7 +57,7 @@ public abstract class AbstractSseService {
                 }
             }
         } catch (IOException e) {
-            log.error("Failed to send initial data for stream {}", getStreamId(), e);
+            log.debug("Failed to send initial data for stream {}: {}", getStreamId(), e.getMessage());
             removeEmitter(emitter);
         }
 
@@ -111,11 +116,6 @@ public abstract class AbstractSseService {
     }
 
     protected synchronized void broadcast(String name, String data) {
-        if ("message".equals(name) || "delete".equals(name)) {
-            log.debug("Broadcasting SSE event to {}: name={}, data={}", getStreamId(), name, data);
-        } else {
-            log.info("Broadcasting SSE event to {}: name={}, data={}", getStreamId(), name, data);
-        }
 
         String jsonData;
         try {
@@ -130,7 +130,11 @@ public abstract class AbstractSseService {
             try {
                 emitter.send(SseEmitter.event().name(name).data(jsonData));
             } catch (IOException e) {
-                log.warn("Failed to send event to emitter in stream {}, removing it: {}", getStreamId(), e.getMessage());
+                if (e.getMessage() != null && e.getMessage().contains("softwaregesteuert")) {
+                    log.debug("SSE client disconnected for stream {}: {}", getStreamId(), e.getMessage());
+                } else {
+                    log.info("Failed to send event to emitter in stream {}, removing it: {}", getStreamId(), e.getMessage());
+                }
                 failedEmitters.add(emitter);
             }
         });
@@ -144,5 +148,22 @@ public abstract class AbstractSseService {
 
     private void removeEmitter(SseEmitter emitter) {
         emitters.remove(emitter);
+    }
+
+    @PreDestroy
+    public void cleanup() {
+        if (emitters.isEmpty()) {
+            return;
+        }
+        log.info("Cleaning up SSE emitters for stream: {}. Closing {} emitters.", getStreamId(), emitters.size());
+        emitters.forEach(emitter -> {
+            try {
+                emitter.complete();
+            } catch (Exception e) {
+                // Ignore errors during shutdown, especially "recycled facade" errors
+                log.debug("Failed to complete emitter during cleanup for stream {}: {}", getStreamId(), e.getMessage());
+            }
+        });
+        emitters.clear();
     }
 }

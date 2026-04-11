@@ -126,4 +126,17 @@ document.addEventListener('DOMContentLoaded', function() {
     handleSse(eventSource, null);
     handleSse(terminalSource, document.getElementById('chat-output'));
 
+    const btnTest = document.getElementById('btn-test');
+    if (btnTest) {
+        btnTest.addEventListener('click', async function() {
+            try {
+                const response = await fetch('/api/run/test', { method: 'POST' });
+                const runId = await response.text();
+                console.log('Test Run started:', runId);
+            } catch (error) {
+                console.error('Error starting test run:', error);
+            }
+        });
+    }
+
 });

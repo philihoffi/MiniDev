@@ -8,4 +8,11 @@ public class TerminalSseService extends AbstractSseService {
     public String getStreamId() {
         return "TERMINAL";
     }
+    public void sendTerminalText(String text, String eventType, int delayMillis) {
+        sendText(text, eventType, delayMillis);
+    }
+
+    public void clearTerminal() {
+        sendClearCommand();
+    }
 }

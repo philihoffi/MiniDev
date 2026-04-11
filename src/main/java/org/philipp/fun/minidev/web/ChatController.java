@@ -1,5 +1,6 @@
 package org.philipp.fun.minidev.web;
 
+import org.philipp.fun.minidev.core.AgentService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.philipp.fun.minidev.llm.LlmClient;
@@ -20,17 +21,21 @@ public class ChatController {
 
     private static final Logger log = LoggerFactory.getLogger(ChatController.class);
     private final LlmClient llmClient;
-    private final NotificationSseService notificationSseService;
+    private final AgentService agentService;
 
-    public ChatController(LlmClient llmClient, NotificationSseService notificationSseService) {
+    public ChatController(LlmClient llmClient, AgentService agentService) {
         this.llmClient = llmClient;
-        this.notificationSseService = notificationSseService;
+        this.agentService = agentService;
+    }
+
+    @PostMapping("/run/test")
+    public String startTestRun() {
+        return agentService.startNewRun().toString();
     }
 
     @PostMapping("/chat")
     public LlmResponse chat(@RequestBody ChatApiRequest request) {
         log.info("Received chat request for message: {}", request.message());
-        notificationSseService.sendNotification("Incoming chat message: " + request.message());
         if (request.message() == null || request.message().isBlank()) {
             log.warn("Chat request failed: Message is empty");
             return LlmResponse.failure("Message is required");
