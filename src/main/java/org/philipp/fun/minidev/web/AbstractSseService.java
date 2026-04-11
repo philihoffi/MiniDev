@@ -111,7 +111,11 @@ public abstract class AbstractSseService {
     }
 
     protected synchronized void broadcast(String name, String data) {
-        log.info("Broadcasting SSE event to {}: name={}, data={}", getStreamId(), name, data);
+        if ("message".equals(name) || "delete".equals(name)) {
+            log.debug("Broadcasting SSE event to {}: name={}, data={}", getStreamId(), name, data);
+        } else {
+            log.info("Broadcasting SSE event to {}: name={}, data={}", getStreamId(), name, data);
+        }
 
         String jsonData;
         try {
