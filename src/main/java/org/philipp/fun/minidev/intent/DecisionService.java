@@ -55,6 +55,7 @@ public class DecisionService {
             - Core Mechanic: %s
             - Open To-Dos: %s
             - Completed To-Dos: %s
+            - Phase History: %s
             - Fixing Iterations so far: %d
             
             Decide which state we should transition to next.
@@ -62,13 +63,19 @@ public class DecisionService {
 
     public DecisionResponse decideNextStep(AgentRun run) {
         GameMetadata metadata = run.getGameMetadata();
+        long fixingIterations = metadata.phaseHistory().stream()
+                .filter(s -> s == RunState.FIXING)
+                .count();
+
         String prompt = String.format(SYSTEM_PROMPT,
                 run.getState(),
                 metadata.name(),
                 metadata.concept(),
                 metadata.coreMechanic(),
                 metadata.todos(),
-                metadata.doneTodos()
+                metadata.doneTodos(),
+                metadata.phaseHistory(),
+                fixingIterations
         );
 
         Map<String, Object> schema = Map.of(

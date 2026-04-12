@@ -38,11 +38,9 @@ import java.util.stream.Stream;
 public class AgentService {
 
     private static final Logger log = LoggerFactory.getLogger(AgentService.class);
-    private static final int MAX_FIXING_ITERATIONS = 3;
 
     private final Map<UUID, AgentRun> activeRuns = new ConcurrentHashMap<>();
     private final NotificationSseService notificationSseService;
-    private final TerminalSseService terminalSseService;
 
     private final Map<RunState, PhaseHandler> phaseHandlers;
 
@@ -52,7 +50,6 @@ public class AgentService {
 
     public AgentService(
             NotificationSseService notificationSseService,
-            TerminalSseService terminalSseService,
             PlanningPhaseHandler planningPhaseHandler,
             CodingPhaseHandler codingPhaseHandler,
             ReviewingPhaseHandler reviewingPhaseHandler,
@@ -63,7 +60,6 @@ public class AgentService {
             @Value("${minidev.storage.base-path}") String storageBasePath,
             DecisionService decisionService) {
         this.notificationSseService = notificationSseService;
-        this.terminalSseService = terminalSseService;
         this.decisionService = decisionService;
 
         this.phaseHandlers = Map.of(

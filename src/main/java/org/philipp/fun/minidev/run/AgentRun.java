@@ -2,7 +2,9 @@ package org.philipp.fun.minidev.run;
 
 import java.nio.file.Path;
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 import java.util.Objects;
 import java.util.UUID;
 
@@ -43,6 +45,7 @@ public final class AgentRun {
         if (changedAt.isBefore(updatedAt)) {
             throw new IllegalArgumentException("changedAt must not be before updatedAt");
         }
+        this.gameMetadata.phaseHistory().add(this.state);
         this.state = nextState;
         this.updatedAt = changedAt;
         return true;
