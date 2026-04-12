@@ -8,6 +8,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const projectList = document.getElementById('project-list');
     const playBtn = document.getElementById('play-project-tab');
     const refreshBtn = document.getElementById('refresh-projects-btn');
+    const startAgentBtn = document.getElementById('start-agent-btn');
     let activeTerminalBlock = null;
     let selectedRunId = null;
     
@@ -45,6 +46,28 @@ document.addEventListener('DOMContentLoaded', () => {
     if (refreshBtn) {
         refreshBtn.addEventListener('click', () => {
             loadProjects();
+        });
+    }
+
+    // Start Agent Button Event
+    if (startAgentBtn) {
+        startAgentBtn.addEventListener('click', () => {
+            if (confirm('Möchten Sie einen neuen Agenten-Run starten?')) {
+                fetch('/api/agent/run', { method: 'POST' })
+                    .then(response => {
+                        if (response.ok) {
+                            return response.text();
+                        }
+                        throw new Error('Fehler beim Starten des Agenten');
+                    })
+                    .then(runId => {
+                        console.log('New run started:', runId);
+                        loadProjects();
+                        // Terminal leeren für den neuen Run
+                        terminalOutput.innerHTML = '';
+                    })
+                    .catch(err => alert(err.message));
+            }
         });
     }
 
