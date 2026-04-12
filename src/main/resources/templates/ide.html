@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="de" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title th:text="${appName} + ' IDE'">MiniDev IDE</title>
+    <link rel="stylesheet" th:href="@{/css/main.css}">
+</head>
+<body>
+<main class="page-shell">
+    <div class="ide-shell">
+        <!-- Sidebar -->
+        <aside class="sidebar-container">
+            <section class="window-frame sidebar-panel" style="height: 100%; display: flex; flex-direction: column;">
+                <div class="title-bar">Projects</div>
+                <div class="window-body" style="flex: 1; display: flex; flex-direction: column; padding: 4px;">
+                    <div class="project-list" id="project-list">
+                        <div class="project-item">run-4c27862e...</div>
+                        <div class="project-item">run-548f52e0...</div>
+                        <div class="project-item">run-ee0a1e6e...</div>
+                    </div>
+                    <div class="action-row" style="margin-top: 10px;">
+                        <button class="action-button" style="width: 100%;">Refresh</button>
+                    </div>
+                </div>
+            </section>
+        </aside>
+
+        <!-- Main Editor & Terminal -->
+        <div class="main-editor-container">
+            <!-- Editors -->
+            <section class="window-frame">
+                <div class="title-bar" th:text="${appName} + ' - Source Editors'">MiniDev - Source Editors</div>
+                <div class="window-body" style="height: calc(100% - 32px); padding: 8px; overflow: hidden; display: flex; flex-direction: column;">
+                    <!-- Editor Tabs (only visible on small screens) -->
+                    <nav class="editor-tabs" id="editor-tabs">
+                        <button class="tab-button active" data-editor="html">INDEX.HTML</button>
+                        <button class="tab-button" data-editor="css">STYLE.CSS</button>
+                        <button class="tab-button" data-editor="js">SCRIPT.JS</button>
+                    </nav>
+
+                    <div class="editors-grid" id="editors-grid" style="flex: 1; min-height: 0;">
+                        <div class="editor-pane active" data-editor="html">
+                            <div class="editor-header">INDEX.HTML</div>
+                            <div class="editor-body" contenteditable="true">&lt;!DOCTYPE html&gt;
+&lt;html&gt;
+  &lt;body&gt;
+    &lt;h1&gt;Hello World&lt;/h1&gt;
+  &lt;/body&gt;
+&lt;/html&gt;</div>
+                        </div>
+                        <div class="editor-pane" data-editor="css">
+                            <div class="editor-header">STYLE.CSS</div>
+                            <div class="editor-body" contenteditable="true">body {
+  background: silver;
+}</div>
+                        </div>
+                        <div class="editor-pane" data-editor="js">
+                            <div class="editor-header">SCRIPT.JS</div>
+                            <div class="editor-body" contenteditable="true">console.log("MiniDev IDE Active");</div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Terminal -->
+            <section class="side-panel terminal-container">
+                <div class="panel-title">System Terminal</div>
+                <div class="screen terminal-screen" id="terminal-output">
+                    Initializing MiniDev IDE...
+                    Ready.
+                </div>
+            </section>
+        </div>
+    </div>
+
+    <!-- Status Bar (optional, mimicking index.html) -->
+    <div class="status-bar" style="margin-top: 8px; flex-shrink: 0;">
+        <span th:text="'APP: ' + ${appName}">APP: MiniDev</span>
+        <span>MODE: IDE / EDIT</span>
+        <span>LOC: 0,0</span>
+    </div>
+
+</main>
+
+<script th:src="@{/js/ide.js}" defer></script>
+</body>
+</html>

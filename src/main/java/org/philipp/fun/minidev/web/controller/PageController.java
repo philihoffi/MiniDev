@@ -1,6 +1,5 @@
 package org.philipp.fun.minidev.web.controller;
 
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -21,6 +20,12 @@ public class PageController {
         model.addAttribute("viewTitle", "Initial View");
         model.addAttribute("tagline", "Tiny autonomous game developer");
         return "index";
+    }
+
+    @GetMapping("/ide")
+    public String ide(Model model) {
+        model.addAttribute("appName", applicationName);
+        return "ide";
     }
 
 }

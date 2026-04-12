@@ -6,7 +6,6 @@ import org.philipp.fun.minidev.run.GameMetadata;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -14,6 +13,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 @RestController
@@ -56,14 +56,14 @@ public class AgentController {
                 .orElse(ResponseEntity.notFound().build());
     }
 
-    @GetMapping(value = "/games/{runId}/content", produces = "text/html")
-    public ResponseEntity<String> getGameContent(@PathVariable UUID runId) {
-        log.debug("REST request to get game content for run: {}", runId);
-        String content = agentService.getGameContent(runId);
-        if (content != null) {
-            return ResponseEntity.ok(content);
+    @GetMapping("/games/{runId}/components")
+    public ResponseEntity<Map<String, String>> getGameComponents(@PathVariable UUID runId) {
+        log.debug("REST request to get game components for run: {}", runId);
+        Map<String, String> components = agentService.getGameComponentContent(runId);
+        if (components != null) {
+            return ResponseEntity.ok(components);
         }
-        log.warn("Game content not found for run: {}", runId);
+        log.warn("Game components not found for run: {}", runId);
         return ResponseEntity.notFound().build();
     }
 }

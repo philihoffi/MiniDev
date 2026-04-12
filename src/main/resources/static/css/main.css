@@ -6,9 +6,16 @@
 
 /* Terminal specific styles */
 .terminal-block {
-    margin-bottom: 10px;
+    margin-bottom: 2px;
     white-space: pre-wrap;
-    font-family: monospace;
+    font-family: var(--font-screen);
+    font-size: 13px;
+    display: block;
+    width: 100%;
+    min-height: 1.2em;
+}
+.terminal-block:empty {
+    display: none;
 }
 .agent-work {
     border-left: 2px solid var(--color-screen-text, #0f0);

@@ -1,7 +1,56 @@
 .page-shell {
-    max-width: 920px;
-    margin: 0 auto;
-    padding: 24px;
+    width: 100%;
+    height: 100vh;
+    margin: 0;
+    padding: 8px;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+.ide-shell {
+    display: grid;
+    grid-template-columns: 200px 1fr;
+    grid-template-rows: 1fr;
+    flex: 1;
+    min-height: 0;
+    gap: 8px;
+}
+
+.sidebar-container {
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+}
+
+.main-editor-container {
+    display: grid;
+    grid-template-rows: minmax(0, 1fr) 200px;
+    gap: 8px;
+    min-height: 0;
+}
+
+.editors-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 8px;
+    height: 100%;
+    min-height: 0;
+}
+
+.editor-pane {
+    display: none;
+    flex-direction: column;
+    height: 100%;
+    min-height: 0;
+}
+
+.editor-pane.active {
+    display: flex;
+}
+
+.editor-header {
+    display: none;
 }
 
 .content-grid {
@@ -10,9 +59,62 @@
     gap: 16px;
 }
 
+@media (max-width: 1024px) {
+    .page-shell {
+        height: auto;
+        min-height: 100vh;
+    }
+
+    .ide-shell {
+        grid-template-columns: 1fr;
+        grid-template-rows: 180px 1fr;
+        flex: none;
+    }
+
+    .editor-tabs {
+        display: flex;
+    }
+
+    .editors-grid {
+        grid-template-columns: 1fr;
+        height: auto;
+        border-top: 2px solid var(--border-light);
+        z-index: 1;
+        background: var(--bg-window);
+    }
+    
+    .editor-pane {
+        height: 400px;
+    }
+
+    .editor-pane.active {
+        display: flex;
+    }
+}
+
 @media (max-width: 767px) {
     .page-shell {
-        padding: 10px;
+        padding: 8px;
+        height: auto;
+        min-height: 100vh;
+    }
+
+    .ide-shell {
+        grid-template-columns: 1fr;
+        grid-template-rows: auto auto;
+        flex: none;
+    }
+
+    .sidebar-container {
+        height: 150px;
+    }
+
+    .main-editor-container {
+        grid-template-rows: auto 320px;
+    }
+
+    .editor-pane {
+        height: 350px;
     }
 
     .content-grid {

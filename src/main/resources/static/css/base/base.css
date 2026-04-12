@@ -13,9 +13,14 @@
     --border-dark: #000000;
     --border-shadow: #808080;
     --border-light: #ffffff;
+    --border-medium: #dfdfdf;
 
     --font-mono: "Lucida Console", "Courier New", monospace;
     --font-screen: "Courier New", monospace;
+}
+
+* {
+    box-sizing: border-box;
 }
 
 body {

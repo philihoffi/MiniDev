@@ -61,15 +61,15 @@ public abstract class AbstractSseService {
     protected abstract boolean isHistoryEnabled();
 
     public synchronized SseEmitter subscribe() {
-        SseEmitter emitter = new SseEmitter(Long.MAX_VALUE);
+        SseEmitter emitter = new SseEmitter(180_000L);
 
         emitter.onCompletion(() -> {
-            log.info("SSE emitter completed for stream: {}", getStreamId());
+            log.debug("SSE emitter completed for stream: {}", getStreamId());
             removeEmitter(emitter);
         });
 
         emitter.onTimeout(() -> {
-            log.info("SSE emitter timed out for stream: {}", getStreamId());
+            log.debug("SSE emitter timed out for stream: {}", getStreamId());
             removeEmitter(emitter);
         });
 

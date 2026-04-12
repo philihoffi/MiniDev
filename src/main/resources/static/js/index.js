@@ -37,14 +37,16 @@ document.addEventListener('DOMContentLoaded', function() {
         });
 
         source.addEventListener('message', (e) => {
+            let data;
+            try {
+                data = JSON.parse(e.data);
+            } catch (err) {
+                data = e.data;
+            }
+
             if (activeElement) {
-                try {
-                    const data = JSON.parse(e.data);
-                    activeElement.textContent += data;
-                    if (source === terminalSource) targetElement.scrollTop = targetElement.scrollHeight;
-                } catch (err) {
-                    activeElement.textContent += e.data;
-                }
+                activeElement.textContent += data;
+                if (source === terminalSource) targetElement.scrollTop = targetElement.scrollHeight;
             }
         });
 
@@ -83,6 +85,12 @@ document.addEventListener('DOMContentLoaded', function() {
 
     handleSse(eventSource, null);
     handleSse(terminalSource, output);
+
+    window.addEventListener('beforeunload', () => {
+        console.log('Closing SSE connections...');
+        eventSource.close();
+        terminalSource.close();
+    });
 
     const btnTest = document.getElementById('btn-test');
     if (btnTest) {

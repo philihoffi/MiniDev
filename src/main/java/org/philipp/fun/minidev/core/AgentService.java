@@ -208,6 +208,40 @@ public class AgentService {
         return Optional.ofNullable(run);
     }
 
+    public Map<String, String> getGameComponentContent(UUID runId) {
+        String content = getGameContent(runId);
+        if (content == null) {
+            return null;
+        }
+
+        String html = content;
+        String css = "";
+        String js = "";
+
+        if (content.contains("<style>")) {
+            int start = content.indexOf("<style>");
+            int end = content.indexOf("</style>");
+            if (end > start) {
+                css = content.substring(start + 7, end);
+                html = html.replace(content.substring(start, end + 8), "<!-- CSS removed to editor -->");
+            }
+        }
+        if (content.contains("<script>")) {
+            int start = content.indexOf("<script>");
+            int end = content.lastIndexOf("</script>");
+            if (end > start) {
+                js = content.substring(start + 8, end);
+                html = html.replace(content.substring(start, end + 9), "<!-- JS removed to editor -->");
+            }
+        }
+
+        return Map.of(
+                "html", html,
+                "css", css,
+                "js", js
+        );
+    }
+
     public String getGameContent(UUID runId) {
         Path runPath = Paths.get(storageBasePath, "run-" + runId, "index.html");
         if (Files.exists(runPath)) {
