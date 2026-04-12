@@ -240,7 +240,7 @@ public class PlanningPhaseHandler implements PhaseHandler {
         List<String> todos = extractTodos(llmResponse, DEFAULT_PLANNING_TODOS);
         Path gameDirectory = Paths.get(storageBasePath, "run-" + runId);
 
-        return new GameMetadata(runId, name, concept, mechanic, todos, gameDirectory);
+        return new GameMetadata(runId, name, concept, mechanic, todos, new ArrayList<>(), gameDirectory);
     }
 
     private String extractField(String text, String marker, String defaultValue) {

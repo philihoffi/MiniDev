@@ -7,6 +7,7 @@ import org.philipp.fun.minidev.core.phase.planning.PlanningPhaseHandler;
 import org.philipp.fun.minidev.core.phase.publishing.PublishingPhaseHandler;
 import org.philipp.fun.minidev.core.phase.reviewing.ReviewingPhaseHandler;
 import org.philipp.fun.minidev.core.phase.testing.TestingPhaseHandler;
+import org.philipp.fun.minidev.intent.DecisionService;
 import org.philipp.fun.minidev.run.AgentRun;
 import org.philipp.fun.minidev.run.AgentRun.RunState;
 import org.philipp.fun.minidev.run.GameMetadata;
@@ -47,6 +48,7 @@ public class AgentService {
 
     private final ObjectMapper objectMapper;
     private final String storageBasePath;
+    private final DecisionService decisionService;
 
     public AgentService(
             NotificationSseService notificationSseService,
@@ -58,9 +60,11 @@ public class AgentService {
             FixingPhaseHandler fixingPhaseHandler,
             PublishingPhaseHandler publishingPhaseHandler,
             ObjectMapper objectMapper,
-            @Value("${minidev.storage.base-path}") String storageBasePath) {
+            @Value("${minidev.storage.base-path}") String storageBasePath,
+            DecisionService decisionService) {
         this.notificationSseService = notificationSseService;
         this.terminalSseService = terminalSseService;
+        this.decisionService = decisionService;
 
         this.phaseHandlers = Map.of(
                 RunState.PLANNING, planningPhaseHandler,
@@ -126,36 +130,7 @@ public class AgentService {
     }
 
     private RunState getNextState(AgentRun run) {
-        RunState current = run.getState();
-        return switch (current) {
-            case IDLE -> RunState.PLANNING;
-            case PLANNING -> RunState.CODING;
-            case CODING -> RunState.REVIEWING;
-            case REVIEWING -> {
-                GameMetadata metadata = run.getGameMetadata();
-                if(metadata != null && !metadata.todos().isEmpty() && run.getFixingIterations() >= MAX_FIXING_ITERATIONS){
-                    metadata.todos().clear();
-                    this.terminalSseService.sendTerminalText("Fuck it I'm done", SseEventType.AGENT_WORK, 0);
-                }
-
-                if (metadata != null && !metadata.todos().isEmpty()) {//TODO better solution to determine if fixing is needed
-                    yield RunState.FIXING;
-                } else {
-                    yield RunState.TESTING;
-                }
-            }
-            case TESTING -> {
-                GameMetadata metadata = run.getGameMetadata();
-                if (metadata != null && !metadata.todos().isEmpty() && run.getFixingIterations() < MAX_FIXING_ITERATIONS) {
-                    yield RunState.FIXING;
-                } else {
-                    yield RunState.PUBLISHING;
-                }
-            }
-            case FIXING -> RunState.REVIEWING;
-            case PUBLISHING -> RunState.DONE;
-            default -> RunState.DONE;
-        };
+        return decisionService.decideNextStep(run).newState();
     }
 
     private void saveMetadata(AgentRun run) {
