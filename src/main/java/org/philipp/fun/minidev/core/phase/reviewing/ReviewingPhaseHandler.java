@@ -121,13 +121,15 @@ public class ReviewingPhaseHandler implements PhaseHandler {
                     }
                 }
 
-                log.info("Successfully updated To-Dos for run {}. Moved {} tasks back to TODO. Summary: {}", 
+
+                log.info("Successfully updated To-Dos for run {}. Moved {} tasks back to TODO. Summary: {}",
                         metadata.runId(), movedCount, reviewResponse.reviewSummary());
                 terminalSseService.sendTerminalText("Review completed. Moved " + movedCount + " tasks back to TODO list.\n", SseEventType.AGENT_WORK, 50);
             } catch (Exception e) {
                 log.error("Failed to parse review response for run {}: {}", metadata.runId(), e.getMessage());
                 notificationSseService.sendNotification("Review failed: " + e.getMessage());
             }
+            metadata.doneTodos().clear();
         } else {
             log.error("LLM review failed for run {}: {}", metadata.runId(), response.errorMessage());
             notificationSseService.sendNotification("Review failed: " + response.errorMessage());
