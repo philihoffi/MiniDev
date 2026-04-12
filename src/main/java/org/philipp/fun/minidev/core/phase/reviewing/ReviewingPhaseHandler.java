@@ -2,7 +2,9 @@ package org.philipp.fun.minidev.core.phase.reviewing;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.philipp.fun.minidev.core.phase.PhaseHandler;
+import org.philipp.fun.minidev.core.GameStorageService;
 import org.philipp.fun.minidev.llm.LlmClient;
+import org.philipp.fun.minidev.web.service.IdeSseService;
 import org.philipp.fun.minidev.llm.LlmRequest;
 import org.philipp.fun.minidev.llm.LlmResponse;
 import org.philipp.fun.minidev.run.AgentRun;
@@ -31,13 +33,20 @@ public class ReviewingPhaseHandler implements PhaseHandler {
     private final LlmClient llmClient;
     private final ObjectMapper objectMapper;
 
+    private final IdeSseService ideSseService;
+    private final GameStorageService gameStorageService;
+
     public ReviewingPhaseHandler(
             NotificationSseService notificationSseService,
             TerminalSseService terminalSseService,
+            IdeSseService ideSseService,
+            GameStorageService gameStorageService,
             LlmClient llmClient,
             ObjectMapper objectMapper) {
         this.notificationSseService = notificationSseService;
         this.terminalSseService = terminalSseService;
+        this.ideSseService = ideSseService;
+        this.gameStorageService = gameStorageService;
         this.llmClient = llmClient;
         this.objectMapper = objectMapper;
     }
@@ -165,6 +174,15 @@ public class ReviewingPhaseHandler implements PhaseHandler {
                 log.info("Successfully updated To-Dos for run {}. Moved {} tasks back to TODO, added {} new tasks. Summary: {}",
                         metadata.runId(), movedCount, addedCount, reviewResponse.reviewSummary());
                 terminalSseService.sendTerminalText("Assessment completed: Updated " + movedCount + " existing and " + addedCount + " new backlog items.\n", SseEventType.AGENT_WORK, 50);
+
+                // Ensure IDE is in sync
+                Map<String, String> components = gameStorageService.getGameComponentContent(run.getGameMetadata().runId());
+                if (components != null) {
+                    // Just send full update to ensure everything is correct after review
+                    ideSseService.sendFileUpdate("html", components.get("html"));
+                    ideSseService.sendFileUpdate("css", components.get("css"));
+                    ideSseService.sendFileUpdate("js", components.get("js"));
+                }
             } catch (Exception e) {
                 log.error("Failed to parse review response for run {}: {}", metadata.runId(), e.getMessage());
                 notificationSseService.sendNotification("Review failed: " + e.getMessage());

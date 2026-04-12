@@ -20,7 +20,8 @@ public abstract class AbstractSseService {
         START("start"),
         END("end"),
         CLEAR("clear"),
-        DELETE("delete");
+        DELETE("delete"),
+        EVENT("event");
 
         private final String value;
 
@@ -35,7 +36,11 @@ public abstract class AbstractSseService {
 
     public enum SseEventType {
         USER_MESSAGE("UserMessage"),
-        AGENT_WORK("agent-work");
+        AGENT_WORK("agent-work"),
+        FILE_UPDATE("file-update"),
+        FILE_APPEND("file-append"),
+        FILE_DELETE("file-delete"),
+        SWITCH_TAB("switch-tab");
 
         private final String value;
 
@@ -143,23 +148,36 @@ public abstract class AbstractSseService {
         broadcast(SseEventName.CLEAR, "");
     }
 
-    protected synchronized void broadcast(SseEventName eventName, String data) {
+    protected synchronized void broadcast(SseEventName eventName, Object data) {
+        broadcast(eventName, null, data);
+    }
+
+    protected synchronized void broadcast(SseEventName eventName, SseEventType eventType, Object data) {
         if (emitters.isEmpty()) {
             return;
         }
 
         String jsonData;
         try {
-            jsonData = OBJECT_MAPPER.writeValueAsString(data);
+            if (data instanceof String && !isValidJson((String) data)) {
+                jsonData = OBJECT_MAPPER.writeValueAsString(data);
+            } else if (data instanceof String) {
+                jsonData = (String) data;
+            } else {
+                jsonData = OBJECT_MAPPER.writeValueAsString(data);
+            }
         } catch (JsonProcessingException e) {
             log.error("Failed to serialize SSE data to JSON for stream {}", getStreamId(), e);
             return;
         }
 
+        String finalEventName = eventType != null ? eventType.getValue() : eventName.getValue();
+
         List<SseEmitter> failedEmitters = new CopyOnWriteArrayList<>();
         emitters.forEach(emitter -> {
             try {
-                emitter.send(SseEmitter.event().name(eventName.getValue()).data(jsonData));
+                SseEmitter.SseEventBuilder eventBuilder = SseEmitter.event().name(finalEventName).data(jsonData);
+                emitter.send(eventBuilder);
             } catch (IOException e) {
                 if (e.getMessage() != null && e.getMessage().contains("softwaregesteuert")) {
                     log.debug("SSE client disconnected for stream {}: {}", getStreamId(), e.getMessage());
@@ -171,6 +189,22 @@ public abstract class AbstractSseService {
         });
 
         emitters.removeAll(failedEmitters);
+    }
+
+    private boolean isValidJson(String json) {
+        if (json == null || json.trim().isEmpty()) {
+            return false;
+        }
+        String trimmed = json.trim();
+        if (!((trimmed.startsWith("{") && trimmed.endsWith("}")) || (trimmed.startsWith("[") && trimmed.endsWith("]")))) {
+            return false;
+        }
+        try {
+            OBJECT_MAPPER.readTree(json);
+            return true;
+        } catch (Exception e) {
+            return false;
+        }
     }
 
     private void addEmitter(SseEmitter emitter) {

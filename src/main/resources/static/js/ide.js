@@ -38,6 +38,84 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     const terminalSource = new EventSource('/api/events/TERMINAL');
+    const ideSource = new EventSource('/api/events/IDE');
+
+    function getEditor(fileType) {
+        if (fileType === 'html') return editorHtml;
+        if (fileType === 'css') return editorCss;
+        if (fileType === 'js') return editorJs;
+        return null;
+    }
+
+    function switchTab(editorName) {
+        const button = document.querySelector(`.tab-button[data-editor="${editorName}"]`);
+        if (button) {
+            button.click();
+        }
+    }
+
+    ideSource.addEventListener('switch-tab', (e) => {
+        const fileType = JSON.parse(e.data);
+        switchTab(fileType);
+        
+        // Aktives Projekt in der Liste markieren, wenn es gerade bearbeitet wird
+        const activeProject = document.querySelector('.project-item.working-on');
+        if (activeProject && !activeProject.classList.contains('active')) {
+            document.querySelectorAll('.project-item').forEach(i => i.classList.remove('active'));
+            activeProject.classList.add('active');
+        }
+    });
+
+    ideSource.addEventListener('file-append', (e) => {
+        try {
+            const data = JSON.parse(e.data);
+            const { fileType, char } = data;
+            const editor = getEditor(fileType);
+            if (editor) {
+                editor.textContent += char;
+                const container = editor.closest('.editor-body');
+                if (container) {
+                    container.scrollTop = container.scrollHeight;
+                }
+            }
+        } catch (err) {
+            console.error("Error processing file-append", err);
+        }
+    });
+
+    ideSource.addEventListener('file-delete', (e) => {
+        const fileType = JSON.parse(e.data);
+        const editor = getEditor(fileType);
+        if (editor) {
+            const text = editor.textContent;
+            if (text.length > 0) {
+                editor.textContent = text.substring(0, text.length - 1);
+            }
+        }
+    });
+
+    ideSource.addEventListener('message', (e) => {
+        // Dieser Listener wird nur für das initiale Laden oder explizite Updates verwendet, 
+        // wenn KEIN Streaming stattfindet.
+        try {
+            const data = JSON.parse(e.data);
+            const { fileType, content } = data;
+            const editor = getEditor(fileType);
+
+            if (editor) {
+                // Nur aktualisieren, wenn nicht gerade ein Stream läuft oder wir sicher sind, 
+                // dass wir den ganzen Inhalt brauchen (z.B. nach Review)
+                console.log(`Received full content update for ${fileType}`);
+                editor.textContent = content;
+                const container = editor.closest('.editor-body');
+                if (container) {
+                    container.scrollTop = container.scrollHeight;
+                }
+            }
+        } catch (err) {
+            console.error("Error processing IDE message event", err);
+        }
+    });
     
     terminalSource.addEventListener('start', (e) => {
         const eventType = JSON.parse(e.data);
@@ -76,8 +154,9 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     window.addEventListener('beforeunload', () => {
-        console.log('Closing IDE SSE connection...');
+        console.log('Closing IDE SSE connections...');
         terminalSource.close();
+        ideSource.close();
     });
 
     // Einfaches Logging ins "Terminal"

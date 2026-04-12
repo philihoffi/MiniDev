@@ -2,12 +2,14 @@ package org.philipp.fun.minidev.core.phase.fixing;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.philipp.fun.minidev.core.phase.PhaseHandler;
+import org.philipp.fun.minidev.core.GameStorageService;
 import org.philipp.fun.minidev.llm.LlmClient;
 import org.philipp.fun.minidev.llm.LlmRequest;
 import org.philipp.fun.minidev.llm.LlmResponse;
 import org.philipp.fun.minidev.run.AgentRun;
 import org.philipp.fun.minidev.run.AgentRun.RunState;
 import org.philipp.fun.minidev.run.GameMetadata;
+import org.philipp.fun.minidev.web.service.IdeSseService;
 import org.philipp.fun.minidev.web.service.NotificationSseService;
 import org.philipp.fun.minidev.web.service.TerminalSseService;
 import org.philipp.fun.minidev.web.service.AbstractSseService.SseEventType;
@@ -28,16 +30,23 @@ public class FixingPhaseHandler implements PhaseHandler {
 
     private final NotificationSseService notificationSseService;
     private final TerminalSseService terminalSseService;
+    private final IdeSseService ideSseService;
     private final LlmClient llmClient;
     private final ObjectMapper objectMapper;
+
+    private final GameStorageService gameStorageService;
 
     public FixingPhaseHandler(
             NotificationSseService notificationSseService,
             TerminalSseService terminalSseService,
+            IdeSseService ideSseService,
+            GameStorageService gameStorageService,
             LlmClient llmClient,
             ObjectMapper objectMapper) {
         this.notificationSseService = notificationSseService;
         this.terminalSseService = terminalSseService;
+        this.ideSseService = ideSseService;
+        this.gameStorageService = gameStorageService;
         this.llmClient = llmClient;
         this.objectMapper = objectMapper;
     }
@@ -121,8 +130,19 @@ public class FixingPhaseHandler implements PhaseHandler {
                     FixingResponse fixingResponse = objectMapper.readValue(content, FixingResponse.class);
                     String updatedCode = fixingResponse.updatedCode().trim();
 
+                    String oldCode = Files.readString(metadata.htmlPath());
+                    Map<String, String> oldComponents = gameStorageService.getGameComponentContent(run.getGameMetadata().runId());
+
                     Files.createDirectories(metadata.htmlPath().getParent());
                     Files.writeString(metadata.htmlPath(), updatedCode);
+
+                    // Stream updated code to IDE
+                    Map<String, String> newComponents = gameStorageService.getGameComponentContent(run.getGameMetadata().runId());
+                    if (newComponents != null && oldComponents != null) {
+                        ideSseService.streamFileUpdate("html", oldComponents.get("html"), newComponents.get("html"));
+                        ideSseService.streamFileUpdate("css", oldComponents.get("css"), newComponents.get("css"));
+                        ideSseService.streamFileUpdate("js", oldComponents.get("js"), newComponents.get("js"));
+                    }
 
                     run.getGameMetadata().doneTodos().addAll(currentTodos);
                     run.getGameMetadata().todos().clear();

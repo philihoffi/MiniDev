@@ -9,6 +9,7 @@ import org.philipp.fun.minidev.llm.LlmResponse;
 import org.philipp.fun.minidev.run.AgentRun;
 import org.philipp.fun.minidev.run.AgentRun.RunState;
 import org.philipp.fun.minidev.run.GameMetadata;
+import org.philipp.fun.minidev.web.service.IdeSseService;
 import org.philipp.fun.minidev.web.service.NotificationSseService;
 import org.philipp.fun.minidev.web.service.TerminalSseService;
 import org.philipp.fun.minidev.web.service.AbstractSseService.SseEventType;
@@ -28,16 +29,23 @@ public class CodingPhaseHandler implements PhaseHandler {
 
     private final NotificationSseService notificationSseService;
     private final TerminalSseService terminalSseService;
+    private final IdeSseService ideSseService;
     private final LlmClient llmClient;
     private final ObjectMapper objectMapper;
+
+    private final GameStorageService gameStorageService;
 
     public CodingPhaseHandler(
             NotificationSseService notificationSseService,
             TerminalSseService terminalSseService,
+            IdeSseService ideSseService,
+            GameStorageService gameStorageService,
             LlmClient llmClient,
             ObjectMapper objectMapper) {
         this.notificationSseService = notificationSseService;
         this.terminalSseService = terminalSseService;
+        this.ideSseService = ideSseService;
+        this.gameStorageService = gameStorageService;
         this.llmClient = llmClient;
         this.objectMapper = objectMapper;
     }
@@ -76,6 +84,14 @@ public class CodingPhaseHandler implements PhaseHandler {
             Files.writeString(metadata.htmlPath(), code);
             log.info("Saved file to {}", metadata.htmlPath());
             terminalSseService.sendTerminalText("Deployment successful: " + metadata.htmlPath().getFileName(), SseEventType.AGENT_WORK, 100);
+            
+            // Stream code to IDE
+            Map<String, String> components = gameStorageService.getGameComponentContent(run.getGameMetadata().runId());
+            if (components != null) {
+                ideSseService.streamFileUpdate("html", "", components.get("html"));
+                ideSseService.streamFileUpdate("css", "", components.get("css"));
+                ideSseService.streamFileUpdate("js", "", components.get("js"));
+            }
         } catch (IOException e) {
             log.error("Failed to save file to {}", metadata.htmlPath(), e);
             failRun(run, "Failed to save the generated file: " + e.getMessage());
