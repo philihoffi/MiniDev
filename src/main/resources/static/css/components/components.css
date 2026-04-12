@@ -173,6 +173,15 @@
     border: 1px dotted var(--border-light);
 }
 
+.project-item.working-on {
+    font-weight: bold;
+    color: #000080;
+}
+
+.project-item.active.working-on {
+    color: #ff0; /* Gelb auf Blau wenn aktiv und in Arbeit */
+}
+
 .terminal-container {
     height: 100%;
     display: flex;

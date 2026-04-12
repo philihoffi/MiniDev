@@ -68,6 +68,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     terminalSource.addEventListener('end', () => {
         activeTerminalBlock = null;
+        loadProjects(); // Projektliste aktualisieren, wenn ein Run fertig ist
     });
 
     terminalSource.addEventListener('clear', () => {
@@ -90,8 +91,16 @@ document.addEventListener('DOMContentLoaded', () => {
 
     async function loadProjects() {
         try {
-            const response = await fetch('/api/agent/games');
-            const games = await response.json();
+            const [gamesResponse, activeRunResponse] = await Promise.all([
+                fetch('/api/agent/games'),
+                fetch('/api/agent/active-run')
+            ]);
+            
+            const games = await gamesResponse.json();
+            let activeRunId = null;
+            if (activeRunResponse.status === 200) {
+                activeRunId = await activeRunResponse.json();
+            }
             
             projectList.innerHTML = '';
             games.forEach(game => {
@@ -101,12 +110,18 @@ document.addEventListener('DOMContentLoaded', () => {
                 const runId = game.runId;
                 item.textContent = game.name || runId;
                 item.title = runId;
+                
+                if (runId === activeRunId) {
+                    item.classList.add('working-on');
+                    item.title += " (In Arbeit)";
+                }
+
                 item.addEventListener('click', () => loadProjectContent(runId, item));
                 projectList.appendChild(item);
             });
-            logToTerminal(`${games.length} Projekte geladen.`);
+            // logToTerminal(`${games.length} Projekte geladen.`);
         } catch (error) {
-            logToTerminal('Fehler beim Laden der Projekte: ' + error.message, 'error');
+            // logToTerminal('Fehler beim Laden der Projekte: ' + error.message, 'error');
         }
     }
 
@@ -114,7 +129,12 @@ document.addEventListener('DOMContentLoaded', () => {
         document.querySelectorAll('.project-item').forEach(i => i.classList.remove('active'));
         element.classList.add('active');
         
-        logToTerminal(`Lade Projekt ${element.textContent}...`);
+        // logToTerminal(`Lade Projekt ${element.textContent}...`);
+        
+        // Editor-Inhalte vor dem Laden leeren
+        editorHtml.textContent = '';
+        editorCss.textContent = '';
+        editorJs.textContent = '';
         
         try {
             const response = await fetch(`/api/agent/games/${runId}/components`);
@@ -126,13 +146,22 @@ document.addEventListener('DOMContentLoaded', () => {
             editorCss.textContent = data.css || '';
             editorJs.textContent = data.js || '';
             
-            logToTerminal(`Projekt ${element.textContent} erfolgreich geladen.`);
+            // logToTerminal(`Projekt ${element.textContent} erfolgreich geladen.`);
         } catch (error) {
-            logToTerminal(`Fehler: ${error.message}`, 'error');
+            // logToTerminal(`Fehler: ${error.message}`, 'error');
         }
     }
 
     // Initiales Laden
     loadProjects();
-    logToTerminal('System bereit.');
+    // logToTerminal('System bereit.');
+
+    // Refresh Button Event
+    const refreshBtn = document.querySelector('.action-row .action-button');
+    if (refreshBtn && refreshBtn.textContent === 'Refresh') {
+        refreshBtn.addEventListener('click', () => {
+            // logToTerminal('Aktualisiere Projektliste...');
+            loadProjects();
+        });
+    }
 });

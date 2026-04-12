@@ -62,6 +62,15 @@ public class AgentController {
         return gameStorageService.getAllGames();
     }
 
+    @GetMapping("/active-run")
+    public ResponseEntity<UUID> getActiveRunId() {
+        UUID activeRunId = agentService.getActiveRunId();
+        if (activeRunId != null) {
+            return ResponseEntity.ok(activeRunId);
+        }
+        return ResponseEntity.noContent().build();
+    }
+
     @GetMapping("/games/{runId}")
     public ResponseEntity<AgentRun> getRun(@PathVariable UUID runId) {
         log.info("REST request to get run: {}", runId);

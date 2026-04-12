@@ -41,6 +41,7 @@ public class AgentService {
     private final DecisionService decisionService;
 
     private final AtomicBoolean isProcessing = new AtomicBoolean(false);
+    private UUID activeRunId = null;
 
     public AgentService(
             NotificationSseService notificationSseService,
@@ -89,6 +90,7 @@ public class AgentService {
             return;
         }
 
+        this.activeRunId = runId;
         AgentRun run = activeRuns.get(runId);
         if (run == null) {
             isProcessing.set(false);
@@ -129,6 +131,7 @@ public class AgentService {
             notificationSseService.sendNotification("Run FAILED: " + e.getMessage());
         } finally {
             isProcessing.set(false);
+            this.activeRunId = null;
         }
     }
 
@@ -163,5 +166,9 @@ public class AgentService {
             run = gameStorageService.loadRunFromDisk(runId);
         }
         return Optional.ofNullable(run);
+    }
+
+    public UUID getActiveRunId() {
+        return activeRunId;
     }
 }
