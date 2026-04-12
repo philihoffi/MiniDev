@@ -1,5 +1,6 @@
 package org.philipp.fun.minidev.core.phase.reviewing;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.philipp.fun.minidev.core.phase.PhaseHandler;
 import org.philipp.fun.minidev.llm.LlmClient;
 import org.philipp.fun.minidev.llm.LlmRequest;
@@ -18,8 +19,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
+import java.util.Map;
 
 @Component
 public class ReviewingPhaseHandler implements PhaseHandler {
@@ -29,14 +29,17 @@ public class ReviewingPhaseHandler implements PhaseHandler {
     private final NotificationSseService notificationSseService;
     private final TerminalSseService terminalSseService;
     private final LlmClient llmClient;
+    private final ObjectMapper objectMapper;
 
     public ReviewingPhaseHandler(
             NotificationSseService notificationSseService,
             TerminalSseService terminalSseService,
-            LlmClient llmClient) {
+            LlmClient llmClient,
+            ObjectMapper objectMapper) {
         this.notificationSseService = notificationSseService;
         this.terminalSseService = terminalSseService;
         this.llmClient = llmClient;
+        this.objectMapper = objectMapper;
     }
 
     @Override
@@ -60,7 +63,21 @@ public class ReviewingPhaseHandler implements PhaseHandler {
             log.error("Failed to read code for review from {}", metadata.htmlPath(), e);
         }
 
-        String todosFormatted = String.join("\n", metadata.todos().stream().map(t -> "- " + t).toList());
+        String doneTodosFormatted = String.join("\n", metadata.doneTodos().stream().map(t -> "- " + t).toList());
+        String openTodosFormatted = String.join("\n", metadata.todos().stream().map(t -> "- " + t).toList());
+
+        Map<String, Object> schema = Map.of(
+                "type", "object",
+                "properties", Map.of(
+                        "failedDoneTodos", Map.of(
+                                "type", "array",
+                                "items", Map.of("type", "string")
+                        ),
+                        "reviewSummary", Map.of("type", "string")
+                ),
+                "required", List.of("failedDoneTodos", "reviewSummary"),
+                "additionalProperties", false
+        );
 
         LlmRequest request = new LlmRequest(
                 List.of(
@@ -68,7 +85,9 @@ public class ReviewingPhaseHandler implements PhaseHandler {
                                 You are a professional code reviewer. You are reviewing the progress of a game called '%s'.
                                 The game concept is: %s
                                 
-                                Current To-Do List:
+                                Tasks marked as completed (DONE):
+                                %s
+                                Open Tasks (STILL TO DO):
                                 %s
                                 
                                 Current Implementation (HTML/JS/CSS):
@@ -76,47 +95,55 @@ public class ReviewingPhaseHandler implements PhaseHandler {
                                 %s
                                 --- END CODE ---
                                 
-                                Task:
-                                1. Check which To-Dos from the list have already been implemented in the code.
-                                2. Create an updated To-Do List.
-                                3. Remove To-Dos that are fully completed.
-                                4. Keep To-Dos that are not yet or only partially implemented.
-                                5. Do not add brand-new To-Dos. Only keep or remove items from the current list.
-                                
-                                Respond ONLY with the updated To-Do list as a bulleted list (using '-'). No other text.
-                                """, metadata.name(), metadata.concept(), todosFormatted, code)),
-                        LlmRequest.Message.user("Please provide the updated To-Do list.")
-                )
+                                Your Task:
+                                1. Evaluate whether the tasks in the 'DONE' list are actually fully and correctly implemented in the provided code.
+                                2. If a task from the 'DONE' list is NOT or only partially implemented, identify it.
+                                3. DO NOT add any brand-new tasks. Only evaluate the existing 'DONE' list.
+                                4. Respond with a JSON object containing a list of 'failedDoneTodos' (tasks from the DONE list that should be moved back to TODO) and a 'reviewSummary' explaining your reasoning.
+                                """, metadata.name(), metadata.concept(), doneTodosFormatted, openTodosFormatted, code)),
+                        LlmRequest.Message.user("Please provide the review results as JSON.")
+                ), schema
         );
 
         LlmResponse response = llmClient.chat(request);
 
         if (response.success()) {
-            run.getGameMetadata().todos().clear();
-            List<String> updatedTodos = extractTodos(response.content().trim(), List.of());
-            run.getGameMetadata().todos().addAll(updatedTodos);
-            log.info("Successfully updated To-Dos for run {}. New count: {}", metadata.runId(), updatedTodos.size());
-            log.debug("New To-Dos for run {}: {}", metadata.runId(), updatedTodos);
-            terminalSseService.sendTerminalText("To-Do list updated based on review.", SseEventType.AGENT_WORK, 50);
+            try {
+                String content = cleanJsonResponse(response.content());
+                ReviewResponse reviewResponse = objectMapper.readValue(content, ReviewResponse.class);
+                List<String> failedTodos = reviewResponse.failedDoneTodos();
+
+                int movedCount = 0;
+                for (String failedTodo : failedTodos) {
+                    if (metadata.doneTodos().remove(failedTodo)) {
+                        metadata.todos().addFirst(failedTodo);
+                        movedCount++;
+                    }
+                }
+
+                log.info("Successfully updated To-Dos for run {}. Moved {} tasks back to TODO. Summary: {}", 
+                        metadata.runId(), movedCount, reviewResponse.reviewSummary());
+                terminalSseService.sendTerminalText("Review completed. Moved " + movedCount + " tasks back to TODO list.\n", SseEventType.AGENT_WORK, 50);
+            } catch (Exception e) {
+                log.error("Failed to parse review response for run {}: {}", metadata.runId(), e.getMessage());
+                notificationSseService.sendNotification("Review failed: " + e.getMessage());
+            }
         } else {
             log.error("LLM review failed for run {}: {}", metadata.runId(), response.errorMessage());
             notificationSseService.sendNotification("Review failed: " + response.errorMessage());
         }
     }
 
-    private List<String> extractTodos(String text, List<String> fallbackTodos) {
-        List<String> todos = new ArrayList<>();
-        Pattern pattern = Pattern.compile("^\\s*-\\s*(.+)$", Pattern.MULTILINE);
-        Matcher matcher = pattern.matcher(text);
-
-        while (matcher.find()) {
-            todos.add(matcher.group(1).trim());
+    private String cleanJsonResponse(String content) {
+        content = content.trim();
+        if (content.startsWith("```json")) {
+            content = content.substring(7);
+        } else if (content.startsWith("```")) {
+            content = content.substring(3);
         }
-
-        if (todos.isEmpty()) {
-            return new ArrayList<>(fallbackTodos);
+        if (content.endsWith("```")) {
+            content = content.substring(0, content.length() - 3);
         }
-
-        return todos;
+        return content.trim();
     }
 }
