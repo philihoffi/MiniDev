@@ -10,6 +10,7 @@ public record GameMetadata(
         UUID runId,
         String name,
         String concept,
+        String coreMechanic,
         List<String> todos,
         List<String> doneTodos,
         Path files,
@@ -21,6 +22,7 @@ public record GameMetadata(
         Objects.requireNonNull(runId, "runId must not be null");
         Objects.requireNonNull(name, "name must not be null");
         Objects.requireNonNull(concept, "concept must not be null");
+        Objects.requireNonNull(coreMechanic, "coreMechanic must not be null");
         Objects.requireNonNull(todos, "todos must not be null");
         Objects.requireNonNull(doneTodos, "doneTodos must not be null");
         Objects.requireNonNull(files, "files must not be null");
@@ -28,12 +30,20 @@ public record GameMetadata(
         Objects.requireNonNull(readmePath, "readmePath must not be null");
     }
 
+    public GameMetadata(UUID runId, String name, String concept, String coreMechanic, List<String> todos, Path files) {
+        this(runId, name, concept, coreMechanic, todos, new ArrayList<>(), files, files.resolve("index.html"), files.resolve("README.md"));
+    }
+
+    public GameMetadata(UUID runId, String name, String concept, String coreMechanic, List<String> todos, List<String> doneTodos, Path files) {
+        this(runId, name, concept, coreMechanic, todos, doneTodos, files, files.resolve("index.html"), files.resolve("README.md"));
+    }
+
     public GameMetadata(UUID runId, String name, String concept, List<String> todos, Path files) {
-        this(runId, name, concept, todos, new ArrayList<>(), files, files.resolve("index.html"), files.resolve("README.md"));
+        this(runId, name, concept, "", todos, new ArrayList<>(), files, files.resolve("index.html"), files.resolve("README.md"));
     }
 
     public GameMetadata(UUID runId, String name, String concept, List<String> todos, List<String> doneTodos, Path files) {
-        this(runId, name, concept, todos, doneTodos, files, files.resolve("index.html"), files.resolve("README.md"));
+        this(runId, name, concept, "", todos, doneTodos, files, files.resolve("index.html"), files.resolve("README.md"));
     }
 
 
@@ -43,6 +53,7 @@ public record GameMetadata(
         return "GameMetadata{" +
                 "name='" + name + '\'' +
                 ", concept='" + concept + '\'' +
+                ", coreMechanic='" + coreMechanic + '\'' +
                 ", todos=" + todos +
                 ", doneTodos=" + doneTodos +
                 ", files=" + files +

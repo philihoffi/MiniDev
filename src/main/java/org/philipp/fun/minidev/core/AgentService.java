@@ -194,7 +194,7 @@ public class AgentService {
                                 if (dirName.startsWith("run-")) {
                                     try {
                                         UUID runId = UUID.fromString(dirName.substring(4));
-                                        metadata = new GameMetadata(runId, metadata.name(), metadata.concept(), metadata.todos(), metadata.doneTodos(), metadata.files(), metadata.htmlPath(), metadata.readmePath());
+                                        metadata = new GameMetadata(runId, metadata.name(), metadata.concept(), metadata.coreMechanic(), metadata.todos(), metadata.doneTodos(), metadata.files(), metadata.htmlPath(), metadata.readmePath());
                                     } catch (IllegalArgumentException ignored) {}
                                 }
                             }

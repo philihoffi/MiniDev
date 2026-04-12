@@ -106,11 +106,12 @@ public class CodingPhaseHandler implements PhaseHandler {
                 LlmRequest.Message.user(String.format("""
                         GAME: %s
                         CONCEPT: %s
+                        CORE MECHANIC: %s
                         TODOS:
                         %s
                         
                         Design the technical implementation.
-                        """, metadata.name(), metadata.concept(), todosFormatted))
+                        """, metadata.name(), metadata.concept(), metadata.coreMechanic(), todosFormatted))
         ), schema);
 
         LlmResponse response = llmClient.chat(request);
@@ -168,11 +169,12 @@ public class CodingPhaseHandler implements PhaseHandler {
                         """, metadata.name(), techConcept)),
                 LlmRequest.Message.user(String.format("""
                         CONCEPT: %s
+                        CORE MECHANIC: %s
                         TODOS:
                         %s
                         
                         Generate the complete code for the game.
-                        """, metadata.concept(), todosFormatted))
+                        """, metadata.concept(), metadata.coreMechanic(), todosFormatted))
         ), schema);
 
         LlmResponse response = llmClient.chat(request);

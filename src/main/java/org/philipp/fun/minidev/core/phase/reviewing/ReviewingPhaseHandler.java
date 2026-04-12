@@ -88,6 +88,7 @@ public class ReviewingPhaseHandler implements PhaseHandler {
                         LlmRequest.Message.system(String.format("""
                                 You are a professional code reviewer. You are reviewing the progress of a game called '%s'.
                                 The game concept is: %s
+                                Core Mechanic: %s
                                 
                                 Tasks marked as completed (DONE):
                                 %s
@@ -111,7 +112,7 @@ public class ReviewingPhaseHandler implements PhaseHandler {
                                     - 'failedDoneTodos': tasks from the DONE list that should be moved back to TODO.
                                     - 'newTodos': brand-new tasks identified in step 3 (ONLY for polish, usability, or clarity - NO NEW FEATURES).
                                     - 'reviewSummary': explaining your reasoning.
-                                """, metadata.name(), metadata.concept(), doneTodosFormatted, openTodosFormatted, code)),
+                                """, metadata.name(), metadata.concept(), metadata.coreMechanic(), doneTodosFormatted, openTodosFormatted, code)),
                         LlmRequest.Message.user("Please provide the review results as JSON.")
                 ), schema
         );

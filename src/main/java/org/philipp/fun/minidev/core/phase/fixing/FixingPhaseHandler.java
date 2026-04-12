@@ -87,6 +87,7 @@ public class FixingPhaseHandler implements PhaseHandler {
                             LlmRequest.Message.system(String.format("""
                                     You are a professional web developer. Your task is to implement a specific feature in a game called '%s'.
                                     The game concept is: %s
+                                    Core Mechanic: %s
                                     
                                     Already completed tasks:
                                     %s
@@ -106,7 +107,7 @@ public class FixingPhaseHandler implements PhaseHandler {
                                     4. Ensure the game remains a single HTML file with embedded CSS and JS.
                                     
                                     Respond with a JSON object containing the updated code and a short summary of the changes.
-                                    """, metadata.name(), metadata.concept(), doneTodosFormatted, nextTodo, currentCode)),
+                                    """, metadata.name(), metadata.concept(), metadata.coreMechanic(), doneTodosFormatted, nextTodo, currentCode)),
                             LlmRequest.Message.user("Please provide the updated code.")
                     ), schema
             );

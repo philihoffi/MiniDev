@@ -224,7 +224,7 @@ public class PlanningPhaseHandler implements PhaseHandler {
             return null;
         }
 
-        return parseGameMetadata(response.content(), runId);
+        return parseGameMetadata(response.content(), runId, candidate.coreMechanic());
     }
 
     private void failRun(AgentRun run, String errorMsg) {
@@ -233,13 +233,14 @@ public class PlanningPhaseHandler implements PhaseHandler {
         notificationSseService.sendNotification(errorMsg);
     }
 
-    private GameMetadata parseGameMetadata(String llmResponse, UUID runId) {
+    private GameMetadata parseGameMetadata(String llmResponse, UUID runId, String candidateCoreMechanic) {
         String name = extractField(llmResponse, "NAME:", "Untitled Game");
         String concept = extractField(llmResponse, "CONCEPT:", "A simple browser game");
+        String mechanic = extractField(llmResponse, "MECHANIC:", candidateCoreMechanic);
         List<String> todos = extractTodos(llmResponse, DEFAULT_PLANNING_TODOS);
         Path gameDirectory = Paths.get(storageBasePath, "run-" + runId);
 
-        return new GameMetadata(runId, name, concept, todos, gameDirectory);
+        return new GameMetadata(runId, name, concept, mechanic, todos, gameDirectory);
     }
 
     private String extractField(String text, String marker, String defaultValue) {
