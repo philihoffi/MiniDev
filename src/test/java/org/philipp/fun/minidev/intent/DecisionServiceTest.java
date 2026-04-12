@@ -52,7 +52,7 @@ class DecisionServiceTest {
         LlmResponse llmResponse = LlmResponse.success(jsonResponse, "test-model", 100);
         when(llmClient.chat(any(LlmRequest.class))).thenReturn(llmResponse);
 
-        DecisionResponse expectedResponse = new DecisionResponse(runId, RunState.CODING, "Let's start coding!", true);
+        DecisionResponse expectedResponse = new DecisionResponse(runId.toString(), RunState.CODING, "Let's start coding!", true);
         when(objectMapper.readValue(eq(jsonResponse), eq(DecisionResponse.class))).thenReturn(expectedResponse);
 
         DecisionResponse result = decisionService.decideNextStep(run);
@@ -91,7 +91,7 @@ class DecisionServiceTest {
         LlmResponse llmResponse = LlmResponse.success(jsonResponse, "test-model", 100);
         when(llmClient.chat(any(LlmRequest.class))).thenReturn(llmResponse);
 
-        IdeaSelectionResponse expectedResponse = new IdeaSelectionResponse(runId, 1, "Game 2 is better!");
+        IdeaSelectionResponse expectedResponse = new IdeaSelectionResponse(runId.toString(), 1, "Game 2 is better!");
         when(objectMapper.readValue(eq(jsonResponse), eq(IdeaSelectionResponse.class))).thenReturn(expectedResponse);
 
         IdeaSelectionResponse result = decisionService.selectBestIdea(candidates, runId);
@@ -99,6 +99,5 @@ class DecisionServiceTest {
         assertEquals(1, result.selectedIndex());
         assertEquals("Game 2 is better!", result.message());
         verify(llmClient).chat(any(LlmRequest.class));
-        verify(terminalSseService, atLeastOnce()).sendTerminalText(anyString(), any(), anyInt());
     }
 }

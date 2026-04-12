@@ -95,7 +95,7 @@ public class AgentService {
         try {
             RunState currentState = run.getState();
             while (currentState != RunState.DONE && currentState != RunState.FAILED) {
-                RunState nextState = getNextState(run);
+                RunState nextState = decisionService.decideNextStep(run).newState();
                 
                 if (run.getState().canTransitionTo(nextState)) {
                     run.transitionTo(nextState);
@@ -123,10 +123,6 @@ public class AgentService {
             run.transitionTo(RunState.FAILED);
             notificationSseService.sendNotification("Run FAILED: " + e.getMessage());
         }
-    }
-
-    private RunState getNextState(AgentRun run) {
-        return decisionService.decideNextStep(run).newState();
     }
 
     private void saveMetadata(AgentRun run) {
@@ -165,7 +161,7 @@ public class AgentService {
                                 if (dirName.startsWith("run-")) {
                                     try {
                                         UUID runId = UUID.fromString(dirName.substring(4));
-                                        metadata = new GameMetadata(runId, metadata.name(), metadata.concept(), metadata.coreMechanic(), metadata.todos(), metadata.doneTodos(), metadata.files(), metadata.htmlPath(), metadata.readmePath());
+                                        metadata = new GameMetadata(runId, metadata.name(), metadata.concept(), metadata.coreMechanic(), metadata.todos(), metadata.doneTodos(), metadata.phaseHistory(), metadata.files());
                                     } catch (IllegalArgumentException ignored) {}
                                 }
                             }

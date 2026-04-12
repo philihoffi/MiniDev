@@ -14,6 +14,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -82,7 +83,7 @@ public class DecisionService {
                 "type", "object",
                 "properties", Map.of(
                         "runId", Map.of("type", "string"),
-                        "newState", Map.of("type", "string", "enum", List.of("PLANNING", "CODING", "REVIEWING", "TESTING", "FIXING", "PUBLISHING", "DONE")),
+                        "newState", Map.of("type", "string", "enum", Arrays.stream( run.getState().getPossibleTransitions()).map(Enum::name).toList()),
                         "message", Map.of("type", "string"),
                         "accepted", Map.of("type", "boolean")
                 ),
@@ -102,6 +103,12 @@ public class DecisionService {
             LlmResponse response = llmClient.chat(request);
             String content = cleanJsonResponse(response.content());
             DecisionResponse decision = objectMapper.readValue(content, DecisionResponse.class);
+
+            if (!run.getState().canTransitionTo(decision.newState())) {
+                log.warn("LLM suggested invalid transition from {} to {}. Falling back.", run.getState(), decision.newState());
+                return fallbackDecision(run);
+            }
+
             log.info("Decision made: {} - Message: {}", decision.newState(), decision.message());
 
             this.terminalSseService.sendTerminalText("Next step: " + decision.newState() + "\n", SseEventType.AGENT_WORK, 0);
@@ -155,7 +162,7 @@ public class DecisionService {
             log.error("Failed to select idea via LLM", e);
         }
 
-        return new IdeaSelectionResponse(runId, 0, "Fallback: Selected by default (first candidate).");
+        return new IdeaSelectionResponse(runId.toString(), 0, "Fallback: Selected by default (first candidate).");
     }
 
     private String cleanJsonResponse(String content) {
@@ -183,6 +190,6 @@ public class DecisionService {
             case PUBLISHING -> RunState.DONE;
             default -> RunState.DONE;
         };
-        return new DecisionResponse(run.getGameMetadata().runId(), next, "Fallback logic used.", true);
+        return new DecisionResponse(run.getGameMetadata().runId().toString(), next, "Fallback logic used.", true);
     }
 }

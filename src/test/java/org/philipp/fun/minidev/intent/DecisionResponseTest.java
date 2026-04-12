@@ -20,10 +20,10 @@ class DecisionResponseTest {
         String message = "Starting work on new game";
         boolean accepted = true;
 
-        DecisionResponse response = new DecisionResponse(runId, newState, message, accepted);
+        DecisionResponse response = new DecisionResponse(runId.toString(), newState, message, accepted);
 
         assertAll(
-                () -> assertEquals(runId, response.runId()),
+                () -> assertEquals(runId.toString(), response.runId()),
                 () -> assertEquals(newState, response.newState()),
                 () -> assertEquals(message, response.message()),
                 () -> assertTrue(response.accepted())
@@ -36,7 +36,7 @@ class DecisionResponseTest {
         RunState newState = RunState.IDLE;
         String message = "Cannot start work while already running";
 
-        DecisionResponse response = new DecisionResponse(runId, newState, message, false);
+        DecisionResponse response = new DecisionResponse(runId.toString(), newState, message, false);
 
         assertFalse(response.accepted());
     }
@@ -47,8 +47,8 @@ class DecisionResponseTest {
         RunState newState = RunState.CODING;
         String message = "Implementing feature";
 
-        DecisionResponse response1 = new DecisionResponse(runId, newState, message, true);
-        DecisionResponse response2 = new DecisionResponse(runId, newState, message, true);
+        DecisionResponse response1 = new DecisionResponse(runId.toString(), newState, message, true);
+        DecisionResponse response2 = new DecisionResponse(runId.toString(), newState, message, true);
 
         assertAll(
                 () -> assertEquals(response1, response2),
@@ -61,8 +61,8 @@ class DecisionResponseTest {
         UUID runId = UUID.randomUUID();
         String message = "Working";
 
-        DecisionResponse response1 = new DecisionResponse(runId, RunState.PLANNING, message, true);
-        DecisionResponse response2 = new DecisionResponse(runId, RunState.CODING, message, true);
+        DecisionResponse response1 = new DecisionResponse(runId.toString(), RunState.PLANNING, message, true);
+        DecisionResponse response2 = new DecisionResponse(runId.toString(), RunState.CODING, message, true);
 
         assertNotEquals(response1, response2);
     }
