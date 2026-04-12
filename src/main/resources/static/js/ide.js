@@ -99,8 +99,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 item.className = 'project-item';
                 // GameMetadata hat ein runId Feld (UUID)
                 const runId = game.runId;
-                item.textContent = runId;
-                item.title = game.name || runId;
+                item.textContent = game.name || runId;
+                item.title = runId;
                 item.addEventListener('click', () => loadProjectContent(runId, item));
                 projectList.appendChild(item);
             });
@@ -114,7 +114,7 @@ document.addEventListener('DOMContentLoaded', () => {
         document.querySelectorAll('.project-item').forEach(i => i.classList.remove('active'));
         element.classList.add('active');
         
-        logToTerminal(`Lade Projekt ${runId}...`);
+        logToTerminal(`Lade Projekt ${element.textContent}...`);
         
         try {
             const response = await fetch(`/api/agent/games/${runId}/components`);
@@ -126,7 +126,7 @@ document.addEventListener('DOMContentLoaded', () => {
             editorCss.textContent = data.css || '';
             editorJs.textContent = data.js || '';
             
-            logToTerminal(`Projekt ${runId} erfolgreich geladen.`);
+            logToTerminal(`Projekt ${element.textContent} erfolgreich geladen.`);
         } catch (error) {
             logToTerminal(`Fehler: ${error.message}`, 'error');
         }
