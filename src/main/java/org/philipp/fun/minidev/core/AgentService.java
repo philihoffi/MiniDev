@@ -28,6 +28,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.Map;
+import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Stream;
 
@@ -218,6 +219,26 @@ public class AgentService {
         notificationSseService.sendNotification("Resuming run: " + runId);
 
         processRun(runId);
+    }
+
+    public Optional<AgentRun> getRun(UUID runId) {
+        AgentRun run = activeRuns.get(runId);
+        if (run == null) {
+            run = loadRunFromDisk(runId);
+        }
+        return Optional.ofNullable(run);
+    }
+
+    public String getGameContent(UUID runId) {
+        Path runPath = Paths.get(storageBasePath, "run-" + runId, "index.html");
+        if (Files.exists(runPath)) {
+            try {
+                return Files.readString(runPath);
+            } catch (IOException e) {
+                log.error("Failed to read game content: {}", runPath, e);
+            }
+        }
+        return null;
     }
 
     private AgentRun loadRunFromDisk(UUID runId) {
