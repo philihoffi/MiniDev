@@ -126,7 +126,7 @@ public class FixingPhaseHandler implements PhaseHandler {
 
                     log.info("Successfully saved {} characters of fixed code for run {} to {}. Summary: {}", 
                             updatedCode.length(), metadata.runId(), metadata.htmlPath(), fixingResponse.changesSummary());
-                    terminalSseService.sendTerminalText("To-Do '" + nextTodo + "' implemented. Summary: "+fixingResponse.changesSummary(), SseEventType.AGENT_WORK, 50);
+                    terminalSseService.sendTerminalText("To-Do '" + nextTodo + "' implemented.", SseEventType.AGENT_WORK, 50);
                 } catch (Exception e) {
                     log.error("Failed to parse or save fixed code for run {} to {}", metadata.runId(), metadata.htmlPath(), e);
                     break;
