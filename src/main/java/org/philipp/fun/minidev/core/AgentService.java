@@ -74,14 +74,15 @@ public class AgentService {
     }
 
     public UUID startNewRun() {
-        AgentRun run = new AgentRun();
-        activeRuns.put(run.getRunId(), run);
-        log.info("Started new test run: {}", run.getRunId());
-        notificationSseService.sendNotification("New Run started: " + run.getRunId());
+        AgentRun run = new AgentRun(this.storageBasePath);
+        UUID uuid = run.getGameMetadata().runId();
+        activeRuns.put(uuid, run);
+        log.info("Started new test run: {}", uuid);
+        notificationSseService.sendNotification("New Run started: " + uuid);
 
-        processRun(run.getRunId());
+        processRun(uuid);
         
-        return run.getRunId();
+        return uuid;
     }
 
     protected void processRun(UUID runId) {
@@ -166,9 +167,9 @@ public class AgentService {
         try {
             Files.createDirectories(files);
             this.objectMapper.writeValue(metadataPath.toFile(), metadata);
-            log.info("Saved metadata for run {} to {}", run.getRunId(), metadataPath);
+            log.info("Saved metadata for run {} to {}", run.getGameMetadata().runId(), metadataPath);
         } catch (IOException e) {
-            log.error("Failed to save metadata for run {}", run.getRunId(), e);
+            log.error("Failed to save metadata for run {}", run.getGameMetadata().runId(), e);
         }
     }
 
@@ -187,7 +188,6 @@ public class AgentService {
                     .map(metadataPath -> {
                         try {
                             GameMetadata metadata = objectMapper.readValue(metadataPath.toFile(), GameMetadata.class);
-                            // Ensure runId is set from directory name if it was missing in JSON (for migration)
                             if (metadata.runId() == null) {
                                 String dirName = metadataPath.getParent().getFileName().toString();
                                 if (dirName.startsWith("run-")) {
@@ -263,7 +263,7 @@ public class AgentService {
                 if (!runId.equals(metadata.runId())) {
                     metadata = new GameMetadata(runId, metadata.name(), metadata.concept(), metadata.todos(), metadata.files(), metadata.htmlPath(), metadata.readmePath());
                 }
-                return new AgentRun(runId, RunState.REVIEWING, java.time.Instant.now(), java.time.Instant.now(), metadata);
+                return new AgentRun(RunState.REVIEWING, java.time.Instant.now(), java.time.Instant.now(), metadata);
             } catch (IOException e) {
                 log.error("Failed to load run from disk: {}", runId, e);
             }

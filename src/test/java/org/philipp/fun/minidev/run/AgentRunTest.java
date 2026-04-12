@@ -24,10 +24,10 @@ class AgentRunTest {
         Instant updatedAt = createdAt.plusSeconds(30);
         GameMetadata metadata = new GameMetadata(runId, "Test Game", "Concept", List.of("Task 1"), Path.of("test-path"));
 
-        AgentRun run = new AgentRun(runId, AgentRun.RunState.PLANNING, createdAt, updatedAt, metadata);
+        AgentRun run = new AgentRun(AgentRun.RunState.PLANNING, createdAt, updatedAt, metadata);
 
         assertAll(
-                () -> assertEquals(runId, run.getRunId()),
+                () -> assertEquals(runId, run.getGameMetadata().runId()),
                 () -> assertEquals(AgentRun.RunState.PLANNING, run.getState()),
                 () -> assertEquals(createdAt, run.getCreatedAt()),
                 () -> assertEquals(updatedAt, run.getUpdatedAt()),
@@ -41,7 +41,7 @@ class AgentRunTest {
         AgentRun run = new AgentRun(storagePath);
 
         assertAll(
-                () -> assertNotNull(run.getRunId()),
+                () -> assertNotNull(run.getGameMetadata().runId()),
                 () -> assertEquals(AgentRun.RunState.IDLE, run.getState()),
                 () -> assertNotNull(run.getCreatedAt()),
                 () -> assertEquals(run.getCreatedAt(), run.getUpdatedAt()),
@@ -56,7 +56,7 @@ class AgentRunTest {
         AgentRun run = new AgentRun("test-storage");
 
         assertAll(
-                () -> assertNotNull(run.getRunId()),
+                () -> assertNotNull(run.getGameMetadata().runId()),
                 () -> assertEquals(AgentRun.RunState.IDLE, run.getState()),
                 () -> assertNotNull(run.getCreatedAt()),
                 () -> assertEquals(run.getCreatedAt(), run.getUpdatedAt()),
@@ -68,12 +68,13 @@ class AgentRunTest {
     void fullConstructorRejectsNullArguments() {
         UUID runId = UUID.randomUUID();
         Instant timestamp = Instant.EPOCH;
+        GameMetadata metadata = new GameMetadata(runId, "Name", "Concept", List.of(), Path.of("test"));
 
         assertAll(
-                () -> assertThrows(NullPointerException.class, () -> new AgentRun(null, AgentRun.RunState.IDLE, timestamp, timestamp, null)),
-                () -> assertThrows(NullPointerException.class, () -> new AgentRun(runId, null, timestamp, timestamp, null)),
-                () -> assertThrows(NullPointerException.class, () -> new AgentRun(runId, AgentRun.RunState.IDLE, null, timestamp, null)),
-                () -> assertThrows(NullPointerException.class, () -> new AgentRun(runId, AgentRun.RunState.IDLE, timestamp, null, null))
+                () -> assertThrows(NullPointerException.class, () -> new AgentRun(AgentRun.RunState.IDLE, timestamp, timestamp, null)),
+                () -> assertThrows(NullPointerException.class, () -> new AgentRun(null, timestamp, timestamp, metadata)),
+                () -> assertThrows(NullPointerException.class, () -> new AgentRun(AgentRun.RunState.IDLE, null, timestamp, metadata)),
+                () -> assertThrows(NullPointerException.class, () -> new AgentRun(AgentRun.RunState.IDLE, timestamp, null, metadata))
         );
     }
 
@@ -82,10 +83,11 @@ class AgentRunTest {
         UUID runId = UUID.randomUUID();
         Instant createdAt = Instant.EPOCH;
         Instant updatedAt = createdAt.minusSeconds(1);
+        GameMetadata metadata = new GameMetadata(runId, "Name", "Concept", List.of(), Path.of("test"));
 
         IllegalArgumentException exception = assertThrows(
                 IllegalArgumentException.class,
-                () -> new AgentRun(runId, AgentRun.RunState.IDLE, createdAt, updatedAt, null)
+                () -> new AgentRun(AgentRun.RunState.IDLE, createdAt, updatedAt, metadata)
         );
 
         assertEquals("updatedAt must not be before createdAt", exception.getMessage());
@@ -125,7 +127,9 @@ class AgentRunTest {
     @Test
     void transitionToRejectsTimestampBeforeCurrentUpdatedAt() {
         Instant createdAt = Instant.EPOCH;
-        AgentRun run = new AgentRun(UUID.randomUUID(), AgentRun.RunState.PLANNING, createdAt, createdAt.plusSeconds(10), null);
+        UUID runId = UUID.randomUUID();
+        GameMetadata metadata = new GameMetadata(runId, "Name", "Concept", List.of(), Path.of("test"));
+        AgentRun run = new AgentRun(AgentRun.RunState.PLANNING, createdAt, createdAt.plusSeconds(10), metadata);
 
         IllegalArgumentException exception = assertThrows(
                 IllegalArgumentException.class,

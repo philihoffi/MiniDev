@@ -76,14 +76,14 @@ public class PlanningPhaseHandler implements PhaseHandler {
         GameIdeaCandidate bestCandidate = selectBestCandidate(candidates);
         terminalSseService.sendTerminalText("Selected best idea: " + bestCandidate.name() + "\nExpanding concept...", SseEventType.AGENT_WORK, 60);
 
-        GameMetadata metadata = expandIdea(bestCandidate, run.getRunId());
+        GameMetadata metadata = expandIdea(bestCandidate, run.getGameMetadata().runId());
         if (metadata == null) {
             failRun(run, "Failed to expand the selected game idea.");
             return;
         }
 
         run.setGameMetadata(metadata);
-        log.info("Initialized metadata for run {}: {}", run.getRunId(), metadata);
+        log.info("Initialized metadata for run {}: {}", run.getGameMetadata().runId(), metadata);
         terminalSseService.sendTerminalText("Game planning completed: " + metadata.name(), SseEventType.AGENT_WORK, 100);
     }
 

@@ -45,12 +45,12 @@ public class CodingPhaseHandler implements PhaseHandler {
     public void execute(AgentRun run) {
         GameMetadata metadata = run.getGameMetadata();
         if (metadata == null) {
-            log.error("No metadata found for run {}", run.getRunId());
+            log.error("No metadata found for run {}", run.getGameMetadata().runId());
             run.transitionTo(RunState.FAILED);
             return;
         }
 
-        log.info("Coding phase for run {}", run.getRunId());
+        log.info("Coding phase for run {}", run.getGameMetadata().runId());
 
         String todosFormatted = String.join("\n", metadata.todos().stream().map(t -> "- " + t).toList());
 
@@ -202,7 +202,7 @@ public class CodingPhaseHandler implements PhaseHandler {
     }
 
     private void failRun(AgentRun run, String message) {
-        log.error("Run {} failed: {}", run.getRunId(), message);
+        log.error("Run {} failed: {}", run.getGameMetadata().runId(), message);
         run.transitionTo(RunState.FAILED);
         notificationSseService.sendNotification("Phase CODING failed: " + message);
         terminalSseService.sendTerminalText("ERROR: " + message + "\n", SseEventType.AGENT_WORK, 0);

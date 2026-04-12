@@ -7,8 +7,6 @@ import java.util.Objects;
 import java.util.UUID;
 
 public final class AgentRun {
-
-    private final UUID runId;
     private final Instant createdAt;
 
     private RunState state;
@@ -16,12 +14,11 @@ public final class AgentRun {
     private GameMetadata gameMetadata;
     private int fixingIterations = 0;
 
-    public AgentRun(UUID runId, RunState state, Instant createdAt, Instant updatedAt, GameMetadata gameMetadata) {
-        this.runId = Objects.requireNonNull(runId, "runId must not be null");
+    public AgentRun(RunState state, Instant createdAt, Instant updatedAt, GameMetadata gameMetadata) {
         this.state = Objects.requireNonNull(state, "state must not be null");
         this.createdAt = Objects.requireNonNull(createdAt, "createdAt must not be null");
         this.updatedAt = Objects.requireNonNull(updatedAt, "updatedAt must not be null");
-        this.gameMetadata = gameMetadata;
+        this.gameMetadata = Objects.requireNonNull(gameMetadata, "gameMetadata must not be null");
         this.fixingIterations = 0;
         if (updatedAt.isBefore(createdAt)) {
             throw new IllegalArgumentException("updatedAt must not be before createdAt");
@@ -37,12 +34,9 @@ public final class AgentRun {
                 Arrays.asList("Define game concept", "Implement game mechanics", "Create assets", "Test and polish"),
                 Path.of(storageBasePath, "run-" + runId)
         );
-        this(runId, RunState.IDLE, Instant.now(), Instant.now(), gameMetadata);
+        this(RunState.IDLE, Instant.now(), Instant.now(), gameMetadata);
     }
 
-    public AgentRun() {
-        this(UUID.randomUUID(), RunState.IDLE, Instant.now(), Instant.now(), null);
-    }
 
     public boolean transitionTo(RunState nextState, Instant changedAt) {
         Objects.requireNonNull(nextState, "nextState must not be null");
@@ -57,10 +51,6 @@ public final class AgentRun {
 
     public boolean transitionTo(RunState nextState) {
         return transitionTo(nextState, Instant.now());
-    }
-
-    public UUID getRunId() {
-        return runId;
     }
 
     public RunState getState() {
@@ -94,7 +84,6 @@ public final class AgentRun {
     @Override
     public String toString() {
         return "AgentRun{"
-                + "runId='" + runId + '\''
                 + ", state=" + state
                 + ", createdAt=" + createdAt
                 + ", updatedAt=" + updatedAt
@@ -121,7 +110,7 @@ public final class AgentRun {
 
         public boolean isActive() {
             return this == PLANNING || this == CODING || this == REVIEWING
-                || this == TESTING || this == FIXING;
+                    || this == TESTING || this == FIXING;
         }
 
         public boolean isTerminal() {

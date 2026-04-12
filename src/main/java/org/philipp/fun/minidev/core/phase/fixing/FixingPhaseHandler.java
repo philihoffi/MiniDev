@@ -40,12 +40,12 @@ public class FixingPhaseHandler implements PhaseHandler {
     public void execute(AgentRun run) {
         GameMetadata metadata = run.getGameMetadata();
         if (metadata == null) {
-            log.error("No metadata found for run {}", run.getRunId());
+            log.error("No metadata found for run {}", run.getGameMetadata().runId());
             run.transitionTo(RunState.FAILED);
             return;
         }
 
-        log.info("Fixing phase for run {}", run.getRunId());
+        log.info("Fixing phase for run {}", run.getGameMetadata().runId());
         run.incrementFixingIterations();
         terminalSseService.sendTerminalText("Fixing identified issues and implementing missing To-Dos...\n", SseEventType.AGENT_WORK, 50);
 
