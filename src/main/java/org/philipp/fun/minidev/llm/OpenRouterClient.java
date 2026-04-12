@@ -58,7 +58,7 @@ public class OpenRouterClient implements LlmClient {
 
             OpenRouterRequest requestBody = new OpenRouterRequest(
                     messages,
-                    "openrouter/auto",
+                    "google/gemini-3-flash-preview",
                     request.temperature(),
                     request.maxTokens(),
                     responseFormat,
@@ -77,6 +77,7 @@ public class OpenRouterClient implements LlmClient {
                 log.warn("Received empty response from OpenRouter API");
                 return LlmResponse.failure("Empty response from OpenRouter");
             }
+            responseBody = responseBody.trim();
             log.debug("Received response from OpenRouter: {}", responseBody);
 
             OpenRouterResponse response = OBJECT_MAPPER.readValue(responseBody, OpenRouterResponse.class);
