@@ -50,13 +50,13 @@ public class FixingPhaseHandler implements PhaseHandler {
             return;
         }
 
-        terminalSseService.sendTerminalText("Fixing identified issues for " + metadata.name() + "\n Total ToDos: " + metadata.todos().size() + "\n", SseEventType.AGENT_WORK, 50);
+        terminalSseService.sendTerminalText("Addressing identified issues for " + metadata.name() + "\n Total pending items: " + metadata.todos().size() + "\n", SseEventType.AGENT_WORK, 50);
 
         while (!run.getGameMetadata().todos().isEmpty()) {
             metadata = run.getGameMetadata();
             String nextTodo = metadata.todos().get(0);
             log.info("Fixing next To-Do for run {}: {}", metadata.runId(), nextTodo);
-            terminalSseService.sendTerminalText("Implementing To-Do: " + nextTodo + "\n", SseEventType.AGENT_WORK, 50);
+            terminalSseService.sendTerminalText("Processing task: " + nextTodo + "\n", SseEventType.AGENT_WORK, 50);
 
             String currentCode = "";
             try {
@@ -138,7 +138,7 @@ public class FixingPhaseHandler implements PhaseHandler {
 
         if (run.getGameMetadata().todos().isEmpty()) {
             log.info("All To-Dos completed for run {}", run.getGameMetadata().runId());
-            terminalSseService.sendTerminalText("All To-Dos are completed.\n", SseEventType.AGENT_WORK, 50);
+            terminalSseService.sendTerminalText("All identified tasks have been successfully processed.\n", SseEventType.AGENT_WORK, 50);
         } else {
             log.warn("Fixing phase ended with remaining To-Dos for run {}", run.getGameMetadata().runId());
         }

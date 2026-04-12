@@ -24,7 +24,7 @@ public class PublishingPhaseHandler implements PhaseHandler {
     public void execute(AgentRun run) {
         UUID runId = run.getGameMetadata().runId();
         log.info("Starting publishing phase for run {}", runId);
-        String msg = "Publishing game to storage...";
+        String msg = "Finalizing and storing game assets...";
         terminalSseService.sendTerminalText(msg, SseEventType.AGENT_WORK, 50);
         log.info("Game published for run {}", runId);
     }

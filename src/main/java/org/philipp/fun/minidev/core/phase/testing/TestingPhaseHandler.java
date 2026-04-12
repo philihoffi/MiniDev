@@ -42,14 +42,14 @@ public class TestingPhaseHandler implements PhaseHandler {
         UUID runId = metadata.runId();
         Path htmlPath = metadata.htmlPath();
         log.info("Starting testing phase for run {} on file {}", runId, htmlPath);
-        terminalSseService.sendTerminalText("Starting static code analysis for " + htmlPath.getFileName() + "...", SseEventType.AGENT_WORK, 50);
+        terminalSseService.sendTerminalText("Executing automated verification for " + htmlPath.getFileName() + "...", SseEventType.AGENT_WORK, 50);
 
         AnalysisResult result = performStaticAnalysis(htmlPath, runId);
 
         if (result.findings().isEmpty()) {
-            terminalSseService.sendTerminalText("Static analysis passed! No issues found.", SseEventType.AGENT_WORK, 50);
+            terminalSseService.sendTerminalText("Verification successful: No integrity issues detected.", SseEventType.AGENT_WORK, 50);
         } else {
-            terminalSseService.sendTerminalText("Static analysis failed with " + result.findings().size() + " findings:", SseEventType.AGENT_WORK, 50);
+            terminalSseService.sendTerminalText("Verification completed with " + result.findings().size() + " validation errors:", SseEventType.AGENT_WORK, 50);
             for (String finding : result.findings()) {
                 terminalSseService.sendTerminalText("- " + finding, SseEventType.AGENT_WORK, 50);
             }
@@ -57,9 +57,9 @@ public class TestingPhaseHandler implements PhaseHandler {
 
         // Always try to format, even if there are findings (unless there were fatal errors reading the file)
         if (result.document() != null) {
-            terminalSseService.sendTerminalText("Running linter/formatter...", SseEventType.AGENT_WORK, 50);
+            terminalSseService.sendTerminalText("Optimizing code structure...", SseEventType.AGENT_WORK, 50);
             formatAndSave(htmlPath, result.document());
-            terminalSseService.sendTerminalText("Formatting complete.", SseEventType.AGENT_WORK, 50);
+            terminalSseService.sendTerminalText("Code optimization completed.", SseEventType.AGENT_WORK, 50);
         }
 
         if (!result.findings().isEmpty()) {

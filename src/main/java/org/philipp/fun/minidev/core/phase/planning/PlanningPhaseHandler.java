@@ -71,7 +71,7 @@ public class PlanningPhaseHandler implements PhaseHandler {
     public void execute(AgentRun run) {
         UUID runId = run.getGameMetadata().runId();
         log.info("Starting planning phase for run {}", runId);
-        terminalSseService.sendTerminalText("Brainstorming original game ideas...", SseEventType.AGENT_WORK, 30);
+        terminalSseService.sendTerminalText("Initiating brainstorming for game concepts...", SseEventType.AGENT_WORK, 30);
 
         List<String> previousIdeas = getPreviousIdeas();
         log.debug("Found {} previous ideas for run {}", previousIdeas.size(), runId);
@@ -85,7 +85,7 @@ public class PlanningPhaseHandler implements PhaseHandler {
         IdeaSelectionResponse ideaSelection = decisionService.selectBestIdea(candidates, runId);
         GameIdeaCandidate bestCandidate = candidates.get(ideaSelection.selectedIndex());
 
-        terminalSseService.sendTerminalText("Selected game idea: " + bestCandidate.name() + "Message: "+ ideaSelection.message(), SseEventType.AGENT_WORK, 30);
+        terminalSseService.sendTerminalText("Strategy selected: " + bestCandidate.name() + " (" + ideaSelection.message() + ")", SseEventType.AGENT_WORK, 30);
 
         GameMetadata metadata = expandIdea(bestCandidate, run.getGameMetadata().runId());
         if (metadata == null) {
@@ -95,7 +95,7 @@ public class PlanningPhaseHandler implements PhaseHandler {
 
         run.setGameMetadata(metadata);
         log.info("Initialized metadata for run {}: {}", run.getGameMetadata().runId(), metadata);
-        terminalSseService.sendTerminalText("Game planning completed: " + metadata.name(), SseEventType.AGENT_WORK, 100);
+        terminalSseService.sendTerminalText("Game architecture and planning finalized: " + metadata.name(), SseEventType.AGENT_WORK, 100);
     }
 
     private List<String> getPreviousIdeas() {

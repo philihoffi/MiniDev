@@ -55,7 +55,7 @@ public class CodingPhaseHandler implements PhaseHandler {
         String todosFormatted = String.join("\n", metadata.todos().stream().map(t -> "- " + t).toList());
 
         // Step 1: Technical Concept
-        terminalSseService.sendTerminalText("Designing technical implementation for " + metadata.name() + "...", SseEventType.AGENT_WORK, 30);
+        terminalSseService.sendTerminalText("Developing technical specifications for " + metadata.name() + "...", SseEventType.AGENT_WORK, 30);
         String techConcept = generateTechnicalConcept(metadata, todosFormatted);
         if (techConcept == null) {
             failRun(run, "Failed to design technical concept.");
@@ -63,7 +63,7 @@ public class CodingPhaseHandler implements PhaseHandler {
         }
 
         // Step 2: Code Generation
-        terminalSseService.sendTerminalText("Writing game code (HTML, CSS, JS)...", SseEventType.AGENT_WORK, 70);
+        terminalSseService.sendTerminalText("Generating source code (HTML5/JavaScript/CSS3)...", SseEventType.AGENT_WORK, 70);
         String code = generateGameCode(metadata, todosFormatted, techConcept);
         if (code == null) {
             failRun(run, "Failed to generate game code.");
@@ -74,7 +74,7 @@ public class CodingPhaseHandler implements PhaseHandler {
             Files.createDirectories(metadata.htmlPath().getParent());
             Files.writeString(metadata.htmlPath(), code);
             log.info("Saved file to {}", metadata.htmlPath());
-            terminalSseService.sendTerminalText("Code successfully written to " + metadata.htmlPath().getFileName(), SseEventType.AGENT_WORK, 100);
+            terminalSseService.sendTerminalText("Deployment successful: " + metadata.htmlPath().getFileName(), SseEventType.AGENT_WORK, 100);
         } catch (IOException e) {
             log.error("Failed to save file to {}", metadata.htmlPath(), e);
             failRun(run, "Failed to save the generated file: " + e.getMessage());
@@ -212,6 +212,6 @@ public class CodingPhaseHandler implements PhaseHandler {
         log.error("Run {} failed: {}", run.getGameMetadata().runId(), message);
         run.transitionTo(RunState.FAILED);
         notificationSseService.sendNotification("Phase CODING failed: " + message);
-        terminalSseService.sendTerminalText("ERROR: " + message + "\n", SseEventType.AGENT_WORK, 0);
+        terminalSseService.sendTerminalText("CRITICAL ERROR: " + message + "\n", SseEventType.AGENT_WORK, 0);
     }
 }

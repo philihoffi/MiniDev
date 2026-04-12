@@ -52,7 +52,7 @@ public class ReviewingPhaseHandler implements PhaseHandler {
         }
 
         log.info("Starting review phase for run {}", run.getGameMetadata().runId());
-        terminalSseService.sendTerminalText("Reviewing code and updating To-Dos...\n", SseEventType.AGENT_WORK, 50);
+        terminalSseService.sendTerminalText("Performing quality assurance and To-Do assessment...\n", SseEventType.AGENT_WORK, 50);
 
         String code = "";
         try {
@@ -146,7 +146,7 @@ public class ReviewingPhaseHandler implements PhaseHandler {
 
                 log.info("Successfully updated To-Dos for run {}. Moved {} tasks back to TODO, added {} new tasks. Summary: {}",
                         metadata.runId(), movedCount, addedCount, reviewResponse.reviewSummary());
-                terminalSseService.sendTerminalText("Review completed. Moved " + movedCount + " back and added " + addedCount + " new tasks to TODO list.\n", SseEventType.AGENT_WORK, 50);
+                terminalSseService.sendTerminalText("Assessment completed: Updated " + movedCount + " existing and " + addedCount + " new backlog items.\n", SseEventType.AGENT_WORK, 50);
             } catch (Exception e) {
                 log.error("Failed to parse review response for run {}: {}", metadata.runId(), e.getMessage());
                 notificationSseService.sendNotification("Review failed: " + e.getMessage());

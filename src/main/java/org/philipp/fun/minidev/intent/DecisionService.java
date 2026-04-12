@@ -111,7 +111,7 @@ public class DecisionService {
 
             log.info("Decision made: {} - Message: {}", decision.newState(), decision.message());
 
-            this.terminalSseService.sendTerminalText("Next step: " + decision.newState() + "\n", SseEventType.AGENT_WORK, 0);
+            this.terminalSseService.sendTerminalText("Transitioning to: " + decision.newState() + "\n", SseEventType.AGENT_WORK, 0);
 
             return decision;
         } catch (Exception e) {
