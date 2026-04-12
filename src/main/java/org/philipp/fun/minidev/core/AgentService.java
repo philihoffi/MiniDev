@@ -7,7 +7,6 @@ import org.philipp.fun.minidev.core.phase.planning.PlanningPhaseHandler;
 import org.philipp.fun.minidev.core.phase.publishing.PublishingPhaseHandler;
 import org.philipp.fun.minidev.core.phase.reviewing.ReviewingPhaseHandler;
 import org.philipp.fun.minidev.core.phase.testing.TestingPhaseHandler;
-import org.philipp.fun.minidev.llm.LlmClient;
 import org.philipp.fun.minidev.run.AgentRun;
 import org.philipp.fun.minidev.run.AgentRun.RunState;
 import org.philipp.fun.minidev.run.GameMetadata;
@@ -26,9 +25,11 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
+import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.Map;
 import java.util.UUID;
+import java.util.stream.Stream;
 
 @Service
 public class AgentService {
@@ -43,6 +44,7 @@ public class AgentService {
     private final Map<RunState, PhaseHandler> phaseHandlers;
 
     private final ObjectMapper objectMapper;
+    private final String storageBasePath;
 
     public AgentService(
             NotificationSseService notificationSseService,
@@ -53,7 +55,8 @@ public class AgentService {
             TestingPhaseHandler testingPhaseHandler,
             FixingPhaseHandler fixingPhaseHandler,
             PublishingPhaseHandler publishingPhaseHandler,
-            ObjectMapper objectMapper) {
+            ObjectMapper objectMapper,
+            @Value("${minidev.storage.base-path}") String storageBasePath) {
         this.notificationSseService = notificationSseService;
         this.terminalSseService = terminalSseService;
 
@@ -66,6 +69,7 @@ public class AgentService {
                 RunState.PUBLISHING, publishingPhaseHandler
         );
         this.objectMapper = objectMapper;
+        this.storageBasePath = storageBasePath;
     }
 
     public UUID startNewRun() {
@@ -165,5 +169,69 @@ public class AgentService {
         } catch (IOException e) {
             log.error("Failed to save metadata for run {}", run.getRunId(), e);
         }
+    }
+
+    public List<GameMetadata> getAllGames() {
+        Path basePath = Paths.get(storageBasePath);
+        if (!Files.exists(basePath) || !Files.isDirectory(basePath)) {
+            return List.of();
+        }
+
+        try (Stream<Path> walk = Files.walk(basePath, 1)) {
+            return walk
+                    .filter(Files::isDirectory)
+                    .filter(path -> !path.equals(basePath))
+                    .map(path -> path.resolve("metadata.json"))
+                    .filter(Files::exists)
+                    .map(metadataPath -> {
+                        try {
+                            return objectMapper.readValue(metadataPath.toFile(), GameMetadata.class);
+                        } catch (IOException e) {
+                            log.error("Failed to load metadata from {}", metadataPath, e);
+                            return null;
+                        }
+                    })
+                    .filter(Objects::nonNull)
+                    .toList();
+        } catch (IOException e) {
+            log.error("Failed to list games in {}", storageBasePath, e);
+            return List.of();
+        }
+    }
+
+    public void resumeRun(UUID runId) {
+        AgentRun run = activeRuns.get(runId);
+        if (run == null) {
+            run = loadRunFromDisk(runId);
+        }
+
+        if (run == null) {
+            throw new IllegalArgumentException("Run not found: " + runId);
+        }
+
+        if (run.getState().isTerminal()) {
+            run.transitionTo(RunState.REVIEWING);
+        }
+
+        activeRuns.put(runId, run);
+        log.info("Resuming run: {}", runId);
+        notificationSseService.sendNotification("Resuming run: " + runId);
+
+        processRun(runId);
+    }
+
+    private AgentRun loadRunFromDisk(UUID runId) {
+        Path runPath = Paths.get(storageBasePath, "run-" + runId);
+        Path metadataPath = runPath.resolve("metadata.json");
+
+        if (Files.exists(metadataPath)) {
+            try {
+                GameMetadata metadata = objectMapper.readValue(metadataPath.toFile(), GameMetadata.class);
+                return new AgentRun(runId, RunState.REVIEWING, java.time.Instant.now(), java.time.Instant.now(), metadata);
+            } catch (IOException e) {
+                log.error("Failed to load run from disk: {}", runId, e);
+            }
+        }
+        return null;
     }
 }

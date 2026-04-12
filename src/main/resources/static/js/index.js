@@ -88,7 +88,7 @@ document.addEventListener('DOMContentLoaded', function() {
     if (btnTest) {
         btnTest.addEventListener('click', async function() {
             try {
-                const response = await fetch('/api/run/test', { method: 'POST' });
+                const response = await fetch('/api/agent/run', { method: 'POST' });
                 const runId = await response.text();
                 console.log('Test Run started:', runId);
             } catch (error) {
