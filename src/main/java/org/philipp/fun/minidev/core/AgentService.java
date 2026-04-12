@@ -41,6 +41,7 @@ public class AgentService {
     private final DecisionService decisionService;
 
     private final AtomicBoolean isProcessing = new AtomicBoolean(false);
+    private final TerminalSseService terminalSseService;
     private UUID activeRunId = null;
 
     public AgentService(
@@ -52,7 +53,7 @@ public class AgentService {
             FixingPhaseHandler fixingPhaseHandler,
             PublishingPhaseHandler publishingPhaseHandler,
             GameStorageService gameStorageService,
-            DecisionService decisionService) {
+            DecisionService decisionService, TerminalSseService terminalSseService) {
         this.notificationSseService = notificationSseService;
         this.decisionService = decisionService;
 
@@ -65,6 +66,7 @@ public class AgentService {
                 RunState.PUBLISHING, publishingPhaseHandler
         );
         this.gameStorageService = gameStorageService;
+        this.terminalSseService = terminalSseService;
     }
 
     public UUID startNewRun() {
@@ -89,6 +91,7 @@ public class AgentService {
             log.warn("ProcessRun called while another run is already being processed.");
             return;
         }
+        terminalSseService.clearTerminal();
 
         this.activeRunId = runId;
         AgentRun run = activeRuns.get(runId);

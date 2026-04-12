@@ -10,7 +10,8 @@ public record OpenRouterRequest(
     String model,
     Double temperature,
     @JsonProperty("max_tokens") Integer maxTokens,
-    @JsonProperty("response_format") ResponseFormat responseFormat
+    @JsonProperty("response_format") ResponseFormat responseFormat,
+    @JsonProperty("session_id") String sessionId
 ) {
     public record Message(
         String role,

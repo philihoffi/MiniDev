@@ -89,10 +89,15 @@ document.addEventListener('DOMContentLoaded', () => {
     ideSource.addEventListener('file-append', (e) => {
         try {
             const data = JSON.parse(e.data);
-            const { fileType, char } = data;
+            const { fileType, char, position } = data;
             const editor = getEditor(fileType);
             if (editor) {
-                editor.textContent += char;
+                if (position !== undefined) {
+                    const text = editor.textContent;
+                    editor.textContent = text.slice(0, position) + char + text.slice(position);
+                } else {
+                    editor.textContent += char;
+                }
                 const container = editor.closest('.editor-body');
                 if (container) {
                     container.scrollTop = container.scrollHeight;
@@ -104,13 +109,24 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     ideSource.addEventListener('file-delete', (e) => {
-        const fileType = JSON.parse(e.data);
-        const editor = getEditor(fileType);
-        if (editor) {
-            const text = editor.textContent;
-            if (text.length > 0) {
-                editor.textContent = text.substring(0, text.length - 1);
+        try {
+            const data = JSON.parse(e.data);
+            const fileType = typeof data === 'string' ? data : data.fileType;
+            const position = typeof data === 'object' ? data.position : undefined;
+            
+            const editor = getEditor(fileType);
+            if (editor) {
+                const text = editor.textContent;
+                if (text.length > 0) {
+                    if (position !== undefined) {
+                        editor.textContent = text.slice(0, position) + text.slice(position + 1);
+                    } else {
+                        editor.textContent = text.substring(0, text.length - 1);
+                    }
+                }
             }
+        } catch (err) {
+            console.error("Error processing file-delete", err);
         }
     });
 

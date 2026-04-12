@@ -61,7 +61,8 @@ public class OpenRouterClient implements LlmClient {
                     "openrouter/auto",
                     request.temperature(),
                     request.maxTokens(),
-                    responseFormat
+                    responseFormat,
+                    request.sessionId()
             );
 
             String requestJson = OBJECT_MAPPER.writeValueAsString(requestBody);

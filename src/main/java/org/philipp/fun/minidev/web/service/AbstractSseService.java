@@ -66,7 +66,7 @@ public abstract class AbstractSseService {
     protected abstract boolean isHistoryEnabled();
 
     public synchronized SseEmitter subscribe() {
-        SseEmitter emitter = new SseEmitter(180_000L);
+        SseEmitter emitter = new SseEmitter(Long.MAX_VALUE);//TODO
 
         emitter.onCompletion(() -> {
             log.debug("SSE emitter completed for stream: {}", getStreamId());

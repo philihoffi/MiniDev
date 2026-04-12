@@ -149,7 +149,7 @@ public class PlanningPhaseHandler implements PhaseHandler {
                         Format your response as a valid JSON object.
                         """),
                 LlmRequest.Message.user("Brainstorm 6-10 highly original and innovative browser game concepts.")
-        ), schema);
+        ), null, null, true, schema, runId.toString());
 
         LlmResponse response = llmClient.chat(request);
         if (!response.success()) {
@@ -218,7 +218,7 @@ public class PlanningPhaseHandler implements PhaseHandler {
                         Hook: %s
                         Core Mechanic: %s
                         """, candidate.name(), candidate.hook(), candidate.coreMechanic()))
-        ), schema);
+        ), null, null, true, schema, runId.toString());
 
         LlmResponse response = llmClient.chat(request);
         if (!response.success()) {

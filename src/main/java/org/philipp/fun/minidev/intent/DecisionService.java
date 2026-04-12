@@ -104,7 +104,11 @@ public class DecisionService {
                         LlmRequest.Message.system(prompt),
                         LlmRequest.Message.user("What is the next step for this project?")
                 ),
-                schema
+                null,
+                null,
+                true,
+                schema,
+                run.getGameMetadata().runId().toString()
         );
 
         try {
@@ -154,7 +158,11 @@ public class DecisionService {
                         LlmRequest.Message.system("You are a creative game director with a personality."),
                         LlmRequest.Message.user(promptBuilder.toString())
                 ),
-                schema
+                null,
+                null,
+                true,
+                schema,
+                runId.toString()
         );
 
         try {

@@ -129,7 +129,7 @@ public class CodingPhaseHandler implements PhaseHandler {
                         
                         Design the technical implementation.
                         """, metadata.name(), metadata.concept(), metadata.coreMechanic(), todosFormatted))
-        ), schema);
+        ), null, null, true, schema, metadata.runId().toString());
 
         LlmResponse response = llmClient.chat(request);
         if (!response.success()) {
@@ -192,7 +192,7 @@ public class CodingPhaseHandler implements PhaseHandler {
                         
                         Generate the complete code for the game.
                         """, metadata.concept(), metadata.coreMechanic(), todosFormatted))
-        ), schema);
+        ), null, null, true, schema, metadata.runId().toString());
 
         LlmResponse response = llmClient.chat(request);
         if (!response.success()) {

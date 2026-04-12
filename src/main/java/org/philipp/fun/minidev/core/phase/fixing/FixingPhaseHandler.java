@@ -119,7 +119,12 @@ public class FixingPhaseHandler implements PhaseHandler {
                                     Respond with a JSON object containing the updated code and a short summary of the changes.
                                     """, metadata.name(), metadata.concept(), metadata.coreMechanic(), doneTodosFormatted, todosFormatted, currentCode)),
                             LlmRequest.Message.user("Please provide the updated code with all requested changes.")
-                    ), schema
+                    ),
+                    null,
+                    null,
+                    true,
+                    schema,
+                    metadata.runId().toString()
             );
 
             LlmResponse response = llmClient.chat(request);

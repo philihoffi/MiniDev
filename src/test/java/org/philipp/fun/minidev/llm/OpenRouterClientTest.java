@@ -57,7 +57,11 @@ class OpenRouterClientTest {
 
         RestClient mockRestClient = mock(RestClient.class);
         when(mockRestClient.post()).thenReturn(requestBodyUriSpec);
-        when(requestBodyUriSpec.body(anyString())).thenReturn(requestBodySpec);
+        when(requestBodyUriSpec.body(anyString())).thenAnswer(invocation -> {
+            String requestJson = invocation.getArgument(0);
+            assertTrue(requestJson.contains("\"session_id\":\"test-session-id\""), "Request should contain session_id");
+            return requestBodySpec;
+        });
         when(requestBodySpec.retrieve()).thenReturn(responseSpec);
         when(responseSpec.body(String.class)).thenReturn(mockResponse);
 
@@ -66,7 +70,14 @@ class OpenRouterClientTest {
         restClientField.setAccessible(true);
         restClientField.set(client, mockRestClient);
 
-        LlmRequest request = new LlmRequest(List.of(LlmRequest.Message.user("Hello")));
+        LlmRequest request = new LlmRequest(
+                List.of(LlmRequest.Message.user("Hello")),
+                null,
+                null,
+                false,
+                null,
+                "test-session-id"
+        );
         LlmResponse response = client.chat(request);
 
         assertTrue(response.success());

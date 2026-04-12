@@ -140,7 +140,12 @@ public class ReviewingPhaseHandler implements PhaseHandler {
                                     - 'reviewSummary': explaining your reasoning.
                                 """, metadata.name(), metadata.concept(), metadata.coreMechanic(), doneTodosFormatted, openTodosFormatted, code, reviewInstruction)),
                         LlmRequest.Message.user("Please provide the review results as JSON.")
-                ), schema
+                ),
+                null,
+                null,
+                true,
+                schema,
+                metadata.runId().toString()
         );
 
         LlmResponse response = llmClient.chat(request);
