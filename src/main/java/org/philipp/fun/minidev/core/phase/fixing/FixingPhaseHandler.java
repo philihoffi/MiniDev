@@ -17,6 +17,7 @@ import org.springframework.stereotype.Component;
 
 import java.io.IOException;
 import java.nio.file.Files;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -50,13 +51,15 @@ public class FixingPhaseHandler implements PhaseHandler {
             return;
         }
 
-        terminalSseService.sendTerminalText("Addressing identified issues for " + metadata.name() + "\n Total pending items: " + metadata.todos().size() + "\n", SseEventType.AGENT_WORK, 50);
+        terminalSseService.sendTerminalText("Addressing all identified issues for " + metadata.name() + "\n Total pending items: " + metadata.todos().size() + "\n", SseEventType.AGENT_WORK, 50);
 
-        while (!run.getGameMetadata().todos().isEmpty()) {
+        if (!run.getGameMetadata().todos().isEmpty()) {
             metadata = run.getGameMetadata();
-            String nextTodo = metadata.todos().get(0);
-            log.info("Fixing next To-Do for run {}: {}", metadata.runId(), nextTodo);
-            terminalSseService.sendTerminalText("Processing task: " + nextTodo + "\n", SseEventType.AGENT_WORK, 50);
+            List<String> currentTodos = new ArrayList<>(metadata.todos());
+            String todosFormatted = String.join("\n", currentTodos.stream().map(t -> "- " + t).toList());
+            
+            log.info("Fixing all To-Dos for run {}: {}", metadata.runId(), currentTodos);
+            terminalSseService.sendTerminalText("Processing all tasks:\n" + todosFormatted + "\n", SseEventType.AGENT_WORK, 50);
 
             String currentCode = "";
             try {
@@ -65,7 +68,7 @@ public class FixingPhaseHandler implements PhaseHandler {
                 }
             } catch (IOException e) {
                 log.error("Failed to read code for fixing from {}", metadata.htmlPath(), e);
-                break;
+                return;
             }
 
             String doneTodosFormatted = String.join("\n", metadata.doneTodos().stream().map(t -> "- " + t).toList());
@@ -83,14 +86,14 @@ public class FixingPhaseHandler implements PhaseHandler {
             LlmRequest request = new LlmRequest(
                     List.of(
                             LlmRequest.Message.system(String.format("""
-                                    You are a professional web developer. Your task is to implement a specific feature in a game called '%s'.
+                                    You are a professional web developer. Your task is to implement several features and fixes in a game called '%s'.
                                     The game concept is: %s
                                     Core Mechanic: %s
                                     
                                     Already completed tasks:
                                     %s
                                     
-                                    YOUR CURRENT TASK TO IMPLEMENT:
+                                    YOUR CURRENT TASKS TO IMPLEMENT:
                                     %s
                                     
                                     Current Implementation (HTML/JS/CSS):
@@ -100,13 +103,13 @@ public class FixingPhaseHandler implements PhaseHandler {
                                     
                                     Instructions:
                                     1. Review the current implementation and the completed tasks.
-                                    2. Update the code to implement ONLY the 'CURRENT TASK TO IMPLEMENT'.
+                                    2. Update the code to implement ALL 'CURRENT TASKS TO IMPLEMENT'.
                                     3. Fix any bugs or inconsistencies related to this task.
                                     4. Ensure the game remains a single HTML file with embedded CSS and JS.
                                     
                                     Respond with a JSON object containing the updated code and a short summary of the changes.
-                                    """, metadata.name(), metadata.concept(), metadata.coreMechanic(), doneTodosFormatted, nextTodo, currentCode)),
-                            LlmRequest.Message.user("Please provide the updated code.")
+                                    """, metadata.name(), metadata.concept(), metadata.coreMechanic(), doneTodosFormatted, todosFormatted, currentCode)),
+                            LlmRequest.Message.user("Please provide the updated code with all requested changes.")
                     ), schema
             );
 
@@ -121,24 +124,24 @@ public class FixingPhaseHandler implements PhaseHandler {
                     Files.createDirectories(metadata.htmlPath().getParent());
                     Files.writeString(metadata.htmlPath(), updatedCode);
 
-                    run.getGameMetadata().doneTodos().add(run.getGameMetadata().todos().removeFirst());
+                    run.getGameMetadata().doneTodos().addAll(currentTodos);
+                    run.getGameMetadata().todos().clear();
 
                     log.info("Successfully saved {} characters of fixed code for run {} to {}. Summary: {}", 
                             updatedCode.length(), metadata.runId(), metadata.htmlPath(), fixingResponse.changesSummary());
+                    terminalSseService.sendTerminalText("Fixed code: "+ fixingResponse.changesSummary(), SseEventType.AGENT_WORK, 50);
                 } catch (Exception e) {
                     log.error("Failed to parse or save fixed code for run {} to {}", metadata.runId(), metadata.htmlPath(), e);
-                    break;
                 }
             } else {
                 log.error("LLM fixing failed for run {}: {}", metadata.runId(), response.errorMessage());
-                notificationSseService.sendNotification("Fixing failed for To-Do '" + nextTodo + "': " + response.errorMessage());
-                break;
+                notificationSseService.sendNotification("Fixing failed for the tasks: " + response.errorMessage());
             }
         }
 
         if (run.getGameMetadata().todos().isEmpty()) {
             log.info("All To-Dos completed for run {}", run.getGameMetadata().runId());
-            terminalSseService.sendTerminalText("All identified tasks have been successfully processed.\n", SseEventType.AGENT_WORK, 50);
+            terminalSseService.sendTerminalText("All identified tasks have been successfully processed.", SseEventType.AGENT_WORK, 50);
         } else {
             log.warn("Fixing phase ended with remaining To-Dos for run {}", run.getGameMetadata().runId());
         }

@@ -32,17 +32,28 @@ public class AgentController {
     }
 
     @PostMapping("/run")
-    public String startRun() {
+    public ResponseEntity<String> startRun() {
         log.info("REST request to start a new run");
-        String runId = agentService.startNewRun().toString();
-        log.info("New run started with ID: {}", runId);
-        return runId;
+        try {
+            String runId = agentService.startNewRun().toString();
+            log.info("New run started with ID: {}", runId);
+            return ResponseEntity.ok(runId);
+        } catch (IllegalStateException e) {
+            log.warn("Cannot start run: {}", e.getMessage());
+            return ResponseEntity.status(409).body(e.getMessage());
+        }
     }
 
     @PostMapping("/games/{runId}/resume")
-    public void resumeRun(@PathVariable UUID runId) {
+    public ResponseEntity<Void> resumeRun(@PathVariable UUID runId) {
         log.info("REST request to resume run: {}", runId);
-        agentService.resumeRun(runId);
+        try {
+            agentService.resumeRun(runId);
+            return ResponseEntity.ok().build();
+        } catch (IllegalStateException e) {
+            log.warn("Cannot resume run {}: {}", runId, e.getMessage());
+            return ResponseEntity.status(409).build();
+        }
     }
 
     @GetMapping("/games")

@@ -97,6 +97,11 @@ document.addEventListener('DOMContentLoaded', function() {
         btnTest.addEventListener('click', async function() {
             try {
                 const response = await fetch('/api/agent/run', { method: 'POST' });
+                if (response.status === 409) {
+                    const message = await response.text();
+                    alert(message);
+                    return;
+                }
                 const runId = await response.text();
                 console.log('Test Run started:', runId);
             } catch (error) {

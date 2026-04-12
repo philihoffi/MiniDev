@@ -16,6 +16,7 @@ import org.philipp.fun.minidev.web.service.TerminalSseService;
 import org.philipp.fun.minidev.web.service.AbstractSseService.SseEventType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
 import java.time.Instant;
@@ -24,6 +25,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 @Service
 public class AgentService {
@@ -37,6 +39,8 @@ public class AgentService {
 
     private final GameStorageService gameStorageService;
     private final DecisionService decisionService;
+
+    private final AtomicBoolean isProcessing = new AtomicBoolean(false);
 
     public AgentService(
             NotificationSseService notificationSseService,
@@ -63,6 +67,10 @@ public class AgentService {
     }
 
     public UUID startNewRun() {
+        if (isProcessing.get()) {
+            throw new IllegalStateException("An agent run is already in progress.");
+        }
+        
         AgentRun run = new AgentRun(this.gameStorageService.getStorageBasePath());
         UUID uuid = run.getGameMetadata().runId();
         activeRuns.put(uuid, run);
@@ -74,9 +82,18 @@ public class AgentService {
         return uuid;
     }
 
+    @Async
     protected void processRun(UUID runId) {
+        if (!isProcessing.compareAndSet(false, true)) {
+            log.warn("ProcessRun called while another run is already being processed.");
+            return;
+        }
+
         AgentRun run = activeRuns.get(runId);
-        if (run == null) return;
+        if (run == null) {
+            isProcessing.set(false);
+            return;
+        }
 
         log.info("Processing run {}", runId);
         
@@ -110,10 +127,16 @@ public class AgentService {
             log.error("Error during run {}", runId, e);
             run.transitionTo(RunState.FAILED);
             notificationSseService.sendNotification("Run FAILED: " + e.getMessage());
+        } finally {
+            isProcessing.set(false);
         }
     }
 
     public void resumeRun(UUID runId) {
+        if (isProcessing.get()) {
+            throw new IllegalStateException("An agent run is already in progress.");
+        }
+
         AgentRun run = activeRuns.get(runId);
         if (run == null) {
             run = gameStorageService.loadRunFromDisk(runId);
