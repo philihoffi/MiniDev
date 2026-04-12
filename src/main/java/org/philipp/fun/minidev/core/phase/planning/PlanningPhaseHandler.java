@@ -2,6 +2,7 @@ package org.philipp.fun.minidev.core.phase.planning;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.philipp.fun.minidev.core.GameStorageService;
 import org.philipp.fun.minidev.core.phase.PhaseHandler;
 import org.philipp.fun.minidev.intent.DecisionResponse;
 import org.philipp.fun.minidev.intent.DecisionService;
@@ -46,7 +47,7 @@ public class PlanningPhaseHandler implements PhaseHandler {
     private final NotificationSseService notificationSseService;
     private final TerminalSseService terminalSseService;
     private final LlmClient llmClient;
-    private final String storageBasePath;
+    private final GameStorageService gameStorageService;
     private final ObjectMapper objectMapper;
     private final DecisionService decisionService;
 
@@ -54,13 +55,13 @@ public class PlanningPhaseHandler implements PhaseHandler {
             NotificationSseService notificationSseService,
             TerminalSseService terminalSseService,
             LlmClient llmClient,
-            @Value("${minidev.storage.base-path}") String storageBasePath,
+            GameStorageService gameStorageService,
             ObjectMapper objectMapper,
             DecisionService decisionService) {
         this.notificationSseService = notificationSseService;
         this.terminalSseService = terminalSseService;
         this.llmClient = llmClient;
-        this.storageBasePath = storageBasePath;
+        this.gameStorageService = gameStorageService;
         this.objectMapper = objectMapper;
         this.decisionService = decisionService;
     }
@@ -97,26 +98,9 @@ public class PlanningPhaseHandler implements PhaseHandler {
     }
 
     private List<String> getPreviousIdeas() {
-        Path root = Paths.get(storageBasePath);
-        if (!Files.exists(root)) return List.of();
-
-        try (Stream<Path> paths = Files.list(root)) {
-            return paths.filter(Files::isDirectory)
-                    .map(p -> p.resolve("metadata.json"))
-                    .filter(Files::exists)
-                    .map(p -> {
-                        try {
-                            return objectMapper.readTree(p.toFile()).get("concept").asText();
-                        } catch (Exception e) {
-                            return null;
-                        }
-                    })
-                    .filter(Objects::nonNull)
-                    .collect(Collectors.toList());
-        } catch (IOException e) {
-            log.warn("Could not read previous ideas: {}", e.getMessage());
-            return List.of();
-        }
+        return gameStorageService.getAllGames().stream()
+                .map(GameMetadata::concept)
+                .toList();
     }
 
     private List<GameIdeaCandidate> generateCandidates(List<String> previousIdeas, UUID runId) {
@@ -249,7 +233,7 @@ public class PlanningPhaseHandler implements PhaseHandler {
             String coreMechanic = root.get("coreMechanic").asText();
             List<String> todos = objectMapper.readValue(root.get("todos").toString(), new TypeReference<List<String>>() {});
 
-            Path gameDirectory = Paths.get(storageBasePath, "run-" + runId);
+            Path gameDirectory = Paths.get(gameStorageService.getStorageBasePath(), "run-" + runId);
             return new GameMetadata(runId, name, concept, coreMechanic, todos, new ArrayList<>(), gameDirectory);
         } catch (Exception e) {
             log.error("Failed to parse expanded game metadata for run {}: {}", runId, e.getMessage());

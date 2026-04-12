@@ -1,6 +1,7 @@
 package org.philipp.fun.minidev.web.controller;
 
 import org.philipp.fun.minidev.core.AgentService;
+import org.philipp.fun.minidev.core.GameStorageService;
 import org.philipp.fun.minidev.run.AgentRun;
 import org.philipp.fun.minidev.run.GameMetadata;
 import org.slf4j.Logger;
@@ -23,9 +24,11 @@ public class AgentController {
     private static final Logger log = LoggerFactory.getLogger(AgentController.class);
 
     private final AgentService agentService;
+    private final GameStorageService gameStorageService;
 
-    public AgentController(AgentService agentService) {
+    public AgentController(AgentService agentService, GameStorageService gameStorageService) {
         this.agentService = agentService;
+        this.gameStorageService = gameStorageService;
     }
 
     @PostMapping("/run")
@@ -45,7 +48,7 @@ public class AgentController {
     @GetMapping("/games")
     public List<GameMetadata> getAllGames() {
         log.info("REST request to get all games");
-        return agentService.getAllGames();
+        return gameStorageService.getAllGames();
     }
 
     @GetMapping("/games/{runId}")
@@ -59,7 +62,7 @@ public class AgentController {
     @GetMapping("/games/{runId}/components")
     public ResponseEntity<Map<String, String>> getGameComponents(@PathVariable UUID runId) {
         log.debug("REST request to get game components for run: {}", runId);
-        Map<String, String> components = agentService.getGameComponentContent(runId);
+        Map<String, String> components = gameStorageService.getGameComponentContent(runId);
         if (components != null) {
             return ResponseEntity.ok(components);
         }
