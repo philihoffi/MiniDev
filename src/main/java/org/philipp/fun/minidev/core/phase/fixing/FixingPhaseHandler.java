@@ -95,7 +95,7 @@ public class FixingPhaseHandler implements PhaseHandler {
             LlmRequest request = new LlmRequest(
                     List.of(
                             LlmRequest.Message.system(String.format("""
-                                    You are a professional web developer. Your task is to implement several features and fixes in a game called '%s'.
+                                    You are a professional web developer. Your task is to implement features and fixes in a MINI browser game called '%s'.
                                     The game concept is: %s
                                     Core Mechanic: %s
                                     
@@ -114,7 +114,8 @@ public class FixingPhaseHandler implements PhaseHandler {
                                     1. Review the current implementation and the completed tasks.
                                     2. Update the code to implement ALL 'CURRENT TASKS TO IMPLEMENT'.
                                     3. Fix any bugs or inconsistencies related to this task.
-                                    4. Ensure the game remains a single HTML file with embedded CSS and JS.
+                                    4. Keep the implementation minimalist and efficient.
+                                    5. Ensure the game remains a single HTML file with embedded CSS and JS.
                                     
                                     Respond with a JSON object containing the updated code and a short summary of the changes.
                                     """, metadata.name(), metadata.concept(), metadata.coreMechanic(), doneTodosFormatted, todosFormatted, currentCode)),

@@ -135,20 +135,21 @@ public class PlanningPhaseHandler implements PhaseHandler {
         LlmRequest request = new LlmRequest(List.of(
                 LlmRequest.Message.system("""
                         You are a visionary game designer at a cutting-edge experimental game studio.
-                        Your mission is to brainstorm 6-10 radical, non-derivative browser game concepts.
+                        Your mission is to brainstorm 6-10 radical, non-derivative MINI browser game concepts.
                         
                         CRITICAL GUIDELINES:
+                        - MINI GAMES: Focus on extremely small, focused experiences (Minigames).
                         - NO CLONES: No Clone-like game that is already out there.
                         - MECHANICAL INNOVATION: Focus on a "twist" or a completely new way to interact (e.g., using only one button in a non-obvious way, time-manipulation, physics-based puzzles, etc.).
                         - SINGLE-FILE FEASIBILITY: The game must be playable in a modern browser using only a single HTML file (HTML5, CSS3, Vanilla ES6+ JS). No external assets (use Canvas, SVG, or CSS for graphics).
-                        - ELEGANCE: Small scope, high impact. The core loop should be understandable in seconds but offer depth.
+                        - ELEGANCE & SIMPLICITY: Very small scope, high impact. The core loop should be understandable in seconds but offer depth.
                         
                         PREVIOUS IDEAS (DO NOT REPEAT):
                         """ + previousIdeasContext + """
                         
                         Format your response as a valid JSON object.
                         """),
-                LlmRequest.Message.user("Brainstorm 6-10 highly original and innovative browser game concepts.")
+                LlmRequest.Message.user("Brainstorm 6-10 highly original and innovative MINI browser game concepts.")
         ), null, null, true, schema, runId.toString());
 
         LlmResponse response = llmClient.chat(request);
@@ -202,12 +203,12 @@ public class PlanningPhaseHandler implements PhaseHandler {
 
         LlmRequest request = new LlmRequest(List.of(
                 LlmRequest.Message.system("""
-                        You are a Lead Game Architect. Expand the provided game idea into a comprehensive technical and design specification.
+                        You are a Lead Game Architect. Expand the provided MINI game idea into a concise technical and design specification.
                         Your goal is to provide enough detail so that a developer can implement the game flawlessly in a single HTML file.
                         
                         FOCUS AREAS:
-                        - GAMEPLAY DEPTH: Explain the core loop, scoring, win/loss conditions, and progression.
-                        - UI/UX DESIGN: Describe the layout, HUD, and feedback for player actions.
+                        - MINI GAMEPLAY: Explain the simple core loop, scoring, and quick win/loss conditions. Keep it minimal.
+                        - UI/UX DESIGN: Describe a clean, minimal layout, HUD, and feedback for player actions.
                         - TECHNICAL FEASIBILITY: Ensure everything can be built with Vanilla JS, HTML5 Canvas/DOM, and CSS3 without external assets.
                         
                         Format your response as a valid JSON object.

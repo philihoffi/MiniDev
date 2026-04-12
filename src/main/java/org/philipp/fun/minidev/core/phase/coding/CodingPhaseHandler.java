@@ -113,9 +113,9 @@ public class CodingPhaseHandler implements PhaseHandler {
 
         LlmRequest request = new LlmRequest(List.of(
                 LlmRequest.Message.system("""
-                        You are a Lead Game Architect. Create a technical design for a browser game.
+                        You are a Lead Game Architect. Create a technical design for a MINI browser game.
                         Focus on:
-                        1. Clean architecture (separation of concerns).
+                        1. Minimalist architecture (Keep it simple and small).
                         2. Performance (efficient rendering, avoiding memory leaks).
                         3. Original implementation of mechanics (no generic boilerplate).
                         4. Modern ES6+ JavaScript features.
@@ -171,12 +171,12 @@ public class CodingPhaseHandler implements PhaseHandler {
 
         LlmRequest request = new LlmRequest(List.of(
                 LlmRequest.Message.system(String.format("""
-                        You are a Professional Web Game Developer. Implement the game '%s'.
+                        You are a Professional Web Game Developer. Implement the MINI game '%s'.
                         
                         REQUIREMENTS:
                         - Single file HTML solution (CSS and JS embedded).
                         - Use Vanilla JS (ES6+), NO external libraries.
-                        - High-quality, polished UI and animations.
+                        - Minimalist, polished UI and animations.
                         - Responsive design.
                         - Clean, documented code.
                         - Implementation MUST follow the provided technical concept.
