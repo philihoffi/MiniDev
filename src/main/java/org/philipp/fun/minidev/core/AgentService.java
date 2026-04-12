@@ -186,7 +186,18 @@ public class AgentService {
                     .filter(Files::exists)
                     .map(metadataPath -> {
                         try {
-                            return objectMapper.readValue(metadataPath.toFile(), GameMetadata.class);
+                            GameMetadata metadata = objectMapper.readValue(metadataPath.toFile(), GameMetadata.class);
+                            // Ensure runId is set from directory name if it was missing in JSON (for migration)
+                            if (metadata.runId() == null) {
+                                String dirName = metadataPath.getParent().getFileName().toString();
+                                if (dirName.startsWith("run-")) {
+                                    try {
+                                        UUID runId = UUID.fromString(dirName.substring(4));
+                                        metadata = new GameMetadata(runId, metadata.name(), metadata.concept(), metadata.todos(), metadata.files(), metadata.htmlPath(), metadata.readmePath());
+                                    } catch (IllegalArgumentException ignored) {}
+                                }
+                            }
+                            return metadata;
                         } catch (IOException e) {
                             log.error("Failed to load metadata from {}", metadataPath, e);
                             return null;
@@ -248,6 +259,10 @@ public class AgentService {
         if (Files.exists(metadataPath)) {
             try {
                 GameMetadata metadata = objectMapper.readValue(metadataPath.toFile(), GameMetadata.class);
+                // Ensure runId in metadata matches the requested runId
+                if (!runId.equals(metadata.runId())) {
+                    metadata = new GameMetadata(runId, metadata.name(), metadata.concept(), metadata.todos(), metadata.files(), metadata.htmlPath(), metadata.readmePath());
+                }
                 return new AgentRun(runId, RunState.REVIEWING, java.time.Instant.now(), java.time.Instant.now(), metadata);
             } catch (IOException e) {
                 log.error("Failed to load run from disk: {}", runId, e);

@@ -25,6 +25,8 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
+import java.util.UUID;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -100,7 +102,7 @@ public class PlanningPhaseHandler implements PhaseHandler {
                             return null;
                         }
                     })
-                    .filter(java.util.Objects::nonNull)
+                    .filter(Objects::nonNull)
                     .collect(Collectors.toList());
         } catch (IOException e) {
             log.warn("Could not read previous ideas: {}", e.getMessage());
@@ -111,21 +113,21 @@ public class PlanningPhaseHandler implements PhaseHandler {
     private List<GameIdeaCandidate> generateCandidates(List<String> previousIdeas) {
         String previousIdeasContext = previousIdeas.isEmpty() ? "None." : String.join("\n---\n", previousIdeas);
 
-        Map<String, Object> schema = java.util.Map.of(
+        Map<String, Object> schema = Map.of(
                 "type", "object",
-                "properties", java.util.Map.of(
-                        "ideas", java.util.Map.of(
+                "properties", Map.of(
+                        "ideas", Map.of(
                                 "type", "array",
-                                "items", java.util.Map.of(
+                                "items", Map.of(
                                         "type", "object",
-                                        "properties", java.util.Map.of(
-                                                "name", java.util.Map.of("type", "string"),
-                                                "hook", java.util.Map.of("type", "string"),
-                                                "coreMechanic", java.util.Map.of("type", "string"),
-                                                "uniqueness", java.util.Map.of("type", "string"),
-                                                "similarityRisk", java.util.Map.of("type", "string"),
-                                                "feasibility", java.util.Map.of("type", "integer"),
-                                                "originalityScore", java.util.Map.of("type", "integer")
+                                        "properties", Map.of(
+                                                "name", Map.of("type", "string"),
+                                                "hook", Map.of("type", "string"),
+                                                "coreMechanic", Map.of("type", "string"),
+                                                "uniqueness", Map.of("type", "string"),
+                                                "similarityRisk", Map.of("type", "string"),
+                                                "feasibility", Map.of("type", "integer"),
+                                                "originalityScore", Map.of("type", "integer")
                                         ),
                                         "required", List.of("name", "hook", "coreMechanic", "uniqueness", "similarityRisk", "feasibility", "originalityScore"),
                                         "additionalProperties", false
@@ -190,7 +192,7 @@ public class PlanningPhaseHandler implements PhaseHandler {
                 .orElse(candidates.get(0));
     }
 
-    private GameMetadata expandIdea(GameIdeaCandidate candidate, java.util.UUID runId) {
+    private GameMetadata expandIdea(GameIdeaCandidate candidate, UUID runId) {
         LlmRequest request = new LlmRequest(List.of(
                 LlmRequest.Message.system("""
                         You are a game architect. Expand the following game idea into a full technical concept.
@@ -227,13 +229,13 @@ public class PlanningPhaseHandler implements PhaseHandler {
         notificationSseService.sendNotification(errorMsg);
     }
 
-    private GameMetadata parseGameMetadata(String llmResponse, java.util.UUID runId) {
+    private GameMetadata parseGameMetadata(String llmResponse, UUID runId) {
         String name = extractField(llmResponse, "NAME:", "Untitled Game");
         String concept = extractField(llmResponse, "CONCEPT:", "A simple browser game");
         List<String> todos = extractTodos(llmResponse, DEFAULT_PLANNING_TODOS);
         Path gameDirectory = Paths.get(storageBasePath, "run-" + runId);
 
-        return new GameMetadata(name, concept, todos, gameDirectory);
+        return new GameMetadata(runId, name, concept, todos, gameDirectory);
     }
 
     private String extractField(String text, String marker, String defaultValue) {

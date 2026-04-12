@@ -22,7 +22,7 @@ class AgentRunTest {
         UUID runId = UUID.randomUUID();
         Instant createdAt = Instant.EPOCH;
         Instant updatedAt = createdAt.plusSeconds(30);
-        GameMetadata metadata = new GameMetadata("Test Game", "Concept", List.of("Task 1"), Path.of("test-path"));
+        GameMetadata metadata = new GameMetadata(runId, "Test Game", "Concept", List.of("Task 1"), Path.of("test-path"));
 
         AgentRun run = new AgentRun(runId, AgentRun.RunState.PLANNING, createdAt, updatedAt, metadata);
 

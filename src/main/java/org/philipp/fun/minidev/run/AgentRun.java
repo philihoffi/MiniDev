@@ -31,6 +31,7 @@ public final class AgentRun {
     public AgentRun(String storageBasePath) {
         UUID runId = UUID.randomUUID();
         GameMetadata gameMetadata = new GameMetadata(
+                runId,
                 "Untitled Game",
                 "",
                 Arrays.asList("Define game concept", "Implement game mechanics", "Create assets", "Test and polish"),
