@@ -24,6 +24,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.time.Instant;
 import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
@@ -193,7 +194,7 @@ public class AgentService {
                                 if (dirName.startsWith("run-")) {
                                     try {
                                         UUID runId = UUID.fromString(dirName.substring(4));
-                                        metadata = new GameMetadata(runId, metadata.name(), metadata.concept(), metadata.todos(), metadata.files(), metadata.htmlPath(), metadata.readmePath());
+                                        metadata = new GameMetadata(runId, metadata.name(), metadata.concept(), metadata.todos(), metadata.doneTodos(), metadata.files(), metadata.htmlPath(), metadata.readmePath());
                                     } catch (IllegalArgumentException ignored) {}
                                 }
                             }
@@ -261,9 +262,10 @@ public class AgentService {
                 GameMetadata metadata = objectMapper.readValue(metadataPath.toFile(), GameMetadata.class);
                 // Ensure runId in metadata matches the requested runId
                 if (!runId.equals(metadata.runId())) {
-                    metadata = new GameMetadata(runId, metadata.name(), metadata.concept(), metadata.todos(), metadata.files(), metadata.htmlPath(), metadata.readmePath());
+                    log.warn("Run ID mismatch in metadata for run {}", runId);
+                    throw new IllegalArgumentException("Run ID mismatch in metadata");
                 }
-                return new AgentRun(RunState.REVIEWING, java.time.Instant.now(), java.time.Instant.now(), metadata);
+                return new AgentRun(RunState.REVIEWING, Instant.now(), Instant.now(), metadata);
             } catch (IOException e) {
                 log.error("Failed to load run from disk: {}", runId, e);
             }
