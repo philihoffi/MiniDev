@@ -30,8 +30,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.UUID;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -133,13 +131,13 @@ public class PlanningPhaseHandler implements PhaseHandler {
                                 "items", Map.of(
                                         "type", "object",
                                         "properties", Map.of(
-                                                "name", Map.of("type", "string"),
-                                                "hook", Map.of("type", "string"),
-                                                "coreMechanic", Map.of("type", "string"),
-                                                "uniqueness", Map.of("type", "string"),
-                                                "similarityRisk", Map.of("type", "string"),
-                                                "feasibility", Map.of("type", "integer"),
-                                                "originalityScore", Map.of("type", "integer")
+                                                "name", Map.of("type", "string", "description", "A catchy, short title for the game."),
+                                                "hook", Map.of("type", "string", "description", "A one-sentence 'elevator pitch' that grab's the player's attention."),
+                                                "coreMechanic", Map.of("type", "string", "description", "A technical but brief description of the primary gameplay loop."),
+                                                "uniqueness", Map.of("type", "string", "description", "What makes this game different from any other?"),
+                                                "similarityRisk", Map.of("type", "string", "description", "List any existing games that might be similar and how this idea differs."),
+                                                "feasibility", Map.of("type", "integer", "description", "Scale 1-10: How easily can this be implemented in a single-file HTML/JS/CSS?"),
+                                                "originalityScore", Map.of("type", "integer", "description", "Scale 1-10: How unique is the core mechanic?")
                                         ),
                                         "required", List.of("name", "hook", "coreMechanic", "uniqueness", "similarityRisk", "feasibility", "originalityScore"),
                                         "additionalProperties", false
@@ -152,19 +150,21 @@ public class PlanningPhaseHandler implements PhaseHandler {
 
         LlmRequest request = new LlmRequest(List.of(
                 LlmRequest.Message.system("""
-                        You are a highly creative game designer specializing in original, non-derivative mechanics.
-                        Generate 6-10 unique browser game ideas.
+                        You are a visionary game designer at a cutting-edge experimental game studio.
+                        Your mission is to brainstorm 6-10 radical, non-derivative browser game concepts.
                         
-                        CRITICAL CONSTRAINTS:
-                        - NO common patterns: platformers, clickers, endless runners, snake-like, flappy-like, shooters, match-3, tower defense, or standard RPGs.
-                        - Focus on ORIGINAL MECHANICS and INNOVATIVE gameplay, not just themes.
-                        - Ideas MUST be significantly different from these previously generated ones:
+                        CRITICAL GUIDELINES:
+                        - NO CLONES: No Clone-like game that is already out there.
+                        - MECHANICAL INNOVATION: Focus on a "twist" or a completely new way to interact (e.g., using only one button in a non-obvious way, time-manipulation, physics-based puzzles, etc.).
+                        - SINGLE-FILE FEASIBILITY: The game must be playable in a modern browser using only a single HTML file (HTML5, CSS3, Vanilla ES6+ JS). No external assets (use Canvas, SVG, or CSS for graphics).
+                        - ELEGANCE: Small scope, high impact. The core loop should be understandable in seconds but offer depth.
+                        
+                        PREVIOUS IDEAS (DO NOT REPEAT):
                         """ + previousIdeasContext + """
                         
-                        - Rejection Policy: Reject any idea that resembles existing popular games.
-                        - Format: Respond with a JSON object containing an 'ideas' array.
+                        Format your response as a valid JSON object.
                         """),
-                LlmRequest.Message.user("Generate 6-10 innovative browser game concepts for HTML/JS/CSS.")
+                LlmRequest.Message.user("Brainstorm 6-10 highly original and innovative browser game concepts.")
         ), schema);
 
         LlmResponse response = llmClient.chat(request);
@@ -199,26 +199,42 @@ public class PlanningPhaseHandler implements PhaseHandler {
     }
 
     private GameMetadata expandIdea(GameIdeaCandidate candidate, UUID runId) {
+        Map<String, Object> schema = Map.of(
+                "type", "object",
+                "properties", Map.of(
+                        "name", Map.of("type", "string"),
+                        "concept", Map.of("type", "string", "description", "Detailed narrative and gameplay overview."),
+                        "coreMechanic", Map.of("type", "string", "description", "In-depth explanation of the main interaction loop."),
+                        "visualStyle", Map.of("type", "string", "description", "Description of the UI/UX, colors, and overall aesthetic (must be CSS/Canvas achievable)."),
+                        "todos", Map.of(
+                                "type", "array",
+                                "items", Map.of("type", "string"),
+                                "description", "Step-by-step implementation plan (at least 5 items)."
+                        )
+                ),
+                "required", List.of("name", "concept", "coreMechanic", "visualStyle", "todos"),
+                "additionalProperties", false
+        );
+
         LlmRequest request = new LlmRequest(List.of(
                 LlmRequest.Message.system("""
-                        You are a game architect. Expand the following game idea into a full technical concept.
+                        You are a Lead Game Architect. Expand the provided game idea into a comprehensive technical and design specification.
+                        Your goal is to provide enough detail so that a developer can implement the game flawlessly in a single HTML file.
                         
-                        IDEA:
-                        Name: """ + candidate.name() + """
-                        Hook: """ + candidate.hook() + """
-                        Core Mechanic: """ + candidate.coreMechanic() + """
+                        FOCUS AREAS:
+                        - GAMEPLAY DEPTH: Explain the core loop, scoring, win/loss conditions, and progression.
+                        - UI/UX DESIGN: Describe the layout, HUD, and feedback for player actions.
+                        - TECHNICAL FEASIBILITY: Ensure everything can be built with Vanilla JS, HTML5 Canvas/DOM, and CSS3 without external assets.
                         
-                        Format your response EXACTLY like this:
-                        NAME: [name]
-                        CONCEPT: [detailed concept, core loop, and player goal]
-                        MECHANIC: [detailed description of the key mechanic]
-                        TODOS:
-                        - [todo 1]
-                        - [todo 2]
-                        - ...
+                        Format your response as a valid JSON object.
                         """),
-                LlmRequest.Message.user("Expand this idea into a detailed concept.")
-        ));
+                LlmRequest.Message.user(String.format("""
+                        EXPAND THIS IDEA:
+                        Name: %s
+                        Hook: %s
+                        Core Mechanic: %s
+                        """, candidate.name(), candidate.hook(), candidate.coreMechanic()))
+        ), schema);
 
         LlmResponse response = llmClient.chat(request);
         if (!response.success()) {
@@ -226,47 +242,25 @@ public class PlanningPhaseHandler implements PhaseHandler {
             return null;
         }
 
-        return parseGameMetadata(response.content(), runId, candidate.coreMechanic());
+        try {
+            com.fasterxml.jackson.databind.JsonNode root = objectMapper.readTree(cleanJsonResponse(response.content()));
+            String name = root.get("name").asText();
+            String concept = root.get("concept").asText() + "\n\nVISUAL STYLE:\n" + root.get("visualStyle").asText();
+            String coreMechanic = root.get("coreMechanic").asText();
+            List<String> todos = objectMapper.readValue(root.get("todos").toString(), new TypeReference<List<String>>() {});
+
+            Path gameDirectory = Paths.get(storageBasePath, "run-" + runId);
+            return new GameMetadata(runId, name, concept, coreMechanic, todos, new ArrayList<>(), gameDirectory);
+        } catch (Exception e) {
+            log.error("Failed to parse expanded game metadata for run {}: {}", runId, e.getMessage());
+            log.debug("Raw expansion response for run {}: {}", runId, response.content());
+            return null;
+        }
     }
 
     private void failRun(AgentRun run, String errorMsg) {
         log.error(errorMsg);
         run.transitionTo(RunState.FAILED);
         notificationSseService.sendNotification(errorMsg);
-    }
-
-    private GameMetadata parseGameMetadata(String llmResponse, UUID runId, String candidateCoreMechanic) {
-        String name = extractField(llmResponse, "NAME:", "Untitled Game");
-        String concept = extractField(llmResponse, "CONCEPT:", "A simple browser game");
-        String mechanic = extractField(llmResponse, "MECHANIC:", candidateCoreMechanic);
-        List<String> todos = extractTodos(llmResponse, DEFAULT_PLANNING_TODOS);
-        Path gameDirectory = Paths.get(storageBasePath, "run-" + runId);
-
-        return new GameMetadata(runId, name, concept, mechanic, todos, new ArrayList<>(), gameDirectory);
-    }
-
-    private String extractField(String text, String marker, String defaultValue) {
-        Pattern pattern = Pattern.compile(Pattern.quote(marker) + "\\s*(.+?)(?=\\n[A-Z]+:|\\nTODOS:|$)", Pattern.DOTALL);
-        Matcher matcher = pattern.matcher(text);
-        if (matcher.find()) {
-            return matcher.group(1).trim();
-        }
-        return defaultValue;
-    }
-
-    private List<String> extractTodos(String text, List<String> fallbackTodos) {
-        List<String> todos = new ArrayList<>();
-        Pattern pattern = Pattern.compile("^\\s*-\\s*(.+)$", Pattern.MULTILINE);
-        Matcher matcher = pattern.matcher(text);
-
-        while (matcher.find()) {
-            todos.add(matcher.group(1).trim());
-        }
-
-        if (todos.isEmpty()) {
-            return new ArrayList<>(fallbackTodos);
-        }
-
-        return todos;
     }
 }

@@ -77,9 +77,14 @@ public class ReviewingPhaseHandler implements PhaseHandler {
                                 "type", "array",
                                 "items", Map.of("type", "string")
                         ),
+                        "consolidatedTodos", Map.of(
+                                "type", "array",
+                                "items", Map.of("type", "string"),
+                                "description", "The final, consolidated list of all REMAINING tasks (original open tasks + failed DONE tasks + new polish tasks), summarized for efficiency."
+                        ),
                         "reviewSummary", Map.of("type", "string")
                 ),
-                "required", List.of("failedDoneTodos", "newTodos", "reviewSummary"),
+                "required", List.of("failedDoneTodos", "newTodos", "consolidatedTodos", "reviewSummary"),
                 "additionalProperties", false
         );
 
@@ -108,9 +113,15 @@ public class ReviewingPhaseHandler implements PhaseHandler {
                                     - Is the UI intuitive and readable?
                                     - DO NOT add new gameplay features or mechanics. Focus only on polish, usability, and clarity.
                                 4. If any such requirements (instructions, UI, polish) are missing, formulate them as NEW tasks.
-                                5. Respond with a JSON object:
+                                5. CONSOLIDATE ALL REMAINING TASKS:
+                                    - Create a final, summarized list of all tasks that still need to be done.
+                                    - This includes: original 'Open Tasks', 'failedDoneTodos' (tasks moved back from DONE), and 'newTodos'.
+                                    - Combine redundant or overlapping tasks into single, clear, high-impact items.
+                                    - Ensure the list is actionable and concise.
+                                6. Respond with a JSON object:
                                     - 'failedDoneTodos': tasks from the DONE list that should be moved back to TODO.
-                                    - 'newTodos': brand-new tasks identified in step 3 (ONLY for polish, usability, or clarity - NO NEW FEATURES).
+                                    - 'newTodos': brand-new tasks identified in step 3.
+                                    - 'consolidatedTodos': the final, summarized list of all remaining tasks (Steps 1, 2, 3, and 5 combined).
                                     - 'reviewSummary': explaining your reasoning.
                                 """, metadata.name(), metadata.concept(), metadata.coreMechanic(), doneTodosFormatted, openTodosFormatted, code)),
                         LlmRequest.Message.user("Please provide the review results as JSON.")
@@ -142,6 +153,13 @@ public class ReviewingPhaseHandler implements PhaseHandler {
                             addedCount++;
                         }
                     }
+                }
+
+                // Step 3: Replace current todos with the consolidated/summarized list from LLM
+                if (reviewResponse.consolidatedTodos() != null && !reviewResponse.consolidatedTodos().isEmpty()) {
+                    metadata.todos().clear();
+                    metadata.todos().addAll(reviewResponse.consolidatedTodos());
+                    log.info("Consolidated To-Do list for run {} has {} items.", metadata.runId(), metadata.todos().size());
                 }
 
                 log.info("Successfully updated To-Dos for run {}. Moved {} tasks back to TODO, added {} new tasks. Summary: {}",
