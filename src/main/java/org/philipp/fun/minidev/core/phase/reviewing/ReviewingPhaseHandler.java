@@ -73,9 +73,13 @@ public class ReviewingPhaseHandler implements PhaseHandler {
                                 "type", "array",
                                 "items", Map.of("type", "string")
                         ),
+                        "newTodos", Map.of(
+                                "type", "array",
+                                "items", Map.of("type", "string")
+                        ),
                         "reviewSummary", Map.of("type", "string")
                 ),
-                "required", List.of("failedDoneTodos", "reviewSummary"),
+                "required", List.of("failedDoneTodos", "newTodos", "reviewSummary"),
                 "additionalProperties", false
         );
 
@@ -98,8 +102,15 @@ public class ReviewingPhaseHandler implements PhaseHandler {
                                 Your Task:
                                 1. Evaluate whether the tasks in the 'DONE' list are actually fully and correctly implemented in the provided code.
                                 2. If a task from the 'DONE' list is NOT or only partially implemented, identify it.
-                                3. DO NOT add any brand-new tasks. Only evaluate the existing 'DONE' list.
-                                4. Respond with a JSON object containing a list of 'failedDoneTodos' (tasks from the DONE list that should be moved back to TODO) and a 'reviewSummary' explaining your reasoning.
+                                3. Review the code for general requirements:
+                                    - Does the game have clear instructions/tutorial for the player?
+                                    - Is the UI intuitive and readable?
+                                    - DO NOT add new gameplay features or mechanics. Focus only on polish, usability, and clarity.
+                                4. If any such requirements (instructions, UI, polish) are missing, formulate them as NEW tasks.
+                                5. Respond with a JSON object:
+                                    - 'failedDoneTodos': tasks from the DONE list that should be moved back to TODO.
+                                    - 'newTodos': brand-new tasks identified in step 3 (ONLY for polish, usability, or clarity - NO NEW FEATURES).
+                                    - 'reviewSummary': explaining your reasoning.
                                 """, metadata.name(), metadata.concept(), doneTodosFormatted, openTodosFormatted, code)),
                         LlmRequest.Message.user("Please provide the review results as JSON.")
                 ), schema
@@ -112,6 +123,7 @@ public class ReviewingPhaseHandler implements PhaseHandler {
                 String content = cleanJsonResponse(response.content());
                 ReviewResponse reviewResponse = objectMapper.readValue(content, ReviewResponse.class);
                 List<String> failedTodos = reviewResponse.failedDoneTodos();
+                List<String> newTodos = reviewResponse.newTodos();
 
                 int movedCount = 0;
                 for (String failedTodo : failedTodos) {
@@ -121,15 +133,23 @@ public class ReviewingPhaseHandler implements PhaseHandler {
                     }
                 }
 
+                int addedCount = 0;
+                if (newTodos != null) {
+                    for (String newTodo : newTodos) {
+                        if (!metadata.todos().contains(newTodo) && !metadata.doneTodos().contains(newTodo)) {
+                            metadata.todos().add(newTodo);
+                            addedCount++;
+                        }
+                    }
+                }
 
-                log.info("Successfully updated To-Dos for run {}. Moved {} tasks back to TODO. Summary: {}",
-                        metadata.runId(), movedCount, reviewResponse.reviewSummary());
-                terminalSseService.sendTerminalText("Review completed. Moved " + movedCount + " tasks back to TODO list.\n", SseEventType.AGENT_WORK, 50);
+                log.info("Successfully updated To-Dos for run {}. Moved {} tasks back to TODO, added {} new tasks. Summary: {}",
+                        metadata.runId(), movedCount, addedCount, reviewResponse.reviewSummary());
+                terminalSseService.sendTerminalText("Review completed. Moved " + movedCount + " back and added " + addedCount + " new tasks to TODO list.\n", SseEventType.AGENT_WORK, 50);
             } catch (Exception e) {
                 log.error("Failed to parse review response for run {}: {}", metadata.runId(), e.getMessage());
                 notificationSseService.sendNotification("Review failed: " + e.getMessage());
             }
-            metadata.doneTodos().clear();
         } else {
             log.error("LLM review failed for run {}: {}", metadata.runId(), response.errorMessage());
             notificationSseService.sendNotification("Review failed: " + response.errorMessage());

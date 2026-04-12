@@ -4,5 +4,6 @@ import java.util.List;
 
 public record ReviewResponse(
         List<String> failedDoneTodos,
+        List<String> newTodos,
         String reviewSummary
 ) {}
