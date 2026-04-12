@@ -18,6 +18,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 
 @Component
 public class TestingPhaseHandler implements PhaseHandler {
@@ -33,14 +34,17 @@ public class TestingPhaseHandler implements PhaseHandler {
     public void execute(AgentRun run) {
         GameMetadata metadata = run.getGameMetadata();
         if (metadata == null || metadata.htmlPath() == null) {
+            log.error("No metadata or HTML path found for run {}", run.getGameMetadata().runId());
             terminalSseService.sendTerminalText("No HTML file found to test.", SseEventType.AGENT_WORK, 50);
             return;
         }
 
+        UUID runId = metadata.runId();
         Path htmlPath = metadata.htmlPath();
+        log.info("Starting testing phase for run {} on file {}", runId, htmlPath);
         terminalSseService.sendTerminalText("Starting static code analysis for " + htmlPath.getFileName() + "...", SseEventType.AGENT_WORK, 50);
 
-        AnalysisResult result = performStaticAnalysis(htmlPath);
+        AnalysisResult result = performStaticAnalysis(htmlPath, runId);
 
         if (result.findings().isEmpty()) {
             terminalSseService.sendTerminalText("Static analysis passed! No issues found.", SseEventType.AGENT_WORK, 50);
@@ -65,10 +69,11 @@ public class TestingPhaseHandler implements PhaseHandler {
 
     private record AnalysisResult(List<String> findings, Document document) {}
 
-    private AnalysisResult performStaticAnalysis(Path htmlPath) {
+    private AnalysisResult performStaticAnalysis(Path htmlPath, UUID runId) {
         List<String> findings = new ArrayList<>();
 
         if (!Files.exists(htmlPath)) {
+            log.warn("HTML file does not exist for run {}: {}", runId, htmlPath);
             findings.add("File index.html does not exist.");
             return new AnalysisResult(findings, null);
         }
@@ -76,11 +81,13 @@ public class TestingPhaseHandler implements PhaseHandler {
         try {
             String content = Files.readString(htmlPath);
             if (content.isBlank()) {
+                log.warn("HTML file is empty for run {}: {}", runId, htmlPath);
                 findings.add("index.html is empty.");
                 return new AnalysisResult(findings, null);
             }
 
             Document doc = Jsoup.parse(content);
+            log.debug("Performing static analysis on run {} ({} characters)", runId, content.length());
 
             // 1. Basic structure checks
             checkBasicStructure(doc, findings);
@@ -94,14 +101,15 @@ public class TestingPhaseHandler implements PhaseHandler {
             // 4. Script checks (basic)
             checkScripts(doc, findings);
 
+            log.info("Static analysis for run {} finished with {} findings", runId, findings.size());
             return new AnalysisResult(findings, doc);
 
         } catch (IOException e) {
-            log.error("Failed to read HTML file for analysis", e);
+            log.error("Failed to read HTML file for analysis on run {}", runId, e);
             findings.add("Error reading index.html: " + e.getMessage());
             return new AnalysisResult(findings, null);
         } catch (Exception e) {
-            log.error("Error during static analysis", e);
+            log.error("Unexpected error during static analysis on run {}", runId, e);
             findings.add("Unexpected error during analysis: " + e.getMessage());
             return new AnalysisResult(findings, null);
         }

@@ -60,7 +60,7 @@ public abstract class AbstractSseService {
     public abstract String getStreamId();
     protected abstract boolean isHistoryEnabled();
 
-    public SseEmitter subscribe() {
+    public synchronized SseEmitter subscribe() {
         SseEmitter emitter = new SseEmitter(Long.MAX_VALUE);
 
         emitter.onCompletion(() -> {
@@ -144,6 +144,9 @@ public abstract class AbstractSseService {
     }
 
     protected synchronized void broadcast(SseEventName eventName, String data) {
+        if (emitters.isEmpty()) {
+            return;
+        }
 
         String jsonData;
         try {

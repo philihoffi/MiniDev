@@ -48,7 +48,7 @@ public class ReviewingPhaseHandler implements PhaseHandler {
             return;
         }
 
-        log.info("Reviewing phase for run {}", run.getGameMetadata().runId());
+        log.info("Starting review phase for run {}", run.getGameMetadata().runId());
         terminalSseService.sendTerminalText("Reviewing code and updating To-Dos...\n", SseEventType.AGENT_WORK, 50);
 
         String code = "";
@@ -93,11 +93,13 @@ public class ReviewingPhaseHandler implements PhaseHandler {
 
         if (response.success()) {
             run.getGameMetadata().todos().clear();
-            run.getGameMetadata().todos().addAll(extractTodos(response.content().trim(), List.of()));
-            log.info("Updated To-Dos for run {}: {}", run.getGameMetadata().runId(), run.getGameMetadata().todos());
+            List<String> updatedTodos = extractTodos(response.content().trim(), List.of());
+            run.getGameMetadata().todos().addAll(updatedTodos);
+            log.info("Successfully updated To-Dos for run {}. New count: {}", metadata.runId(), updatedTodos.size());
+            log.debug("New To-Dos for run {}: {}", metadata.runId(), updatedTodos);
             terminalSseService.sendTerminalText("To-Do list updated based on review.", SseEventType.AGENT_WORK, 50);
         } else {
-            log.error("Failed to review code: {}", response.errorMessage());
+            log.error("LLM review failed for run {}: {}", metadata.runId(), response.errorMessage());
             notificationSseService.sendNotification("Review failed: " + response.errorMessage());
         }
     }

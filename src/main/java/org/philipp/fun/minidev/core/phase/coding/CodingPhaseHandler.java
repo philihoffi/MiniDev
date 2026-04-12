@@ -50,7 +50,7 @@ public class CodingPhaseHandler implements PhaseHandler {
             return;
         }
 
-        log.info("Coding phase for run {}", run.getGameMetadata().runId());
+        log.info("Starting coding phase for run {} of game '{}'", metadata.runId(), metadata.name());
 
         String todosFormatted = String.join("\n", metadata.todos().stream().map(t -> "- " + t).toList());
 
@@ -115,12 +115,13 @@ public class CodingPhaseHandler implements PhaseHandler {
 
         LlmResponse response = llmClient.chat(request);
         if (!response.success()) {
-            log.error("Failed to generate technical concept: {}", response.errorMessage());
+            log.error("Failed to generate technical concept for run {}: {}", metadata.runId(), response.errorMessage());
             return null;
         }
 
         try {
             com.fasterxml.jackson.databind.JsonNode node = objectMapper.readTree(cleanJsonResponse(response.content()));
+            log.debug("Technical concept generated for run {}", metadata.runId());
             return String.format("""
                     TECHNICAL DESIGN: %s
                     STATE MANAGEMENT: %s
@@ -133,7 +134,8 @@ public class CodingPhaseHandler implements PhaseHandler {
                     node.get("inputHandling").asText()
             );
         } catch (Exception e) {
-            log.error("Failed to parse technical concept: {}", e.getMessage());
+            log.error("Failed to parse technical concept for run {}: {}", metadata.runId(), e.getMessage());
+            log.debug("Raw response for run {}: {}", metadata.runId(), response.content());
             return response.content(); // Fallback to raw if parsing fails but technically it shouldn't with structured output
         }
     }
@@ -175,15 +177,18 @@ public class CodingPhaseHandler implements PhaseHandler {
 
         LlmResponse response = llmClient.chat(request);
         if (!response.success()) {
-            log.error("Failed to generate code: {}", response.errorMessage());
+            log.error("Failed to generate game code for run {}: {}", metadata.runId(), response.errorMessage());
             return null;
         }
 
         try {
             com.fasterxml.jackson.databind.JsonNode node = objectMapper.readTree(cleanJsonResponse(response.content()));
-            return node.get("code").asText().trim();
+            String code = node.get("code").asText().trim();
+            log.info("Successfully generated {} characters of game code for run {}", code.length(), metadata.runId());
+            return code;
         } catch (Exception e) {
-            log.error("Failed to parse game code JSON: {}", e.getMessage());
+            log.error("Failed to parse game code JSON for run {}: {}", metadata.runId(), e.getMessage());
+            log.debug("Raw response for run {}: {}", metadata.runId(), response.content());
             return cleanJsonResponse(response.content());
         }
     }

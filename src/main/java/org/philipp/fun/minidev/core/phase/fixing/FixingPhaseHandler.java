@@ -45,7 +45,7 @@ public class FixingPhaseHandler implements PhaseHandler {
             return;
         }
 
-        log.info("Fixing phase for run {}", run.getGameMetadata().runId());
+        log.info("Starting fixing phase for run {} (Iteration: {})", metadata.runId(), run.getFixingIterations() + 1);
         run.incrementFixingIterations();
         terminalSseService.sendTerminalText("Fixing identified issues and implementing missing To-Dos...\n", SseEventType.AGENT_WORK, 50);
 
@@ -93,13 +93,13 @@ public class FixingPhaseHandler implements PhaseHandler {
             try {
                 Files.createDirectories(metadata.htmlPath().getParent());
                 Files.writeString(metadata.htmlPath(), updatedCode);
-                log.info("Saved fixed code to {}", metadata.htmlPath());
+                log.info("Successfully saved {} characters of fixed code for run {} to {}", updatedCode.length(), metadata.runId(), metadata.htmlPath());
                 terminalSseService.sendTerminalText("Issues fixed and code updated.\n", SseEventType.AGENT_WORK, 50);
             } catch (IOException e) {
-                log.error("Failed to save fixed code to {}", metadata.htmlPath(), e);
+                log.error("Failed to save fixed code for run {} to {}", metadata.runId(), metadata.htmlPath(), e);
             }
         } else {
-            log.error("Failed to generate fixed code: {}", response.errorMessage());
+            log.error("LLM fixing failed for run {}: {}", metadata.runId(), response.errorMessage());
             notificationSseService.sendNotification("Fixing failed: " + response.errorMessage());
         }
     }

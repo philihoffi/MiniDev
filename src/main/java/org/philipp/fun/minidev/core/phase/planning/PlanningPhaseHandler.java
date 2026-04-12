@@ -63,10 +63,13 @@ public class PlanningPhaseHandler implements PhaseHandler {
 
     @Override
     public void execute(AgentRun run) {
+        UUID runId = run.getGameMetadata().runId();
+        log.info("Starting planning phase for run {}", runId);
         terminalSseService.sendTerminalText("Brainstorming original game ideas...", SseEventType.AGENT_WORK, 30);
 
         List<String> previousIdeas = getPreviousIdeas();
-        List<GameIdeaCandidate> candidates = generateCandidates(previousIdeas);
+        log.debug("Found {} previous ideas for run {}", previousIdeas.size(), runId);
+        List<GameIdeaCandidate> candidates = generateCandidates(previousIdeas, runId);
 
         if (candidates.isEmpty()) {
             failRun(run, "Failed to generate any game idea candidates.");
@@ -110,7 +113,8 @@ public class PlanningPhaseHandler implements PhaseHandler {
         }
     }
 
-    private List<GameIdeaCandidate> generateCandidates(List<String> previousIdeas) {
+    private List<GameIdeaCandidate> generateCandidates(List<String> previousIdeas, UUID runId) {
+        log.info("Generating game candidates for run {}", runId);
         String previousIdeasContext = previousIdeas.isEmpty() ? "None." : String.join("\n---\n", previousIdeas);
 
         Map<String, Object> schema = Map.of(
@@ -167,8 +171,8 @@ public class PlanningPhaseHandler implements PhaseHandler {
             com.fasterxml.jackson.databind.JsonNode ideasNode = root.get("ideas");
             return objectMapper.readValue(ideasNode.toString(), new TypeReference<List<GameIdeaCandidate>>() {});
         } catch (Exception e) {
-            log.error("Failed to parse game candidates: {}", e.getMessage());
-            log.debug("Raw response: {}", response.content());
+            log.error("Failed to parse game candidates for run {}: {}", runId, e.getMessage());
+            log.debug("Raw brainstorming response for run {}: {}", runId, response.content());
             return List.of();
         }
     }
