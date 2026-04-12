@@ -12,14 +12,13 @@ public final class AgentRun {
     private RunState state;
     private Instant updatedAt;
     private GameMetadata gameMetadata;
-    private int fixingIterations = 0;
+
 
     public AgentRun(RunState state, Instant createdAt, Instant updatedAt, GameMetadata gameMetadata) {
         this.state = Objects.requireNonNull(state, "state must not be null");
         this.createdAt = Objects.requireNonNull(createdAt, "createdAt must not be null");
         this.updatedAt = Objects.requireNonNull(updatedAt, "updatedAt must not be null");
         this.gameMetadata = Objects.requireNonNull(gameMetadata, "gameMetadata must not be null");
-        this.fixingIterations = 0;
         if (updatedAt.isBefore(createdAt)) {
             throw new IllegalArgumentException("updatedAt must not be before createdAt");
         }
@@ -71,14 +70,6 @@ public final class AgentRun {
 
     public void setGameMetadata(GameMetadata gameMetadata) {
         this.gameMetadata = gameMetadata;
-    }
-
-    public int getFixingIterations() {
-        return fixingIterations;
-    }
-
-    public void incrementFixingIterations() {
-        this.fixingIterations++;
     }
 
     @Override

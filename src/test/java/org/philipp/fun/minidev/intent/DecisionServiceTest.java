@@ -5,6 +5,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
+import org.philipp.fun.minidev.core.phase.planning.GameIdeaCandidate;
 import org.philipp.fun.minidev.llm.LlmClient;
 import org.philipp.fun.minidev.llm.LlmRequest;
 import org.philipp.fun.minidev.llm.LlmResponse;
@@ -77,5 +78,27 @@ class DecisionServiceTest {
 
         assertEquals(RunState.CODING, result.newState());
         assertEquals("Fallback logic used.", result.message());
+    }
+    @Test
+    void selectBestIdeaUsesLlmAndReturnsResponse() throws Exception {
+        UUID runId = UUID.randomUUID();
+        List<GameIdeaCandidate> candidates = List.of(
+                new GameIdeaCandidate("Game 1", "Hook 1", "Mechanic 1", "Unique 1", "Risk 1", 5, 5),
+                new GameIdeaCandidate("Game 2", "Hook 2", "Mechanic 2", "Unique 2", "Risk 2", 4, 6)
+        );
+
+        String jsonResponse = "{\"runId\":\"" + runId + "\", \"selectedIndex\":1, \"message\":\"Game 2 is better!\"}";
+        LlmResponse llmResponse = LlmResponse.success(jsonResponse, "test-model", 100);
+        when(llmClient.chat(any(LlmRequest.class))).thenReturn(llmResponse);
+
+        IdeaSelectionResponse expectedResponse = new IdeaSelectionResponse(runId, 1, "Game 2 is better!");
+        when(objectMapper.readValue(eq(jsonResponse), eq(IdeaSelectionResponse.class))).thenReturn(expectedResponse);
+
+        IdeaSelectionResponse result = decisionService.selectBestIdea(candidates, runId);
+
+        assertEquals(1, result.selectedIndex());
+        assertEquals("Game 2 is better!", result.message());
+        verify(llmClient).chat(any(LlmRequest.class));
+        verify(terminalSseService, atLeastOnce()).sendTerminalText(anyString(), any(), anyInt());
     }
 }

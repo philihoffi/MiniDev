@@ -3,6 +3,9 @@ package org.philipp.fun.minidev.core.phase.planning;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.philipp.fun.minidev.core.phase.PhaseHandler;
+import org.philipp.fun.minidev.intent.DecisionResponse;
+import org.philipp.fun.minidev.intent.DecisionService;
+import org.philipp.fun.minidev.intent.IdeaSelectionResponse;
 import org.philipp.fun.minidev.llm.LlmClient;
 import org.philipp.fun.minidev.llm.LlmRequest;
 import org.philipp.fun.minidev.llm.LlmResponse;
@@ -47,18 +50,21 @@ public class PlanningPhaseHandler implements PhaseHandler {
     private final LlmClient llmClient;
     private final String storageBasePath;
     private final ObjectMapper objectMapper;
+    private final DecisionService decisionService;
 
     public PlanningPhaseHandler(
             NotificationSseService notificationSseService,
             TerminalSseService terminalSseService,
             LlmClient llmClient,
             @Value("${minidev.storage.base-path}") String storageBasePath,
-            ObjectMapper objectMapper) {
+            ObjectMapper objectMapper,
+            DecisionService decisionService) {
         this.notificationSseService = notificationSseService;
         this.terminalSseService = terminalSseService;
         this.llmClient = llmClient;
         this.storageBasePath = storageBasePath;
         this.objectMapper = objectMapper;
+        this.decisionService = decisionService;
     }
 
     @Override
@@ -76,8 +82,10 @@ public class PlanningPhaseHandler implements PhaseHandler {
             return;
         }
 
-        GameIdeaCandidate bestCandidate = selectBestCandidate(candidates);
-        terminalSseService.sendTerminalText("Selected best idea: " + bestCandidate.name() + "\nExpanding concept...", SseEventType.AGENT_WORK, 60);
+        IdeaSelectionResponse ideaSelection = decisionService.selectBestIdea(candidates, runId);
+        GameIdeaCandidate bestCandidate = candidates.get(ideaSelection.selectedIndex());
+
+        terminalSseService.sendTerminalText("Selected game idea: " + bestCandidate.name() + "Message: "+ ideaSelection.message(), SseEventType.AGENT_WORK, 30);
 
         GameMetadata metadata = expandIdea(bestCandidate, run.getGameMetadata().runId());
         if (metadata == null) {
@@ -188,12 +196,6 @@ public class PlanningPhaseHandler implements PhaseHandler {
             content = content.substring(0, content.length() - 3);
         }
         return content.trim();
-    }
-
-    private GameIdeaCandidate selectBestCandidate(List<GameIdeaCandidate> candidates) {
-        return candidates.stream()
-                .max(Comparator.comparingInt((GameIdeaCandidate c) -> c.originalityScore() * 2 + c.feasibility()))
-                .orElse(candidates.get(0));
     }
 
     private GameMetadata expandIdea(GameIdeaCandidate candidate, UUID runId) {

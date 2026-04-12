@@ -1,6 +1,7 @@
 package org.philipp.fun.minidev.intent;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.philipp.fun.minidev.core.phase.planning.GameIdeaCandidate;
 import org.philipp.fun.minidev.llm.LlmClient;
 import org.philipp.fun.minidev.llm.LlmRequest;
 import org.philipp.fun.minidev.llm.LlmResponse;
@@ -15,6 +16,7 @@ import org.springframework.stereotype.Service;
 
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 
 @Service
 public class DecisionService {
@@ -66,8 +68,7 @@ public class DecisionService {
                 metadata.concept(),
                 metadata.coreMechanic(),
                 metadata.todos(),
-                metadata.doneTodos(),
-                run.getFixingIterations()
+                metadata.doneTodos()
         );
 
         Map<String, Object> schema = Map.of(
@@ -96,8 +97,6 @@ public class DecisionService {
             DecisionResponse decision = objectMapper.readValue(content, DecisionResponse.class);
             log.info("Decision made: {} - Message: {}", decision.newState(), decision.message());
 
-            this.terminalSseService.sendTerminalText("\n--- DECISION ---\n", SseEventType.AGENT_WORK, 0);
-            this.terminalSseService.sendTerminalText(decision.message() + "\n", SseEventType.AGENT_WORK, 50);
             this.terminalSseService.sendTerminalText("Next step: " + decision.newState() + "\n", SseEventType.AGENT_WORK, 0);
 
             return decision;
@@ -105,6 +104,51 @@ public class DecisionService {
             log.error("Failed to get decision from LLM, falling back to default logic", e);
             return fallbackDecision(run);
         }
+    }
+
+    public IdeaSelectionResponse selectBestIdea(List<GameIdeaCandidate> candidates, UUID runId) {
+        StringBuilder promptBuilder = new StringBuilder();
+        promptBuilder.append("You are a creative game director. Select the most promising game idea from the following candidates.\n\n");
+        for (int i = 0; i < candidates.size(); i++) {
+            GameIdeaCandidate c = candidates.get(i);
+            promptBuilder.append(String.format("ID: %d\nName: %s\nHook: %s\nCore Mechanic: %s\nOriginality: %d\nFeasibility: %d\nUniqueness: %s\n\n",
+                    i, c.name(), c.hook(), c.coreMechanic(), c.originalityScore(), c.feasibility(), c.uniqueness()));
+        }
+        promptBuilder.append("Choose the one that is most innovative but still achievable. Explain your choice briefly. You MUST provide a valid ID from the list.");
+
+        Map<String, Object> schema = Map.of(
+                "type", "object",
+                "properties", Map.of(
+                        "runId", Map.of("type", "string"),
+                        "selectedIndex", Map.of("type", "integer"),
+                        "message", Map.of("type", "string")
+                ),
+                "required", List.of("runId", "selectedIndex", "message"),
+                "additionalProperties", false
+        );
+
+        LlmRequest request = new LlmRequest(
+                List.of(
+                        LlmRequest.Message.system("You are a creative game director with a personality."),
+                        LlmRequest.Message.user(promptBuilder.toString())
+                ),
+                schema
+        );
+
+        try {
+            LlmResponse response = llmClient.chat(request);
+            String content = cleanJsonResponse(response.content());
+            IdeaSelectionResponse ideaSelection = objectMapper.readValue(content, IdeaSelectionResponse.class);
+
+            if (ideaSelection.selectedIndex() >= 0 && ideaSelection.selectedIndex() < candidates.size()) {
+                return ideaSelection;
+            }
+            log.warn("LLM selected invalid index: {}. Falling back.", ideaSelection.selectedIndex());
+        } catch (Exception e) {
+            log.error("Failed to select idea via LLM", e);
+        }
+
+        return new IdeaSelectionResponse(runId, 0, "Fallback: Selected by default (first candidate).");
     }
 
     private String cleanJsonResponse(String content) {

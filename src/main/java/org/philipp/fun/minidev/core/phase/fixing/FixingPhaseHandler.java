@@ -50,8 +50,6 @@ public class FixingPhaseHandler implements PhaseHandler {
             return;
         }
 
-        log.info("Starting fixing phase for run {} (Iteration: {})", metadata.runId(), run.getFixingIterations() + 1);
-        run.incrementFixingIterations();
         terminalSseService.sendTerminalText("Fixing identified issues and implementing missing To-Dos...\n", SseEventType.AGENT_WORK, 50);
 
         while (!run.getGameMetadata().todos().isEmpty()) {
