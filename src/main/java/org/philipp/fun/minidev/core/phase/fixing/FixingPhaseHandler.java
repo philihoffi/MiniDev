@@ -1,5 +1,6 @@
 package org.philipp.fun.minidev.core.phase.fixing;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.philipp.fun.minidev.core.phase.PhaseHandler;
 import org.philipp.fun.minidev.llm.LlmClient;
 import org.philipp.fun.minidev.llm.LlmRequest;
@@ -17,6 +18,7 @@ import org.springframework.stereotype.Component;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.util.List;
+import java.util.Map;
 
 @Component
 public class FixingPhaseHandler implements PhaseHandler {
@@ -26,14 +28,17 @@ public class FixingPhaseHandler implements PhaseHandler {
     private final NotificationSseService notificationSseService;
     private final TerminalSseService terminalSseService;
     private final LlmClient llmClient;
+    private final ObjectMapper objectMapper;
 
     public FixingPhaseHandler(
             NotificationSseService notificationSseService,
             TerminalSseService terminalSseService,
-            LlmClient llmClient) {
+            LlmClient llmClient,
+            ObjectMapper objectMapper) {
         this.notificationSseService = notificationSseService;
         this.terminalSseService = terminalSseService;
         this.llmClient = llmClient;
+        this.objectMapper = objectMapper;
     }
 
     @Override
@@ -67,6 +72,16 @@ public class FixingPhaseHandler implements PhaseHandler {
 
             String doneTodosFormatted = String.join("\n", metadata.doneTodos().stream().map(t -> "- " + t).toList());
 
+            Map<String, Object> schema = Map.of(
+                    "type", "object",
+                    "properties", Map.of(
+                            "updatedCode", Map.of("type", "string"),
+                            "changesSummary", Map.of("type", "string")
+                    ),
+                    "required", List.of("updatedCode", "changesSummary"),
+                    "additionalProperties", false
+            );
+
             LlmRequest request = new LlmRequest(
                     List.of(
                             LlmRequest.Message.system(String.format("""
@@ -90,27 +105,30 @@ public class FixingPhaseHandler implements PhaseHandler {
                                     3. Fix any bugs or inconsistencies related to this task.
                                     4. Ensure the game remains a single HTML file with embedded CSS and JS.
                                     
-                                    Respond ONLY with the complete, updated raw code content. No markdown code blocks, no explanations.
+                                    Respond with a JSON object containing the updated code and a short summary of the changes.
                                     """, metadata.name(), metadata.concept(), doneTodosFormatted, nextTodo, currentCode)),
                             LlmRequest.Message.user("Please provide the updated code.")
-                    )
+                    ), schema
             );
 
             LlmResponse response = llmClient.chat(request);
 
             if (response.success()) {
-                String updatedCode = response.content().trim();
                 try {
+                    String content = cleanJsonResponse(response.content());
+                    FixingResponse fixingResponse = objectMapper.readValue(content, FixingResponse.class);
+                    String updatedCode = fixingResponse.updatedCode().trim();
+
                     Files.createDirectories(metadata.htmlPath().getParent());
                     Files.writeString(metadata.htmlPath(), updatedCode);
 
-
                     run.getGameMetadata().doneTodos().add(run.getGameMetadata().todos().removeFirst());
 
-                    log.info("Successfully saved {} characters of fixed code for run {} to {}", updatedCode.length(), metadata.runId(), metadata.htmlPath());
-                    terminalSseService.sendTerminalText("To-Do '" + nextTodo + "' implemented.\n", SseEventType.AGENT_WORK, 50);
-                } catch (IOException e) {
-                    log.error("Failed to save fixed code for run {} to {}", metadata.runId(), metadata.htmlPath(), e);
+                    log.info("Successfully saved {} characters of fixed code for run {} to {}. Summary: {}", 
+                            updatedCode.length(), metadata.runId(), metadata.htmlPath(), fixingResponse.changesSummary());
+                    terminalSseService.sendTerminalText("To-Do '" + nextTodo + "' implemented. Summary: "+fixingResponse.changesSummary(), SseEventType.AGENT_WORK, 50);
+                } catch (Exception e) {
+                    log.error("Failed to parse or save fixed code for run {} to {}", metadata.runId(), metadata.htmlPath(), e);
                     break;
                 }
             } else {
@@ -126,5 +144,18 @@ public class FixingPhaseHandler implements PhaseHandler {
         } else {
             log.warn("Fixing phase ended with remaining To-Dos for run {}", run.getGameMetadata().runId());
         }
+    }
+
+    private String cleanJsonResponse(String content) {
+        content = content.trim();
+        if (content.startsWith("```json")) {
+            content = content.substring(7);
+        } else if (content.startsWith("```")) {
+            content = content.substring(3);
+        }
+        if (content.endsWith("```")) {
+            content = content.substring(0, content.length() - 3);
+        }
+        return content.trim();
     }
 }
