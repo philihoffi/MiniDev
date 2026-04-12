@@ -6,7 +6,10 @@ document.addEventListener('DOMContentLoaded', () => {
     
     const terminalOutput = document.getElementById('terminal-output');
     const projectList = document.getElementById('project-list');
+    const playBtn = document.getElementById('play-project-tab');
+    const refreshBtn = document.getElementById('refresh-projects-btn');
     let activeTerminalBlock = null;
+    let selectedRunId = null;
     
     const editorHtml = document.querySelector('.editor-pane[data-editor="html"] .editor-body');
     const editorCss = document.querySelector('.editor-pane[data-editor="css"] .editor-body');
@@ -19,7 +22,8 @@ document.addEventListener('DOMContentLoaded', () => {
     tabButtons.forEach(button => {
         button.addEventListener('click', () => {
             const targetEditor = button.getAttribute('data-editor');
-            
+            if (!targetEditor) return; // For non-editor tabs like PLAY
+
             // Update buttons
             tabButtons.forEach(btn => btn.classList.remove('active'));
             button.classList.add('active');
@@ -36,6 +40,22 @@ document.addEventListener('DOMContentLoaded', () => {
             console.log(`Switched to editor: ${targetEditor}`);
         });
     });
+
+    // Refresh Button Event
+    if (refreshBtn) {
+        refreshBtn.addEventListener('click', () => {
+            loadProjects();
+        });
+    }
+
+    // Play Button Event
+    if (playBtn) {
+        playBtn.addEventListener('click', () => {
+            if (selectedRunId) {
+                window.open(`/games-static/run-${selectedRunId}`, '_blank');
+            }
+        });
+    }
 
     const terminalSource = new EventSource('/api/events/TERMINAL');
     const ideSource = new EventSource('/api/events/IDE');
@@ -195,6 +215,10 @@ document.addEventListener('DOMContentLoaded', () => {
                     item.title += " (In Arbeit)";
                 }
 
+                if (selectedRunId === runId) {
+                    item.classList.add('active');
+                }
+
                 item.addEventListener('click', () => loadProjectContent(runId, item));
                 projectList.appendChild(item);
             });
@@ -207,6 +231,8 @@ document.addEventListener('DOMContentLoaded', () => {
     async function loadProjectContent(runId, element) {
         document.querySelectorAll('.project-item').forEach(i => i.classList.remove('active'));
         element.classList.add('active');
+        selectedRunId = runId;
+        if (playBtn) playBtn.disabled = false;
         
         // logToTerminal(`Lade Projekt ${element.textContent}...`);
         
@@ -235,12 +261,4 @@ document.addEventListener('DOMContentLoaded', () => {
     loadProjects();
     // logToTerminal('System bereit.');
 
-    // Refresh Button Event
-    const refreshBtn = document.querySelector('.action-row .action-button');
-    if (refreshBtn && refreshBtn.textContent === 'Refresh') {
-        refreshBtn.addEventListener('click', () => {
-            // logToTerminal('Aktualisiere Projektliste...');
-            loadProjects();
-        });
-    }
 });

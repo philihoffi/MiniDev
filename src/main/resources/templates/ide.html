@@ -19,8 +19,8 @@
                         <div class="project-item">run-548f52e0...</div>
                         <div class="project-item">run-ee0a1e6e...</div>
                     </div>
-                    <div class="action-row" style="margin-top: 10px;">
-                        <button class="action-button" style="width: 100%;">Refresh</button>
+                    <div class="action-row" style="margin-top: 10px; display: flex; gap: 4px;">
+                        <button class="action-button" id="refresh-projects-btn" style="flex: 1;">Refresh List</button>
                     </div>
                 </div>
             </section>
@@ -37,6 +37,7 @@
                         <button class="tab-button active" data-editor="html">INDEX.HTML</button>
                         <button class="tab-button" data-editor="css">STYLE.CSS</button>
                         <button class="tab-button" data-editor="js">SCRIPT.JS</button>
+                        <button class="tab-button action-tab" id="play-project-tab" disabled style="margin-left: auto;">PLAY</button>
                     </nav>
 
                     <div class="editors-grid" id="editors-grid" style="flex: 1; min-height: 0;">

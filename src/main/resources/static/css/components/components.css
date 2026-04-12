@@ -114,6 +114,23 @@
     z-index: 2;
 }
 
+.tab-button.action-tab {
+    background: #c0c0c0;
+    border-color: var(--border-light) var(--border-dark) var(--border-dark) var(--border-light);
+    color: #000080;
+}
+
+.tab-button.action-tab:disabled {
+    color: #808080;
+    cursor: default;
+}
+
+.tab-button.action-tab:not(:disabled):active {
+    border-color: var(--border-dark) var(--border-light) var(--border-light) var(--border-dark);
+    padding-top: 4px;
+    padding-bottom: 2px;
+}
+
 .editor-pane {
     height: 100%;
     min-height: 0;

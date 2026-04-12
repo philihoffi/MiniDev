@@ -62,11 +62,19 @@ public class DecisionService {
             Decide which state we should transition to next.
             """;
 
+    private static final int MAX_FIXING_ITERATIONS = 4;
+
     public DecisionResponse decideNextStep(AgentRun run) {
         GameMetadata metadata = run.getGameMetadata();
         long fixingIterations = metadata.phaseHistory().stream()
                 .filter(s -> s == RunState.FIXING)
                 .count();
+
+        if (fixingIterations >= MAX_FIXING_ITERATIONS && (run.getState() == RunState.REVIEWING || run.getState() == RunState.FIXING)) {
+            log.info("Max fixing iterations ({}) reached for run {}. Forcing transition to PUBLISHING/TESTING.", MAX_FIXING_ITERATIONS, metadata.runId());
+            RunState next = (run.getState() == RunState.FIXING) ? RunState.REVIEWING : RunState.TESTING;
+            return new DecisionResponse(metadata.runId().toString(), next, "Maximum fixing iterations reached. Moving forward to finish the project.", true);
+        }
 
         String prompt = String.format(SYSTEM_PROMPT,
                 run.getState(),
@@ -128,7 +136,7 @@ public class DecisionService {
             promptBuilder.append(String.format("ID: %d\nName: %s\nHook: %s\nCore Mechanic: %s\nOriginality: %d\nFeasibility: %d\nUniqueness: %s\n\n",
                     i, c.name(), c.hook(), c.coreMechanic(), c.originalityScore(), c.feasibility(), c.uniqueness()));
         }
-        promptBuilder.append("Choose the one that is most innovative but still achievable. Explain your choice briefly. You MUST provide a valid ID from the list.");
+        promptBuilder.append("Choose the one that is most innovative but still achievable. You MUST provide a valid ID from the list.");
 
         Map<String, Object> schema = Map.of(
                 "type", "object",

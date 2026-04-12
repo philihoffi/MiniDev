@@ -97,6 +97,15 @@ public class ReviewingPhaseHandler implements PhaseHandler {
                 "additionalProperties", false
         );
 
+        long fixingIterations = metadata.phaseHistory().stream()
+                .filter(s -> s == RunState.FIXING)
+                .count();
+
+        boolean strictReview = fixingIterations >= 2;
+        String reviewInstruction = strictReview ?
+                "DO NOT add any more new tasks. ONLY identify critical bugs that prevent the game from being played. If it's playable, leave it as is." :
+                "Review the code for general requirements: Does the game have clear instructions? Is the UI intuitive? Focus only on polish, usability, and clarity.";
+
         LlmRequest request = new LlmRequest(
                 List.of(
                         LlmRequest.Message.system(String.format("""
@@ -117,11 +126,8 @@ public class ReviewingPhaseHandler implements PhaseHandler {
                                 Your Task:
                                 1. Evaluate whether the tasks in the 'DONE' list are actually fully and correctly implemented in the provided code.
                                 2. If a task from the 'DONE' list is NOT or only partially implemented, identify it.
-                                3. Review the code for general requirements:
-                                    - Does the game have clear instructions/tutorial for the player?
-                                    - Is the UI intuitive and readable?
-                                    - DO NOT add new gameplay features or mechanics. Focus only on polish, usability, and clarity.
-                                4. If any such requirements (instructions, UI, polish) are missing, formulate them as NEW tasks.
+                                3. %s
+                                4. If any such requirements are missing, formulate them as NEW tasks.
                                 5. CONSOLIDATE ALL REMAINING TASKS:
                                     - Create a final, summarized list of all tasks that still need to be done.
                                     - This includes: original 'Open Tasks', 'failedDoneTodos' (tasks moved back from DONE), and 'newTodos'.
@@ -132,7 +138,7 @@ public class ReviewingPhaseHandler implements PhaseHandler {
                                     - 'newTodos': brand-new tasks identified in step 3.
                                     - 'consolidatedTodos': the final, summarized list of all remaining tasks (Steps 1, 2, 3, and 5 combined).
                                     - 'reviewSummary': explaining your reasoning.
-                                """, metadata.name(), metadata.concept(), metadata.coreMechanic(), doneTodosFormatted, openTodosFormatted, code)),
+                                """, metadata.name(), metadata.concept(), metadata.coreMechanic(), doneTodosFormatted, openTodosFormatted, code, reviewInstruction)),
                         LlmRequest.Message.user("Please provide the review results as JSON.")
                 ), schema
         );
