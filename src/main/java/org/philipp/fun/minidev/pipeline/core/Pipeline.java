@@ -22,4 +22,8 @@ public interface Pipeline extends PipelineElement {
         return addStage(stage);
     }
     PipelineResult execute(PipelineContext context);
+
+    default PipelineResult execute() {
+        return execute(new PipelineContext());
+    }
 }
