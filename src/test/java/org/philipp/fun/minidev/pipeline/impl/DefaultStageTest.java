@@ -134,6 +134,24 @@ class DefaultStageTest {
             // Assert
             verify(listener).onError(step, context, exception);
         }
+
+        @Test
+        @DisplayName("Propagate listeners to steps")
+        void testStepListenerPropagation() throws Exception {
+            // Arrange
+            PipelineListener listener = mock(PipelineListener.class);
+            stage.setListeners(Collections.singletonList(listener));
+
+            Step step = mock(Step.class);
+            when(step.execute(context)).thenReturn(new StepResult(StepResult.StepStatus.SUCCESS, "OK"));
+            stage.addStep(step);
+
+            // Act
+            stage.execute(context);
+
+            // Assert
+            verify(step).setListeners(Collections.singletonList(listener));
+        }
     }
     
     @Nested

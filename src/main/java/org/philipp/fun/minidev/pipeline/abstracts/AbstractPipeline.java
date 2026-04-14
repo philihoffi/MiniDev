@@ -10,7 +10,6 @@ import java.util.List;
 
 public abstract class AbstractPipeline extends AbstractPipelineElement implements Pipeline {
     protected final List<Stage> stages = new ArrayList<>();
-    private final List<PipelineListener> listeners = new ArrayList<>();
 
     protected AbstractPipeline(String name) {
         super(name);
@@ -33,33 +32,10 @@ public abstract class AbstractPipeline extends AbstractPipelineElement implement
     @Override
     public Pipeline addListener(PipelineListener listener) {
         if (listener != null) {
-            listeners.add(listener);
+            List<PipelineListener> current = new ArrayList<>(getListeners());
+            current.add(listener);
+            setListeners(current);
         }
         return this;
-    }
-
-    @Override
-    public List<PipelineListener> getListeners() {
-        return Collections.unmodifiableList(listeners);
-    }
-
-    protected void notifyPipelineStart(PipelineContext context) {
-        listeners.forEach(l -> l.onPipelineStart(this, context));
-    }
-
-    protected void notifyPipelineEnd(PipelineContext context, PipelineResult result) {
-        listeners.forEach(l -> l.onPipelineEnd(this, context, result));
-    }
-
-    protected void notifyStageStart(Stage stage, PipelineContext context) {
-        listeners.forEach(l -> l.onStageStart(stage, context));
-    }
-
-    protected void notifyStageEnd(Stage stage, PipelineContext context, StageResult result) {
-        listeners.forEach(l -> l.onStageEnd(stage, context, result));
-    }
-
-    protected void notifyError(PipelineElement element, PipelineContext context, Exception e) {
-        listeners.forEach(l -> l.onError(element, context, e));
     }
 }

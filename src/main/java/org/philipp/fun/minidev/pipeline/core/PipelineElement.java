@@ -6,7 +6,7 @@ import java.util.List;
 public interface PipelineElement {
     String getName();
 
-    default List<PipelineListener> getListeners() {
-        return Collections.emptyList();
-    }
+    List<PipelineListener> getListeners();
+
+    void setListeners(List<PipelineListener> listeners);
 }

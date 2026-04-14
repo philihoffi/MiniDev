@@ -1,7 +1,10 @@
 package org.philipp.fun.minidev.pipeline.abstracts;
 
+import org.philipp.fun.minidev.pipeline.core.PipelineContext;
+import org.philipp.fun.minidev.pipeline.core.PipelineListener;
 import org.philipp.fun.minidev.pipeline.core.Stage;
 import org.philipp.fun.minidev.pipeline.core.Step;
+import org.philipp.fun.minidev.pipeline.model.StepResult;
 
 import java.util.ArrayList;
 import java.util.Collections;

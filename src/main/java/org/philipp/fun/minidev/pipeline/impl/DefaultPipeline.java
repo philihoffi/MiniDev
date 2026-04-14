@@ -21,10 +21,8 @@ public class DefaultPipeline extends AbstractPipeline {
         try {
             for (int i = 0; i < stages.size(); i++) {
                 Stage stage = stages.get(i);
+                stage.setListeners(getListeners());
                 notifyStageStart(stage, context);
-                if (stage instanceof DefaultStage defaultStage) {
-                    defaultStage.setListeners(getListeners());
-                }
                 try {
                     StageResult stageResult = stage.execute(context);
                     notifyStageEnd(stage, context, stageResult);
