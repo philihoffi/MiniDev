@@ -1,5 +1,6 @@
-package org.philipp.fun.minidev.pipeline.abstracts;
+package org.philipp.fun.minidev.pipeline.impl;
 
+import org.philipp.fun.minidev.pipeline.abstracts.AbstractStep;
 import org.philipp.fun.minidev.pipeline.core.PipelineContext;
 import org.philipp.fun.minidev.pipeline.core.StepFunction;
 import org.philipp.fun.minidev.pipeline.model.StepResult;

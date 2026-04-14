@@ -1,15 +1,43 @@
 package org.philipp.fun.minidev.pipeline.impl;
 
-import org.philipp.fun.minidev.pipeline.abstracts.AbstractPipeline;
-import org.philipp.fun.minidev.pipeline.core.PipelineContext;
-import org.philipp.fun.minidev.pipeline.core.Stage;
+import org.philipp.fun.minidev.pipeline.abstracts.AbstractPipelineElement;
+import org.philipp.fun.minidev.pipeline.core.*;
 import org.philipp.fun.minidev.pipeline.model.PipelineResult;
 import org.philipp.fun.minidev.pipeline.model.StageResult;
 
-public class DefaultPipeline extends AbstractPipeline {
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+
+public class DefaultPipeline extends AbstractPipelineElement implements Pipeline {
+    protected final List<Stage> stages = new ArrayList<>();
 
     public DefaultPipeline(String name) {
         super(name);
+    }
+
+    @Override
+    public List<Stage> getStages() {
+        return Collections.unmodifiableList(stages);
+    }
+
+    @Override
+    public Pipeline addStage(Stage stage) {
+        if (stage == null) {
+            throw new IllegalArgumentException("stage must not be null");
+        }
+        stages.add(stage);
+        return this;
+    }
+
+    @Override
+    public Pipeline addListener(PipelineListener listener) {
+        if (listener != null) {
+            List<PipelineListener> current = new ArrayList<>(getListeners());
+            current.add(listener);
+            setListeners(current);
+        }
+        return this;
     }
 
     @Override

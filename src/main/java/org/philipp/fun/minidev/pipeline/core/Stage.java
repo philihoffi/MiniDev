@@ -1,6 +1,6 @@
 package org.philipp.fun.minidev.pipeline.core;
 
-import org.philipp.fun.minidev.pipeline.abstracts.LambdaStep;
+import org.philipp.fun.minidev.pipeline.impl.LambdaStep;
 import org.philipp.fun.minidev.pipeline.impl.DefaultStage;
 import org.philipp.fun.minidev.pipeline.model.StageResult;
 

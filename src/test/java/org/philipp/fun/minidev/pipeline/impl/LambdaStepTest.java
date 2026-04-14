@@ -1,10 +1,11 @@
-package org.philipp.fun.minidev.pipeline.abstracts;
+package org.philipp.fun.minidev.pipeline.impl;
 
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.philipp.fun.minidev.pipeline.core.PipelineContext;
 import org.philipp.fun.minidev.pipeline.model.StepResult;
+import org.philipp.fun.minidev.pipeline.impl.LambdaStep;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
