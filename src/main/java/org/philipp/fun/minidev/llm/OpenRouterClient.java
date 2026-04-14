@@ -5,11 +5,10 @@ import org.philipp.fun.minidev.llm.objects.OpenRouterRequest;
 import org.philipp.fun.minidev.llm.objects.OpenRouterResponse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.MediaType;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClient;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
 
 import java.util.List;
 import java.util.Objects;
@@ -21,15 +20,17 @@ public class OpenRouterClient implements LlmClient {
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
     private final RestClient restClient;
+    private final LlmProperties properties;
 
-
-    public OpenRouterClient(@Value("${minidev.llm.openrouterApiKey}") String apiKey) {
+    public OpenRouterClient(LlmProperties properties) {
+        this.properties = properties;
+        String apiKey = properties.getOpenrouterApiKey();
         Objects.requireNonNull(apiKey, "apiKey must not be null");
         if (apiKey.isBlank()) {
             throw new IllegalArgumentException("apiKey must not be blank");
         }
         this.restClient = RestClient.builder()
-            .baseUrl("https://openrouter.ai/api/v1/chat/completions")
+            .baseUrl(properties.getBaseUrl())
             .defaultHeader(HttpHeaders.AUTHORIZATION, "Bearer " + apiKey)
             .defaultHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
             .build();
@@ -58,7 +59,7 @@ public class OpenRouterClient implements LlmClient {
 
             OpenRouterRequest requestBody = new OpenRouterRequest(
                     messages,
-                    "google/gemini-3-flash-preview",
+                    properties.getModel(),
                     request.temperature(),
                     request.maxTokens(),
                     responseFormat,
