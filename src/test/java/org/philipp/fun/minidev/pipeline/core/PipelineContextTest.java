@@ -35,8 +35,8 @@ class PipelineContextTest {
             String value = "hello";
 
             // Act
-            context.put(STRING_KEY, value);
-            String retrieved = context.get(STRING_KEY);
+            context.putValue(STRING_KEY, value);
+            String retrieved = context.getValue(STRING_KEY);
 
             // Assert
             assertThat(retrieved).isEqualTo(value);
@@ -46,10 +46,10 @@ class PipelineContextTest {
         @DisplayName("contains returns true for existing key")
         void testContains() {
             // Arrange
-            context.put(STRING_KEY, "exists");
+            context.putValue(STRING_KEY, "exists");
 
             // Act
-            boolean contains = context.contains(STRING_KEY);
+            boolean contains = context.containsValue(STRING_KEY);
 
             // Assert
             assertThat(contains).isTrue();
@@ -59,7 +59,7 @@ class PipelineContextTest {
         @DisplayName("get returns null for non-existing key")
         void testGetNull() {
             // Act
-            String retrieved = context.get(STRING_KEY);
+            String retrieved = context.getValue(STRING_KEY);
 
             // Assert
             assertThat(retrieved).isNull();
@@ -69,23 +69,26 @@ class PipelineContextTest {
         @DisplayName("throws ClassCastException when retrieving with wrong type via string key")
         void testWrongType() {
             // Arrange
-            context.put("key", "not an integer");
+            ContextKey<String> stringKey = new ContextKey<>("key", String.class);
+            context.putValue(stringKey, "not an integer");
 
             // Act & Assert
-            assertThatThrownBy(() -> context.get("key", Integer.class))
+            ContextKey<Integer> intKey = new ContextKey<>("key", Integer.class);
+            assertThatThrownBy(() -> context.getValue(intKey))
                     .isInstanceOf(ClassCastException.class);
         }
     }
 
     @Nested
-    @DisplayName("String-based Context Access")
+    @DisplayName("Key-based Context Access")
     class StringAccessTests {
 
         @ParameterizedTest
         @ValueSource(strings = {"key1", "another_key", "namespace.key"})
-        @DisplayName("put and get string-based values")
-        void testStringPutGet(String key) {
+        @DisplayName("put and get key-based values")
+        void testStringPutGet(String name) {
             // Arrange
+            ContextKey<Object> key = new ContextKey<>(name, Object.class);
             Object value = new Object();
 
             // Act

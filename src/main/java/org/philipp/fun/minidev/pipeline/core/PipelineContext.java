@@ -3,8 +3,7 @@ package org.philipp.fun.minidev.pipeline.core;
 import java.util.HashMap;
 import java.util.Map;
 
-public class PipelineContext {
-    private final Map<String, Object> values = new HashMap<>();
+public class PipelineContext extends HashMap<ContextKey<?>, Object> {
     private Pipeline pipeline;
 
     public void setPipeline(Pipeline pipeline) {
@@ -15,35 +14,25 @@ public class PipelineContext {
         return pipeline;
     }
 
-    public <T> void put(ContextKey<T> key, T value) {
-        values.put(key.name(), value);
+    public <T> void putValue(ContextKey<T> key, T value) {
+        super.put(key, value);
     }
 
-    public <T> T get(ContextKey<T> key) {
-        return get(key.name(), key.type());
-    }
-
-    public boolean contains(ContextKey<?> key) {
-        return contains(key.name());
-    }
-
-    public void put(String key, Object value) {
-        values.put(key, value);
-    }
-
-    public Object get(String key) {
-        return values.get(key);
-    }
-
-    public <T> T get(String key, Class<T> type) {
-        Object value = values.get(key);
+    public <T> T getValue(ContextKey<T> key) {
+        Object value = null;
+        for (Map.Entry<ContextKey<?>, Object> entry : super.entrySet()) {
+            if (entry.getKey().name().equals(key.name())) {
+                value = entry.getValue();
+                break;
+            }
+        }
         if (value == null) {
             return null;
         }
-        return type.cast(value);
+        return key.type().cast(value);
     }
 
-    public boolean contains(String key) {
-        return values.containsKey(key);
+    public boolean containsValue(ContextKey<?> key) {
+        return super.containsKey(key);
     }
 }
