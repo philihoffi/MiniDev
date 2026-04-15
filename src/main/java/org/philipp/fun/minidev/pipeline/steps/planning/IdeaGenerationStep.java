@@ -22,6 +22,12 @@ import java.util.List;
  */
 public class IdeaGenerationStep extends AbstractStep {
 
+    private static final String SYSTEM_PROMPT = """
+            You are an expert game designer. Generate 10-20 highly creative and diverse game ideas based on the provided theme.
+            Each idea must include a catchy title and a compelling one-sentence hook that captures the core gameplay and emotional experience.
+            Avoid generic tropes; aim for unique, innovative, and engaging concepts that fit the theme.
+            """;
+
     public IdeaGenerationStep() {
         super("Idea Generation");
     }
@@ -42,7 +48,7 @@ public class IdeaGenerationStep extends AbstractStep {
         JsonSchema schema = new JsonSchema("game_ideas", true, GameIdeas.schema());
 
         LlmRequest request = new LlmRequest(List.of(
-                LlmRequest.Message.system("You are a creative assistant. Generate 10-20 game ideas based on the provided theme."),
+                LlmRequest.Message.system(SYSTEM_PROMPT),
                 LlmRequest.Message.user("Theme: " + theme.theme())
         ), null, null, schema, sessionId);
 

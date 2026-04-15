@@ -20,6 +20,13 @@ public class ThemeGenerationStep extends AbstractStep {
 
     private String fixedTheme;
     
+    private static final String SYSTEM_PROMPT = """
+            You are a creative Game Jam theme generator.
+            Generate a unique, inspiring, and thought-provoking theme for a game development jam.
+            The theme must consist of exactly 5 lowercase words and contain no punctuation.
+            Avoid generic themes. Focus on concepts that allow for diverse interpretation.
+            """;
+
     public ThemeGenerationStep() {
         super("Theme Generation");
         this.fixedTheme = null;
@@ -48,7 +55,7 @@ public class ThemeGenerationStep extends AbstractStep {
         JsonSchema schema = new JsonSchema("game_theme", true, GameTheme.schema());
 
         LlmRequest request = new LlmRequest(List.of(
-                LlmRequest.Message.system("Generate exactly one Game Jam theme with exactly 5 lowercase words. No punctuation."),
+                LlmRequest.Message.system(SYSTEM_PROMPT),
                 LlmRequest.Message.user("Generate a theme for a new game.")
         ), 2.0, null, schema, sessionId);
 

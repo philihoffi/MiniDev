@@ -60,6 +60,8 @@ public class LivePipelineStepTest {
         assertNotNull(context.getValue(ContextKeys.PlanningStage.ELABORATED_CONCEPTS), "Elaborated concepts should be in context");
         assertNotNull(context.getValue(ContextKeys.PlanningStage.EVALUATION), "Evaluation should be in context");
         assertNotNull(context.getValue(ContextKeys.PlanningStage.DETAILED_DESIGN), "Detailed design should be in context");
+
+        System.out.println("Detailed Design: " + context.getValue(ContextKeys.PlanningStage.DETAILED_DESIGN));
     }
 
     @Test

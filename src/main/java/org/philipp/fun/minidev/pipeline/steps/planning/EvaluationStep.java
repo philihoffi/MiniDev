@@ -21,6 +21,13 @@ import java.util.List;
  */
 public class EvaluationStep extends AbstractStep {
 
+    private static final String SYSTEM_PROMPT = """
+            You are an expert game design critic.
+            Your task is to perform a deep, critical evaluation of game concepts.
+            For each concept, analyze it thoroughly based on originality (uniqueness), technical feasibility (realizability in a jam context), and fun factor (player engagement potential).
+            Select the absolute best concept that shows the most potential, provide a detailed justification for your choice, and score each criterion on a scale from 1 to 10.
+            """;
+
     public EvaluationStep() {
         super("Evaluation");
     }
@@ -46,7 +53,7 @@ public class EvaluationStep extends AbstractStep {
         }
 
         LlmRequest request = new LlmRequest(List.of(
-                LlmRequest.Message.system("You are a game design expert. Select the best concept from the provided list and evaluate it based on originality, feasibility, and fun factor. Provide a justification and scores."),
+                LlmRequest.Message.system(SYSTEM_PROMPT),
                 LlmRequest.Message.user(prompt.toString())
         ), null, null, schema, sessionId);
 

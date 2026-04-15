@@ -22,6 +22,12 @@ import java.util.List;
  */
 public class ConceptElaborationStep extends AbstractStep {
 
+    private static final String SYSTEM_PROMPT = """
+            You are an expert game designer with a focus on innovative and engaging concepts.
+            Generate a detailed, creative concept for the game idea, including core mechanics, setting, art style, and target audience.
+            The response should be an inspiring, cohesive paragraph, no more than 5 sentences.
+            """;
+
     public ConceptElaborationStep() {
         super("Concept Elaboration");
     }
@@ -44,7 +50,7 @@ public class ConceptElaborationStep extends AbstractStep {
 
         for (GameIdea idea : selectedIdeas.ideas()) {
             LlmRequest request = new LlmRequest(List.of(
-                    LlmRequest.Message.system("You are a game design expert. Generate a detailed concept for the game idea, including core mechanics, setting, and art style. The response should be a short paragraph, not more than 5 sentences."),
+                    LlmRequest.Message.system(SYSTEM_PROMPT),
                     LlmRequest.Message.user("Idea: " + idea.name() + "\nHook: " + idea.hook())
             ), null, null, schema, sessionId);
 

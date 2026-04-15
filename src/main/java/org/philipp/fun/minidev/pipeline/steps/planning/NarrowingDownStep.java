@@ -19,6 +19,13 @@ import java.util.List;
  */
 public class NarrowingDownStep extends AbstractStep {
 
+    private static final String SYSTEM_PROMPT = """
+            You are a senior Game Design Strategist.
+            Your goal is to curate a selection of game ideas that are both innovative and feasible.
+            Carefully review the provided list, considering creativity, market potential, and gameplay depth.
+            Select the 3 most promising game ideas that offer the best balance of originality and engagement.
+            """;
+
     public NarrowingDownStep() {
         super("Narrowing Down");
     }
@@ -44,7 +51,7 @@ public class NarrowingDownStep extends AbstractStep {
         }
 
         LlmRequest request = new LlmRequest(List.of(
-                LlmRequest.Message.system("You are a game design expert. Select the 3 most promising game ideas from the provided list."),
+                LlmRequest.Message.system(SYSTEM_PROMPT),
                 LlmRequest.Message.user(prompt.toString())
         ), null, null, schema, sessionId);
 

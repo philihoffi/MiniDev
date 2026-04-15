@@ -21,6 +21,23 @@ import java.util.List;
  */
 public class DetailedDesignStep extends AbstractStep {
 
+    private static final String SYSTEM_PROMPT = """
+            You are an expert Game Design Lead.
+            Create a highly detailed, comprehensive, immersive, and structured design document for this game.
+            This document should be extensive and cover all aspects in great depth.
+            Required sections:
+            1. Core Gameplay Mechanics (detailed breakdown of rules and interactions)
+            2. Gameplay Loop (minute-by-minute experience)
+            3. Detailed Setting & Narrative (world-building, lore, character backgrounds)
+            4. Visual Style & Audio Direction (art style, mood, sound design)
+            5. Unique Selling Points (USPs) & Innovation
+            6. Level Design Philosophy (key examples or structure)
+            
+            Focus on the game's vision and player experience.
+            Strictly avoid any implementation details, technical code, or pseudo-code.
+            Be as descriptive and elaborate as possible.
+            """;
+
     public DetailedDesignStep() {
         super("Detailed Design");
     }
@@ -41,7 +58,7 @@ public class DetailedDesignStep extends AbstractStep {
         JsonSchema schema = new JsonSchema("design", true, Design.schema());
 
         LlmRequest request = new LlmRequest(List.of(
-                LlmRequest.Message.system("You are a game design expert. Create a detailed design for the game, including game mechanics, story, and visual style. Do not include implementation details or code."),
+                LlmRequest.Message.system(SYSTEM_PROMPT),
                 LlmRequest.Message.user("Concept: " + evaluation.chosenConcept() + "\n\nEvaluation: " + evaluation.justification())
         ), null, null, schema, sessionId);
 
