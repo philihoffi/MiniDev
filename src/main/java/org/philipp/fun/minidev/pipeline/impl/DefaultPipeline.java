@@ -3,31 +3,32 @@ package org.philipp.fun.minidev.pipeline.impl;
 import org.philipp.fun.minidev.pipeline.abstracts.AbstractPipelineElement;
 import org.philipp.fun.minidev.pipeline.core.*;
 import org.philipp.fun.minidev.pipeline.model.PipelineResult;
-import org.philipp.fun.minidev.pipeline.model.StageResult;
 
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.function.Consumer;
 
-public class DefaultPipeline extends AbstractPipelineElement implements Pipeline {
-    protected final List<Stage> stages = new ArrayList<>();
-    private PipelineResult cachedResult;
-
+public class DefaultPipeline extends SequenzStage implements Pipeline {
     public DefaultPipeline(String name) {
         super(name);
     }
 
     @Override
-    public List<Stage> getStages() {
-        return Collections.unmodifiableList(stages);
+    public Pipeline addStage(String name, Consumer<Stage> stageBuilder) {
+        super.addStage(name, stageBuilder);
+        return this;
     }
 
     @Override
-    public Pipeline addStage(Stage stage) {
-        if (stage == null) {
-            throw new IllegalArgumentException("stage must not be null");
-        }
-        stages.add(stage);
+    public Pipeline addStep(String name, StepFunction function) {
+        super.addStep(name, function);
+        return this;
+    }
+
+    @Override
+    public Pipeline addElement(PipelineElement element) {
+        super.addElement(element);
         return this;
     }
 
@@ -43,61 +44,18 @@ public class DefaultPipeline extends AbstractPipelineElement implements Pipeline
 
     @Override
     public PipelineResult execute(PipelineContext context) {
-        if (cachedResult != null) {
-            return cachedResult;
+        if (getCachedResult() != null) {
+            return getCachedResult();
         }
         context.setPipeline(this);
-        notifyPipelineStart(context);
-        PipelineResult finalResult = null;
-
+        getListeners().forEach(l -> l.onPipelineStart(this, context));
+        PipelineResult result = null;
         try {
-            for (int i = 0; i < stages.size(); i++) {
-                Stage stage = stages.get(i);
-                stage.setListeners(getListeners());
-                notifyStageStart(stage, context);
-                try {
-                    StageResult stageResult = stage.execute(context);
-                    notifyStageEnd(stage, context, stageResult);
-
-                    if (!stageResult.isSuccess()) {
-                        finalResult = new PipelineResult(
-                                getName(),
-                                PipelineResult.PipelineStatus.FAILED,
-                                "Pipeline failed in stage: " + stage.getName(),
-                                stageResult
-                        );
-                        break;
-                    }
-                } catch (Exception e) {
-                    notifyError(stage, context, e);
-                    finalResult = new PipelineResult(
-                            getName(),
-                            PipelineResult.PipelineStatus.FAILED,
-                            "Unexpected exception in stage " + stage.getName() + ": " + e.getMessage(),
-                            new StageResult(stage.getName(), StageResult.StageStatus.FAILED, e.getMessage(), null)
-                    );
-                    break;
-                }
-            }
-
-            if (finalResult == null) {
-                finalResult = new PipelineResult(
-                        getName(),
-                        PipelineResult.PipelineStatus.SUCCESS,
-                        "Pipeline completed successfully",
-                        null
-                );
-            }
+            result = super.execute(context);
         } finally {
-            notifyPipelineEnd(context, finalResult);
+            PipelineResult finalResult = result;
+            getListeners().forEach(l -> l.onPipelineEnd(this, context, finalResult));
         }
-
-        cachedResult = finalResult;
-        return finalResult;
-    }
-
-    @Override
-    public PipelineResult getCachedResult() {
-        return cachedResult;
+        return result;
     }
 }

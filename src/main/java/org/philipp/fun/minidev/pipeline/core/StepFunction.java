@@ -1,8 +1,8 @@
 package org.philipp.fun.minidev.pipeline.core;
 
-import org.philipp.fun.minidev.pipeline.model.StepResult;
+import org.philipp.fun.minidev.pipeline.model.PipelineResult;
 
 @FunctionalInterface
 public interface StepFunction {
-    StepResult execute(PipelineContext context) throws Exception;
+    PipelineResult execute(PipelineContext context) throws Exception;
 }

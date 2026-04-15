@@ -8,7 +8,7 @@ import org.philipp.fun.minidev.llm.objects.LlmResponse;
 import org.philipp.fun.minidev.pipeline.abstracts.AbstractStep;
 import org.philipp.fun.minidev.pipeline.core.ContextKeys;
 import org.philipp.fun.minidev.pipeline.core.PipelineContext;
-import org.philipp.fun.minidev.pipeline.model.StepResult;
+import org.philipp.fun.minidev.pipeline.model.PipelineResult;
 
 import java.util.List;
 
@@ -23,12 +23,12 @@ public class ThemeGenerationStep extends AbstractStep {
     }
 
     @Override
-    protected StepResult doExecute(PipelineContext context) throws Exception {
+    protected PipelineResult doExecute(PipelineContext context) throws Exception {
         LlmClient llmClient = context.getValue(ContextKeys.LLM_CLIENT);
         String sessionId = context.getValue(ContextKeys.SESSION_ID);
 
         if (llmClient == null) {
-            return new StepResult(StepResult.StepStatus.FAILED, "No LlmClient provided in context");
+            return new PipelineResult(getName(), PipelineResult.Status.FAILED, "No LlmClient provided in context", null);
         }
 
         JsonSchema schema = new JsonSchema("game_theme", true, GameTheme.schema());
@@ -41,11 +41,11 @@ public class ThemeGenerationStep extends AbstractStep {
         LlmResponse response = llmClient.chat(request);
 
         if (!response.success()) {
-            return new StepResult(StepResult.StepStatus.FAILED, "LLM API call failed: " + response.errorMessage());
+            return new PipelineResult(getName(), PipelineResult.Status.FAILED, "LLM API call failed: " + response.errorMessage(), null);
         }
 
         GameTheme theme = response.getContentAs(GameTheme.class);
         context.putValue(ContextKeys.THEME, theme);
-        return new StepResult(StepResult.StepStatus.SUCCESS, "Theme generation completed: " + theme.theme());
+        return new PipelineResult(getName(), PipelineResult.Status.SUCCESS, "Theme generation completed: " + theme.theme(), null);
     }
 }

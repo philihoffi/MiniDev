@@ -3,7 +3,7 @@ package org.philipp.fun.minidev.pipeline.impl;
 import org.philipp.fun.minidev.pipeline.abstracts.AbstractStep;
 import org.philipp.fun.minidev.pipeline.core.PipelineContext;
 import org.philipp.fun.minidev.pipeline.core.StepFunction;
-import org.philipp.fun.minidev.pipeline.model.StepResult;
+import org.philipp.fun.minidev.pipeline.model.PipelineResult;
 
 public class LambdaStep extends AbstractStep {
     private final StepFunction function;
@@ -14,7 +14,7 @@ public class LambdaStep extends AbstractStep {
     }
 
     @Override
-    protected StepResult doExecute(PipelineContext context) throws Exception {
+    protected PipelineResult doExecute(PipelineContext context) throws Exception {
         return function.execute(context);
     }
 }

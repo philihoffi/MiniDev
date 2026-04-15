@@ -9,7 +9,7 @@ import org.philipp.fun.minidev.llm.objects.LlmResponse;
 import org.philipp.fun.minidev.pipeline.abstracts.AbstractStep;
 import org.philipp.fun.minidev.pipeline.core.ContextKeys;
 import org.philipp.fun.minidev.pipeline.core.PipelineContext;
-import org.philipp.fun.minidev.pipeline.model.StepResult;
+import org.philipp.fun.minidev.pipeline.model.PipelineResult;
 
 import java.util.List;
 
@@ -26,16 +26,16 @@ public class EvaluationStep extends AbstractStep {
     }
 
     @Override
-    protected StepResult doExecute(PipelineContext context) throws Exception {
+    protected PipelineResult doExecute(PipelineContext context) throws Exception {
         Concepts concepts = context.getValue(ContextKeys.ELABORATED_CONCEPTS);
         LlmClient llmClient = context.getValue(ContextKeys.LLM_CLIENT);
         String sessionId = context.getValue(ContextKeys.SESSION_ID);
 
         if (concepts == null) {
-            return new StepResult(StepResult.StepStatus.FAILED, "No concepts provided in context");
+            return new PipelineResult(getName(), PipelineResult.Status.FAILED, "No concepts provided in context", null);
         }
         if (llmClient == null) {
-            return new StepResult(StepResult.StepStatus.FAILED, "No LlmClient provided in context");
+            return new PipelineResult(getName(), PipelineResult.Status.FAILED, "No LlmClient provided in context", null);
         }
 
         JsonSchema schema = new JsonSchema("evaluation", true, Evaluation.schema());
@@ -53,11 +53,11 @@ public class EvaluationStep extends AbstractStep {
         LlmResponse response = llmClient.chat(request);
 
         if (!response.success()) {
-            return new StepResult(StepResult.StepStatus.FAILED, "LLM API call failed: " + response.errorMessage());
+            return new PipelineResult(getName(), PipelineResult.Status.FAILED, "LLM API call failed: " + response.errorMessage(), null);
         }
 
         Evaluation evaluation = response.getContentAs(Evaluation.class);
         context.putValue(ContextKeys.EVALUATION, evaluation);
-        return new StepResult(StepResult.StepStatus.SUCCESS, "Evaluation completed");
+        return new PipelineResult(getName(), PipelineResult.Status.SUCCESS, "Evaluation completed", null);
     }
 }

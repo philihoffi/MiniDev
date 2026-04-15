@@ -2,10 +2,9 @@ package org.philipp.fun.minidev.pipeline;
 
 import org.junit.jupiter.api.Test;
 import org.philipp.fun.minidev.pipeline.core.*;
-import org.philipp.fun.minidev.pipeline.impl.DefaultPipeline;
-import org.philipp.fun.minidev.pipeline.impl.DefaultStage;
+import org.philipp.fun.minidev.pipeline.impl.SequenzStage;
 import org.philipp.fun.minidev.pipeline.impl.LambdaStep;
-import org.philipp.fun.minidev.pipeline.model.StepResult;
+import org.philipp.fun.minidev.pipeline.model.PipelineResult;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -23,25 +22,27 @@ public class DemoPipelineTest {
         // 2. Add a Listener
         pipeline.addListener(new PipelineListener() {
             @Override
-            public void onStageStart(Stage stage, PipelineContext context) {
-                executionOrder.add("START:" + stage.getName());
+            public void onStepStart(PipelineElement stage, PipelineContext context) {
+                if (stage instanceof Stage) {
+                    executionOrder.add("START:" + stage.getName());
+                }
             }
         });
 
         // 3. Create initial stage that adds other stages
-        Stage triggerStage = new DefaultStage("TriggerStage");
-        triggerStage.addStep(new LambdaStep("TriggerStep", context -> {
+        Stage triggerStage = new SequenzStage("TriggerStage");
+        triggerStage.addElement(new LambdaStep("TriggerStep", context -> {
             // Dynamic addition
-            Stage dynamicStage1 = new DefaultStage("DynamicStage1");
-            Stage dynamicStage2 = new DefaultStage("DynamicStage2");
+            Stage dynamicStage1 = new SequenzStage("DynamicStage1");
+            Stage dynamicStage2 = new SequenzStage("DynamicStage2");
             
-            context.getPipeline().addStage(dynamicStage1);
-            context.getPipeline().addStage(dynamicStage2);
+            context.getPipeline().addElement(dynamicStage1);
+            context.getPipeline().addElement(dynamicStage2);
             
-            return new StepResult(StepResult.StepStatus.SUCCESS, "Added stages");
+            return new PipelineResult("TriggerStep", PipelineResult.Status.SUCCESS, "Added stages", null);
         }));
 
-        pipeline.addStage(triggerStage);
+        pipeline.addElement(triggerStage);
 
         // 4. Execute
         pipeline.execute();

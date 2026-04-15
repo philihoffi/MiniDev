@@ -19,13 +19,7 @@ public class PipelineContext extends HashMap<ContextKey<?>, Object> {
     }
 
     public <T> T getValue(ContextKey<T> key) {
-        Object value = null;
-        for (Map.Entry<ContextKey<?>, Object> entry : super.entrySet()) {
-            if (entry.getKey().name().equals(key.name())) {
-                value = entry.getValue();
-                break;
-            }
-        }
+        Object value = super.get(key);
         if (value == null) {
             return null;
         }

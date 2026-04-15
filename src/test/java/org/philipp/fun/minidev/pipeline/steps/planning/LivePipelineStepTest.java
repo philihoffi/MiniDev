@@ -6,13 +6,11 @@ import org.philipp.fun.minidev.llm.LlmProperties;
 import org.philipp.fun.minidev.llm.OpenRouterClient;
 import org.philipp.fun.minidev.pipeline.core.ContextKeys;
 import org.philipp.fun.minidev.pipeline.core.PipelineContext;
+import org.philipp.fun.minidev.pipeline.core.PipelineElement;
 import org.philipp.fun.minidev.pipeline.core.PipelineListener;
-import org.philipp.fun.minidev.pipeline.core.Stage;
 import org.philipp.fun.minidev.pipeline.core.Step;
 import org.philipp.fun.minidev.pipeline.impl.DefaultPipeline;
 import org.philipp.fun.minidev.pipeline.model.PipelineResult;
-import org.philipp.fun.minidev.pipeline.model.StageResult;
-import org.philipp.fun.minidev.pipeline.model.StepResult;
 import org.philipp.fun.minidev.pipeline.stages.PlanningStage;
 
 import java.util.UUID;
@@ -38,31 +36,21 @@ public class LivePipelineStepTest {
         DefaultPipeline pipeline = new DefaultPipeline("Live Demo");
         pipeline.addListener(new PipelineListener() {
             @Override
-            public void onStepStart(Step step, PipelineContext context) {
+            public void onStepStart(PipelineElement step, PipelineContext context) {
                 System.out.println(">> Step Started: " + step.getName());
             }
 
             @Override
-            public void onStepEnd(Step step, PipelineContext context, StepResult result) {
+            public void onStepEnd(PipelineElement step, PipelineContext context, PipelineResult result) {
                 System.out.println("<< Step Ended: " + step.getName() + " [" + result.status() + "]");
             }
-
-            @Override
-            public void onStageStart(Stage stage, PipelineContext context) {
-                System.out.println(">>> Stage Started: " + stage.getName());
-            }
-
-            @Override
-            public void onStageEnd(Stage stage, PipelineContext context, StageResult result) {
-                System.out.println("<<< Stage Ended: " + stage.getName() + " [" + result.status() + "]");
-            }
         });
-        pipeline.addStage(new PlanningStage());
+        pipeline.addElement(new PlanningStage());
 
         PipelineResult result = pipeline.execute(context);
         
         System.out.println(result.message());
-        assertEquals(PipelineResult.PipelineStatus.SUCCESS, result.status(), "Pipeline execution failed: " + result.message());
+        assertEquals(PipelineResult.Status.SUCCESS, result.status(), "Pipeline execution failed: " + result.message());
 
         // 3. Verifications
         assertNotNull(context.getValue(ContextKeys.THEME), "Theme should be in context");

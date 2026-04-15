@@ -1,24 +1,21 @@
 package org.philipp.fun.minidev.pipeline.core;
 
-import org.philipp.fun.minidev.pipeline.impl.LambdaStep;
-import org.philipp.fun.minidev.pipeline.impl.DefaultStage;
-import org.philipp.fun.minidev.pipeline.model.StageResult;
+import org.philipp.fun.minidev.pipeline.impl.SequenzStage;
 
 import java.util.List;
+import java.util.function.Consumer;
 
 public interface Stage extends PipelineElement {
-    static Stage create(String name) {
-        return new DefaultStage(name);
-    }
+    List<PipelineElement> getElements();
+    Stage addElement(PipelineElement element);
 
-    List<Step> getSteps();
-    Stage addStep(Step step);
+    default Stage addStage(String name, Consumer<Stage> stageBuilder) {
+        SequenzStage stage = new SequenzStage(name);
+        stageBuilder.accept(stage);
+        return addElement(stage);
+    }
 
     default Stage addStep(String name, StepFunction function) {
-        return addStep(new LambdaStep(name, function));
+        return addElement(Step.create(name, function));
     }
-
-    StageResult execute(PipelineContext context);
-
-    StageResult getCachedResult();
 }

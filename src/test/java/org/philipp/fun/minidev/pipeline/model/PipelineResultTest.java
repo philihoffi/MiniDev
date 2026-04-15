@@ -11,69 +11,21 @@ import static org.assertj.core.api.Assertions.assertThat;
 @DisplayName("Pipeline Results Tests")
 class PipelineResultTest {
 
-    @Nested
-    @DisplayName("StepResult Tests")
-    class StepResultTests {
-        @ParameterizedTest
-        @EnumSource(StepResult.StepStatus.class)
-        @DisplayName("isSuccess returns true only for SUCCESS status")
-        void testIsSuccess(StepResult.StepStatus status) {
-            // Arrange
-            StepResult result = new StepResult(status, "test");
+    @ParameterizedTest
+    @EnumSource(PipelineResult.Status.class)
+    @DisplayName("isSuccess returns true only for SUCCESS status")
+    void testIsSuccess(PipelineResult.Status status) {
+        // Arrange
+        PipelineResult result = new PipelineResult("test", status, "test", null);
 
-            // Act
-            boolean isSuccess = result.isSuccess();
+        // Act
+        boolean isSuccess = result.isSuccess();
 
-            // Assert
-            if (status == StepResult.StepStatus.SUCCESS) {
-                assertThat(isSuccess).isTrue();
-            } else {
-                assertThat(isSuccess).isFalse();
-            }
-        }
-    }
-
-    @Nested
-    @DisplayName("StageResult Tests")
-    class StageResultTests {
-        @ParameterizedTest
-        @EnumSource(StageResult.StageStatus.class)
-        @DisplayName("isSuccess returns true only for SUCCESS status")
-        void testIsSuccess(StageResult.StageStatus status) {
-            // Arrange
-            StageResult result = new StageResult("stage", status, "test", null);
-
-            // Act
-            boolean isSuccess = result.isSuccess();
-
-            // Assert
-            if (status == StageResult.StageStatus.SUCCESS) {
-                assertThat(isSuccess).isTrue();
-            } else {
-                assertThat(isSuccess).isFalse();
-            }
-        }
-    }
-
-    @Nested
-    @DisplayName("PipelineResult Tests")
-    class PipelineResultTests {
-        @ParameterizedTest
-        @EnumSource(PipelineResult.PipelineStatus.class)
-        @DisplayName("isSuccess returns true only for SUCCESS status")
-        void testIsSuccess(PipelineResult.PipelineStatus status) {
-            // Arrange
-            PipelineResult result = new PipelineResult("pipeline", status, "test", null);
-
-            // Act
-            boolean isSuccess = result.isSuccess();
-
-            // Assert
-            if (status == PipelineResult.PipelineStatus.SUCCESS) {
-                assertThat(isSuccess).isTrue();
-            } else {
-                assertThat(isSuccess).isFalse();
-            }
+        // Assert
+        if (status == PipelineResult.Status.SUCCESS) {
+            assertThat(isSuccess).isTrue();
+        } else {
+            assertThat(isSuccess).isFalse();
         }
     }
 }

@@ -9,7 +9,7 @@ import org.philipp.fun.minidev.llm.objects.LlmResponse;
 import org.philipp.fun.minidev.pipeline.abstracts.AbstractStep;
 import org.philipp.fun.minidev.pipeline.core.ContextKeys;
 import org.philipp.fun.minidev.pipeline.core.PipelineContext;
-import org.philipp.fun.minidev.pipeline.model.StepResult;
+import org.philipp.fun.minidev.pipeline.model.PipelineResult;
 
 import java.util.List;
 
@@ -27,16 +27,16 @@ public class IdeaGenerationStep extends AbstractStep {
     }
 
     @Override
-    protected StepResult doExecute(PipelineContext context) throws Exception {
+    protected PipelineResult doExecute(PipelineContext context) throws Exception {
         GameTheme theme = context.getValue(ContextKeys.THEME);
         LlmClient llmClient = context.getValue(ContextKeys.LLM_CLIENT);
         String sessionId = context.getValue(ContextKeys.SESSION_ID);
 
         if (theme == null) {
-            return new StepResult(StepResult.StepStatus.FAILED, "No theme provided in context");
+            return new PipelineResult(getName(), PipelineResult.Status.FAILED, "No theme provided in context", null);
         }
         if (llmClient == null) {
-            return new StepResult(StepResult.StepStatus.FAILED, "No LlmClient provided in context");
+            return new PipelineResult(getName(), PipelineResult.Status.FAILED, "No LlmClient provided in context", null);
         }
 
         JsonSchema schema = new JsonSchema("game_ideas", true, GameIdeas.schema());
@@ -49,11 +49,11 @@ public class IdeaGenerationStep extends AbstractStep {
         LlmResponse response = llmClient.chat(request);
 
         if (!response.success()) {
-            return new StepResult(StepResult.StepStatus.FAILED, "LLM API call failed: " + response.errorMessage());
+            return new PipelineResult(getName(), PipelineResult.Status.FAILED, "LLM API call failed: " + response.errorMessage(), null);
         }
 
         GameIdeas ideas = response.getContentAs(GameIdeas.class);
         context.putValue(ContextKeys.IDEAS, ideas);
-        return new StepResult(StepResult.StepStatus.SUCCESS, "Idea generation completed");
+        return new PipelineResult(getName(), PipelineResult.Status.SUCCESS, "Idea generation completed", null);
     }
 }

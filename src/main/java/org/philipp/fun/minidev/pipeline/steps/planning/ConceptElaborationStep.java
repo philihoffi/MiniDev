@@ -11,11 +11,10 @@ import org.philipp.fun.minidev.llm.objects.LlmResponse;
 import org.philipp.fun.minidev.pipeline.abstracts.AbstractStep;
 import org.philipp.fun.minidev.pipeline.core.ContextKeys;
 import org.philipp.fun.minidev.pipeline.core.PipelineContext;
-import org.philipp.fun.minidev.pipeline.model.StepResult;
+import org.philipp.fun.minidev.pipeline.model.PipelineResult;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 
 /**
  * Generate a little bit more detailed concept for the narrowed-down game ideas, including core mechanics,
@@ -28,16 +27,16 @@ public class ConceptElaborationStep extends AbstractStep {
     }
 
     @Override
-    protected StepResult doExecute(PipelineContext context) throws Exception {
+    protected PipelineResult doExecute(PipelineContext context) throws Exception {
         GameIdeas selectedIdeas = context.getValue(ContextKeys.SELECTED_IDEAS);
         LlmClient llmClient = context.getValue(ContextKeys.LLM_CLIENT);
         String sessionId = context.getValue(ContextKeys.SESSION_ID);
 
         if (selectedIdeas == null || selectedIdeas.ideas().isEmpty()) {
-            return new StepResult(StepResult.StepStatus.FAILED, "No selected ideas provided in context");
+            return new PipelineResult(getName(), PipelineResult.Status.FAILED, "No selected ideas provided in context", null);
         }
         if (llmClient == null) {
-            return new StepResult(StepResult.StepStatus.FAILED, "No LlmClient provided in context");
+            return new PipelineResult(getName(), PipelineResult.Status.FAILED, "No LlmClient provided in context", null);
         }
 
         List<String> elaboratedConcepts = new ArrayList<>();
@@ -52,7 +51,7 @@ public class ConceptElaborationStep extends AbstractStep {
             LlmResponse response = llmClient.chat(request);
 
             if (!response.success()) {
-                return new StepResult(StepResult.StepStatus.FAILED, "LLM API call failed: " + response.errorMessage());
+                return new PipelineResult(getName(), PipelineResult.Status.FAILED, "LLM API call failed: " + response.errorMessage(), null);
             }
 
             Concept concept = response.getContentAs(Concept.class);
@@ -60,6 +59,6 @@ public class ConceptElaborationStep extends AbstractStep {
         }
 
         context.putValue(ContextKeys.ELABORATED_CONCEPTS, new Concepts(elaboratedConcepts));
-        return new StepResult(StepResult.StepStatus.SUCCESS, "Concept elaboration completed");
+        return new PipelineResult(getName(), PipelineResult.Status.SUCCESS, "Concept elaboration completed", null);
     }
 }

@@ -9,10 +9,9 @@ import org.philipp.fun.minidev.llm.objects.LlmResponse;
 import org.philipp.fun.minidev.pipeline.abstracts.AbstractStep;
 import org.philipp.fun.minidev.pipeline.core.ContextKeys;
 import org.philipp.fun.minidev.pipeline.core.PipelineContext;
-import org.philipp.fun.minidev.pipeline.model.StepResult;
+import org.philipp.fun.minidev.pipeline.model.PipelineResult;
 
 import java.util.List;
-import java.util.Map;
 
 /**
  * Create a detailed design for the selected game idea, including a game design document,
@@ -27,16 +26,16 @@ public class DetailedDesignStep extends AbstractStep {
     }
 
     @Override
-    protected StepResult doExecute(PipelineContext context) throws Exception {
+    protected PipelineResult doExecute(PipelineContext context) throws Exception {
         Evaluation evaluation = context.getValue(ContextKeys.EVALUATION);
         LlmClient llmClient = context.getValue(ContextKeys.LLM_CLIENT);
         String sessionId = context.getValue(ContextKeys.SESSION_ID);
 
         if (evaluation == null) {
-            return new StepResult(StepResult.StepStatus.FAILED, "Evaluation not provided in context");
+            return new PipelineResult(getName(), PipelineResult.Status.FAILED, "Evaluation not provided in context", null);
         }
         if (llmClient == null) {
-            return new StepResult(StepResult.StepStatus.FAILED, "No LlmClient provided in context");
+            return new PipelineResult(getName(), PipelineResult.Status.FAILED, "No LlmClient provided in context", null);
         }
 
         JsonSchema schema = new JsonSchema("design", true, Design.schema());
@@ -49,11 +48,11 @@ public class DetailedDesignStep extends AbstractStep {
         LlmResponse response = llmClient.chat(request);
 
         if (!response.success()) {
-            return new StepResult(StepResult.StepStatus.FAILED, "LLM API call failed: " + response.errorMessage());
+            return new PipelineResult(getName(), PipelineResult.Status.FAILED, "LLM API call failed: " + response.errorMessage(), null);
         }
 
         Design design = response.getContentAs(Design.class);
         context.putValue(ContextKeys.DETAILED_DESIGN, design.content());
-        return new StepResult(StepResult.StepStatus.SUCCESS, "Detailed design completed");
+        return new PipelineResult(getName(), PipelineResult.Status.SUCCESS, "Detailed design completed", null);
     }
 }
