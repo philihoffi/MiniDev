@@ -8,6 +8,7 @@ import java.util.List;
 public record OpenRouterResponse(
     String id,
     String model,
+    String provider,
     List<Choice> choices,
     Usage usage
 ) {
@@ -20,13 +21,16 @@ public record OpenRouterResponse(
     @JsonIgnoreProperties(ignoreUnknown = true)
     public record Message(
         String role,
-        String content
+        String content,
+        String refusal,
+        String reasoning
     ) {}
 
     @JsonIgnoreProperties(ignoreUnknown = true)
     public record Usage(
         @JsonProperty("prompt_tokens") Integer promptTokens,
         @JsonProperty("completion_tokens") Integer completionTokens,
-        @JsonProperty("total_tokens") Integer totalTokens
+        @JsonProperty("total_tokens") Integer totalTokens,
+        Double cost
     ) {}
 }

@@ -1,4 +1,4 @@
-package org.philipp.fun.minidev.llm;
+package org.philipp.fun.minidev.llm.objects;
 
 import jakarta.validation.constraints.NotNull;
 
@@ -8,20 +8,15 @@ public record LlmRequest(
         @NotNull List<Message> messages,
         Double temperature,
         Integer maxTokens,
-        boolean jsonMode,
-        Object jsonSchema,
+        JsonSchema jsonSchema,
         String sessionId
 ) {
     public LlmRequest(List<Message> messages) {
-        this(messages, null, null, false, null, null);
+        this(messages, null, null, null, null);
     }
 
-    public LlmRequest(List<Message> messages, boolean jsonMode) {
-        this(messages, null, null, jsonMode, null, null);
-    }
-
-    public LlmRequest(List<Message> messages, Object jsonSchema) {
-        this(messages, null, null, true, jsonSchema, null);
+    public LlmRequest(List<Message> messages, JsonSchema jsonSchema) {
+        this(messages, null, null, jsonSchema, null);
     }
 
     public record Message(

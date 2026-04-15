@@ -23,11 +23,5 @@ public record OpenRouterRequest(
         @JsonProperty("json_schema") JsonSchema jsonSchema
     ) {
         public static ResponseFormat JSON = new ResponseFormat("json_object", null);
-
-        public record JsonSchema(
-                String name,
-                Boolean strict,
-                Object schema
-        ) {}
     }
 }

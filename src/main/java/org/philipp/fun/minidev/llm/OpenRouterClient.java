@@ -1,6 +1,8 @@
 package org.philipp.fun.minidev.llm;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.philipp.fun.minidev.llm.objects.LlmRequest;
+import org.philipp.fun.minidev.llm.objects.LlmResponse;
 import org.philipp.fun.minidev.llm.objects.OpenRouterRequest;
 import org.philipp.fun.minidev.llm.objects.OpenRouterResponse;
 import org.slf4j.Logger;
@@ -47,14 +49,8 @@ public class OpenRouterClient implements LlmClient {
             if (request.jsonSchema() != null) {
                 responseFormat = new OpenRouterRequest.ResponseFormat(
                         "json_schema",
-                        new OpenRouterRequest.ResponseFormat.JsonSchema(
-                                "structured_output",
-                                true,
-                                request.jsonSchema()
-                        )
+                        request.jsonSchema()
                 );
-            } else if (request.jsonMode()) {
-                responseFormat = OpenRouterRequest.ResponseFormat.JSON;
             }
 
             OpenRouterRequest requestBody = new OpenRouterRequest(
