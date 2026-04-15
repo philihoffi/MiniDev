@@ -9,6 +9,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Optional;
+import java.util.UUID;
 
 @Repository
 public class FileAgentRunRepository implements AgentRunRepository {
@@ -21,13 +22,13 @@ public class FileAgentRunRepository implements AgentRunRepository {
 
     @Override
     public void save(AgentRun run) throws IOException {
-        Path runDir = Paths.get("generated-games", "run-" + run.id());
+        Path runDir = Paths.get("generated-games", "run-" + run.getId());
         Files.createDirectories(runDir);
         objectMapper.writerWithDefaultPrettyPrinter().writeValue(runDir.resolve("metadata.json").toFile(), run);
     }
 
     @Override
-    public Optional<AgentRun> findById(String id) throws IOException {
+    public Optional<AgentRun> findById(UUID id) throws IOException {
         Path metadataPath = Paths.get("generated-games", "run-" + id, "metadata.json");
         if (!Files.exists(metadataPath)) {
             return Optional.empty();

@@ -21,12 +21,12 @@ class AgentServiceTest {
         AgentService agentService = new AgentService(new FileAgentRunRepository(new ObjectMapper()));
         AgentRun run = agentService.startRun();
         
-        Path metadataPath = Paths.get("generated-games", "run-" + run.id(), "metadata.json");
+        Path metadataPath = Paths.get("generated-games", "run-" + run.getId(), "metadata.json");
         assertTrue(Files.exists(metadataPath));
         
         // Clean up
         Files.deleteIfExists(metadataPath);
-        Files.deleteIfExists(Paths.get("generated-games", "run-" + run.id()));
+        Files.deleteIfExists(Paths.get("generated-games", "run-" + run.getId()));
     }
 
     @Test
@@ -37,14 +37,14 @@ class AgentServiceTest {
         
         AgentRun originalRun = agentService.startRun();
         
-        Optional<AgentRun> loadedRun = repository.findById(originalRun.id());
+        Optional<AgentRun> loadedRun = repository.findById(originalRun.getId());
         
         assertTrue(loadedRun.isPresent());
-        assertEquals(originalRun.id(), loadedRun.get().id());
+        assertEquals(originalRun.getId(), loadedRun.get().getId());
         
         // Clean up
-        Path metadataPath = Paths.get("generated-games", "run-" + originalRun.id(), "metadata.json");
+        Path metadataPath = Paths.get("generated-games", "run-" + originalRun.getId(), "metadata.json");
         Files.deleteIfExists(metadataPath);
-        Files.deleteIfExists(Paths.get("generated-games", "run-" + originalRun.id()));
+        Files.deleteIfExists(Paths.get("generated-games", "run-" + originalRun.getId()));
     }
 }
