@@ -42,7 +42,7 @@ public class DetailedDesignStep extends AbstractStep {
         JsonSchema schema = new JsonSchema("design", true, Design.schema());
 
         LlmRequest request = new LlmRequest(List.of(
-                LlmRequest.Message.system("You are a game design expert. Create a detailed design for the game, including game mechanics, story, and visual style. Do not include implementation details or code."),
+                LlmRequest.Message.system("You are a game design expert. Create a formal Game Design Document (GDD) in Markdown format. The document must be structured with the following sections: 1. Game Title, 2. High Concept, 3. Core Mechanics, 4. Story/Lore, 5. Visual and Audio Style, 6. Key Gameplay Loop. Do not include implementation details or code."),
                 LlmRequest.Message.user("Concept: " + evaluation.chosenConcept() + "\n\nEvaluation: " + evaluation.justification())
         ), null, null, schema, sessionId);
 
