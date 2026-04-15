@@ -60,6 +60,10 @@ public abstract class AbstractPipelineElement implements PipelineElement {
         getListeners().forEach(l -> l.onStepEnd(step, context, result));
     }
 
+    protected void notifyWarning(PipelineElement element, PipelineContext context, String message) {
+        getListeners().forEach(l -> l.onWarning(element, context, message));
+    }
+
     protected void notifyError(PipelineElement element, PipelineContext context, Exception e) {
         getListeners().forEach(l -> l.onError(element, context, e));
     }

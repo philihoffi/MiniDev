@@ -13,6 +13,7 @@ public interface PipelineListener {
 
     default void onStepStart(Step step, PipelineContext context) {}
     default void onStepEnd(Step step, PipelineContext context, StepResult result) {}
-    
+
+    default void onWarning(PipelineElement element, PipelineContext context, String message) {}
     default void onError(PipelineElement element, PipelineContext context, Exception e) {}
 }

@@ -7,7 +7,7 @@ import org.springframework.context.annotation.Configuration;
 @ConfigurationProperties(prefix = "minidev.llm")
 public class LlmProperties {
     private String openrouterApiKey;
-    private String model = "google/gemini-3-flash-preview";
+    private String model = "google/gemini-2.5-flash-lite";
     private String baseUrl = "https://openrouter.ai/api/v1/chat/completions";
 
     public String getOpenrouterApiKey() {
