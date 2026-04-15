@@ -11,6 +11,7 @@ import java.util.List;
 
 public class DefaultStage extends AbstractPipelineElement implements Stage {
     private final List<Step> steps = new ArrayList<>();
+    private StageResult cachedResult;
 
     public DefaultStage(String name) {
         super(name);
@@ -32,6 +33,10 @@ public class DefaultStage extends AbstractPipelineElement implements Stage {
 
     @Override
     public StageResult execute(PipelineContext context) {
+        if (cachedResult != null) {
+            return cachedResult;
+        }
+
         List<PipelineListener> currentListeners = getListeners();
         for (int i = 0; i < steps.size(); i++) {
             Step step = steps.get(i);
@@ -42,24 +47,32 @@ public class DefaultStage extends AbstractPipelineElement implements Stage {
                 notifyStepEnd(step, context, result);
 
                 if (!result.isSuccess()) {
-                    return new StageResult(
+                    cachedResult = new StageResult(
                             getName(),
                             StageResult.StageStatus.FAILED,
                             "Step failed: " + step.getName(),
                             result
                     );
+                    return cachedResult;
                 }
             } catch (Exception e) {
                 notifyError(step, context, e);
-                return new StageResult(
+                cachedResult = new StageResult(
                         getName(),
                         StageResult.StageStatus.FAILED,
                         "Exception in step " + step.getName() + ": " + e.getMessage(),
                         null
                 );
+                return cachedResult;
             }
         }
 
-        return new StageResult(getName(), StageResult.StageStatus.SUCCESS, "Stage completed", null);
+        cachedResult = new StageResult(getName(), StageResult.StageStatus.SUCCESS, "Stage completed", null);
+        return cachedResult;
+    }
+
+    @Override
+    public StageResult getCachedResult() {
+        return cachedResult;
     }
 }

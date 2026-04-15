@@ -9,4 +9,6 @@ public interface Step extends PipelineElement {
     }
 
     StepResult execute(PipelineContext context) throws Exception;
+
+    StepResult getCachedResult();
 }

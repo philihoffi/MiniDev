@@ -23,6 +23,8 @@ public interface Pipeline extends PipelineElement {
     }
     PipelineResult execute(PipelineContext context);
 
+    PipelineResult getCachedResult();
+
     default PipelineResult execute() {
         return execute(new PipelineContext());
     }

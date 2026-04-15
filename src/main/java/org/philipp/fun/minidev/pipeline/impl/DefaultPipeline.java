@@ -11,6 +11,7 @@ import java.util.List;
 
 public class DefaultPipeline extends AbstractPipelineElement implements Pipeline {
     protected final List<Stage> stages = new ArrayList<>();
+    private PipelineResult cachedResult;
 
     public DefaultPipeline(String name) {
         super(name);
@@ -42,6 +43,9 @@ public class DefaultPipeline extends AbstractPipelineElement implements Pipeline
 
     @Override
     public PipelineResult execute(PipelineContext context) {
+        if (cachedResult != null) {
+            return cachedResult;
+        }
         context.setPipeline(this);
         notifyPipelineStart(context);
         PipelineResult finalResult = null;
@@ -88,6 +92,12 @@ public class DefaultPipeline extends AbstractPipelineElement implements Pipeline
             notifyPipelineEnd(context, finalResult);
         }
 
+        cachedResult = finalResult;
         return finalResult;
+    }
+
+    @Override
+    public PipelineResult getCachedResult() {
+        return cachedResult;
     }
 }

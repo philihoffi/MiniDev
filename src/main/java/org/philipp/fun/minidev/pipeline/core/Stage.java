@@ -19,4 +19,6 @@ public interface Stage extends PipelineElement {
     }
 
     StageResult execute(PipelineContext context);
+
+    StageResult getCachedResult();
 }
