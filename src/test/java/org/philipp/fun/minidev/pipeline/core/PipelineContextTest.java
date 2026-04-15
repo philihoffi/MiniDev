@@ -66,16 +66,15 @@ class PipelineContextTest {
         }
 
         @Test
-        @DisplayName("throws ClassCastException when retrieving with wrong type via string key")
-        void testWrongType() {
+        @DisplayName("returns null when retrieving with different type via same name key")
+        void testWrongTypeReturnsNull() {
             // Arrange
             ContextKey<String> stringKey = new ContextKey<>("key", String.class);
             context.putValue(stringKey, "not an integer");
 
             // Act & Assert
             ContextKey<Integer> intKey = new ContextKey<>("key", Integer.class);
-            assertThatThrownBy(() -> context.getValue(intKey))
-                    .isInstanceOf(ClassCastException.class);
+            assertThat(context.getValue(intKey)).isNull();
         }
     }
 
