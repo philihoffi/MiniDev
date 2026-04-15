@@ -33,10 +33,10 @@ public class IdeaGenerationStep extends AbstractStep {
         String sessionId = context.getValue(ContextKeys.SESSION_ID);
 
         if (theme == null) {
-            return PipelineResult.failed(getName(), "No theme provided in context");
+            return PipelineResult.failed(getName(), "No theme provided in context", context);
         }
         if (llmClient == null) {
-            return PipelineResult.failed(getName(), "No LlmClient provided in context");
+            return PipelineResult.failed(getName(), "No LlmClient provided in context", context);
         }
 
         JsonSchema schema = new JsonSchema("game_ideas", true, GameIdeas.schema());
@@ -49,11 +49,11 @@ public class IdeaGenerationStep extends AbstractStep {
         LlmResponse response = llmClient.chat(request);
 
         if (!response.success()) {
-            return PipelineResult.failed(getName(), "LLM API call failed: " + response.errorMessage());
+            return PipelineResult.failed(getName(), "LLM API call failed: " + response.errorMessage(), context);
         }
 
         GameIdeas ideas = response.getContentAs(GameIdeas.class);
         context.putValue(ContextKeys.IDEAS, ideas);
-        return PipelineResult.success(getName(), "Idea generation completed: " + ideas.ideas().size() + " ideas generated");
+        return PipelineResult.success(getName(), "Idea generation completed: " + ideas.ideas().size() + " ideas generated", context);
     }
 }

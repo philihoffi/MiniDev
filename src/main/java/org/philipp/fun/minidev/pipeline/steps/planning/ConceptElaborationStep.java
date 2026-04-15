@@ -33,10 +33,10 @@ public class ConceptElaborationStep extends AbstractStep {
         String sessionId = context.getValue(ContextKeys.SESSION_ID);
 
         if (selectedIdeas == null || selectedIdeas.ideas().isEmpty()) {
-            return PipelineResult.failed(getName(), "No selected ideas provided in context");
+            return PipelineResult.failed(getName(), "No selected ideas provided in context", context);
         }
         if (llmClient == null) {
-            return PipelineResult.failed(getName(), "No LlmClient provided in context");
+            return PipelineResult.failed(getName(), "No LlmClient provided in context", context);
         }
 
         List<String> elaboratedConcepts = new ArrayList<>();
@@ -51,7 +51,7 @@ public class ConceptElaborationStep extends AbstractStep {
             LlmResponse response = llmClient.chat(request);
 
             if (!response.success()) {
-                return PipelineResult.failed(getName(), "LLM API call failed: " + response.errorMessage());
+                return PipelineResult.failed(getName(), "LLM API call failed: " + response.errorMessage(), context);
             }
 
             Concept concept = response.getContentAs(Concept.class);
@@ -59,6 +59,6 @@ public class ConceptElaborationStep extends AbstractStep {
         }
 
         context.putValue(ContextKeys.ELABORATED_CONCEPTS, new Concepts(elaboratedConcepts));
-        return PipelineResult.success(getName(), "Concept elaboration completed for " + elaboratedConcepts.size() + " ideas");
+        return PipelineResult.success(getName(), "Concept elaboration completed for " + elaboratedConcepts.size() + " ideas", context);
     }
 }

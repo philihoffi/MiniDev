@@ -30,10 +30,10 @@ public class NarrowingDownStep extends AbstractStep {
         String sessionId = context.getValue(ContextKeys.SESSION_ID);
 
         if (allIdeas == null) {
-            return PipelineResult.failed(getName(), "No ideas provided in context");
+            return PipelineResult.failed(getName(), "No ideas provided in context", context);
         }
         if (llmClient == null) {
-            return PipelineResult.failed(getName(), "No LlmClient provided in context");
+            return PipelineResult.failed(getName(), "No LlmClient provided in context", context);
         }
 
         JsonSchema schema = new JsonSchema("game_ideas", true, GameIdeas.schema());
@@ -51,7 +51,7 @@ public class NarrowingDownStep extends AbstractStep {
         LlmResponse response = llmClient.chat(request);
 
         if (!response.success()) {
-            return PipelineResult.failed(getName(), "LLM API call failed: " + response.errorMessage());
+            return PipelineResult.failed(getName(), "LLM API call failed: " + response.errorMessage(), context);
         }
 
         GameIdeas selectedIdeas = response.getContentAs(GameIdeas.class);
@@ -62,6 +62,6 @@ public class NarrowingDownStep extends AbstractStep {
         }
 
         context.putValue(ContextKeys.SELECTED_IDEAS, selectedIdeas);
-        return PipelineResult.success(getName(), "Narrowing down completed: selected " + selectedIdeas.ideas().size() + " ideas");
+        return PipelineResult.success(getName(), "Narrowing down completed: selected " + selectedIdeas.ideas().size() + " ideas", context);
     }
 }

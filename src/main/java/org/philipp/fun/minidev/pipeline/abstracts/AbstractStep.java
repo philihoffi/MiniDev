@@ -17,7 +17,7 @@ public abstract class AbstractStep extends AbstractPipelineElement implements St
         }
 
         if (context == null) {
-            return PipelineResult.failed(getName(), "context must not be null");
+            return PipelineResult.failed(getName(), "context must not be null", context);
         }
 
         try {
@@ -25,7 +25,7 @@ public abstract class AbstractStep extends AbstractPipelineElement implements St
             return cachedResult;
         } catch (Exception e) {
             notifyError(this, context, e);
-            cachedResult = PipelineResult.failed(getName(), e.getMessage());
+            cachedResult = PipelineResult.failed(getName(), e.getMessage(), context);
             return cachedResult;
         }
     }

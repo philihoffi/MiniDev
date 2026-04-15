@@ -6,6 +6,8 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
+import org.philipp.fun.minidev.pipeline.impl.DefaultPipeline;
+import org.philipp.fun.minidev.pipeline.model.PipelineResult;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -114,6 +116,36 @@ class PipelineContextTest {
 
             // Assert
             assertThat(retrieved).isSameAs(pipeline);
+        }
+    }
+
+    @Nested
+    @DisplayName("Nested Stages should have the same Context")
+    class NestedStageContextTests {
+        @Test
+        @DisplayName("nested stages share the same context")
+        void testNestedStageContext() {
+            // Arrange
+            Pipeline pipeline = new DefaultPipeline("Test Pipeline");
+            pipeline.addStage("Outer Stage", outer -> {
+                outer.addStep("Outer Step", ctx -> {
+                    ctx.putValue(new ContextKey<>("key", String.class), "value");
+                    return PipelineResult.success("Outer Step");
+                });
+                outer.addStage("Inner Stage", inner -> {
+                    inner.addStep("Inner Step", ctx -> {
+                        String value = ctx.getValue(new ContextKey<>("key", String.class));
+                        assertThat(value).isEqualTo("value");
+                        return PipelineResult.success("Inner Step");
+                    });
+                });
+            });
+
+            // Act
+            PipelineResult result = pipeline.execute(new PipelineContext());
+
+            // Assert
+            assertThat(result.isSuccess()).isTrue();
         }
     }
 }

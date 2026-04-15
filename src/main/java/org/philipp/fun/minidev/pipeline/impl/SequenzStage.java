@@ -48,7 +48,8 @@ public class SequenzStage extends AbstractPipelineElement implements Stage {
                     cachedResult = PipelineResult.failed(
                             getName(),
                             "Element failed: " + element.getName(),
-                            result
+                            result,
+                            result.context()
                     );
                     return cachedResult;
                 }
@@ -57,13 +58,14 @@ public class SequenzStage extends AbstractPipelineElement implements Stage {
                 cachedResult = PipelineResult.failed(
                         getName(),
                         "Exception in element " + element.getName() + ": " + e.getMessage(),
-                        PipelineResult.failed(element.getName(), e.getMessage())
+                        PipelineResult.failed(element.getName(), e.getMessage(), context),
+                        context
                 );
                 return cachedResult;
             }
         }
 
-        cachedResult = PipelineResult.success(getName(), "Completed");
+        cachedResult = PipelineResult.success(getName(), "Completed", context);
         return cachedResult;
     }
 

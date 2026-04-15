@@ -32,10 +32,10 @@ public class EvaluationStep extends AbstractStep {
         String sessionId = context.getValue(ContextKeys.SESSION_ID);
 
         if (concepts == null) {
-            return PipelineResult.failed(getName(), "No concepts provided in context");
+            return PipelineResult.failed(getName(), "No concepts provided in context", context);
         }
         if (llmClient == null) {
-            return PipelineResult.failed(getName(), "No LlmClient provided in context");
+            return PipelineResult.failed(getName(), "No LlmClient provided in context", context);
         }
 
         JsonSchema schema = new JsonSchema("evaluation", true, Evaluation.schema());
@@ -53,11 +53,11 @@ public class EvaluationStep extends AbstractStep {
         LlmResponse response = llmClient.chat(request);
 
         if (!response.success()) {
-            return PipelineResult.failed(getName(), "LLM API call failed: " + response.errorMessage());
+            return PipelineResult.failed(getName(), "LLM API call failed: " + response.errorMessage(), context);
         }
 
         Evaluation evaluation = response.getContentAs(Evaluation.class);
         context.putValue(ContextKeys.EVALUATION, evaluation);
-        return PipelineResult.success(getName(), "Evaluation completed: chosen concept " + evaluation.chosenConcept());
+        return PipelineResult.success(getName(), "Evaluation completed: chosen concept " + evaluation.chosenConcept(), context);
     }
 }

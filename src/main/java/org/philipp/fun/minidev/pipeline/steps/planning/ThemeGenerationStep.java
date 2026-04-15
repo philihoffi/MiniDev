@@ -35,14 +35,14 @@ public class ThemeGenerationStep extends AbstractStep {
         if (fixedTheme != null) {
             GameTheme theme = new GameTheme(fixedTheme);
             context.putValue(ContextKeys.THEME, theme);
-            return PipelineResult.success(getName(), "Using fixed theme: " + fixedTheme);
+            return PipelineResult.success(getName(), "Using fixed theme: " + fixedTheme, context);
         }
 
         LlmClient llmClient = context.getValue(ContextKeys.LLM_CLIENT);
         String sessionId = context.getValue(ContextKeys.SESSION_ID);
 
         if (llmClient == null) {
-            return PipelineResult.failed(getName(), "No LlmClient provided in context");
+            return PipelineResult.failed(getName(), "No LlmClient provided in context", context);
         }
 
         JsonSchema schema = new JsonSchema("game_theme", true, GameTheme.schema());
@@ -55,11 +55,11 @@ public class ThemeGenerationStep extends AbstractStep {
         LlmResponse response = llmClient.chat(request);
 
         if (!response.success()) {
-            return PipelineResult.failed(getName(), "LLM API call failed: " + response.errorMessage());
+            return PipelineResult.failed(getName(), "LLM API call failed: " + response.errorMessage(), context);
         }
 
         GameTheme theme = response.getContentAs(GameTheme.class);
         context.putValue(ContextKeys.THEME, theme);
-        return PipelineResult.success(getName(), "Theme generation completed: " + theme.theme());
+        return PipelineResult.success(getName(), "Theme generation completed: " + theme.theme(), context);
     }
 }
