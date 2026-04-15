@@ -50,7 +50,7 @@ public class ThemeGenerationStep extends AbstractStep {
         LlmRequest request = new LlmRequest(List.of(
                 LlmRequest.Message.system("Generate exactly one Game Jam theme with exactly 5 lowercase words. No punctuation."),
                 LlmRequest.Message.user("Generate a theme for a new game.")
-        ), null, null, schema, sessionId);
+        ), 2.0, null, schema, sessionId);
 
         LlmResponse response = llmClient.chat(request);
 

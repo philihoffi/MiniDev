@@ -1,9 +1,11 @@
 package org.philipp.fun.minidev.pipeline.steps.planning;
 
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable;
 import org.philipp.fun.minidev.llm.LlmProperties;
 import org.philipp.fun.minidev.llm.OpenRouterClient;
+import org.philipp.fun.minidev.llm.dto.GameTheme;
 import org.philipp.fun.minidev.pipeline.core.ContextKeys;
 import org.philipp.fun.minidev.pipeline.core.PipelineContext;
 import org.philipp.fun.minidev.pipeline.core.PipelineElement;
@@ -15,8 +17,7 @@ import org.philipp.fun.minidev.pipeline.stages.PlanningStage;
 
 import java.util.UUID;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.*;
 
 @EnabledIfEnvironmentVariable(named = "OPENROUTER_API_KEY", matches = ".+")
 public class LivePipelineStepTest {
@@ -59,5 +60,37 @@ public class LivePipelineStepTest {
         assertNotNull(context.getValue(ContextKeys.ELABORATED_CONCEPTS), "Elaborated concepts should be in context");
         assertNotNull(context.getValue(ContextKeys.EVALUATION), "Evaluation should be in context");
         assertNotNull(context.getValue(ContextKeys.DETAILED_DESIGN), "Detailed design should be in context");
+    }
+
+    @Test
+    void testThemeGenerationStepLive() throws Exception {
+        // 1. Setup
+        LlmProperties properties = new LlmProperties();
+        properties.setOpenrouterApiKey(System.getenv("OPENROUTER_API_KEY"));
+
+        OpenRouterClient llmClient = new OpenRouterClient(properties);
+        PipelineContext context = new PipelineContext();
+        context.putValue(ContextKeys.LLM_CLIENT, llmClient);
+        context.putValue(ContextKeys.SESSION_ID, "live-theme-gen-test: " + UUID.randomUUID());
+
+        // 2. Execution
+        ThemeGenerationStep step = new ThemeGenerationStep();
+        PipelineResult result = step.execute(context);
+
+        // 3. Verifications
+        System.out.println("Result Message: " + result.message());
+        assertEquals(PipelineResult.Status.SUCCESS, result.status(), "Step execution failed: " + result.message());
+
+        GameTheme theme = context.getValue(ContextKeys.THEME);
+        assertNotNull(theme, "Theme should be in context");
+        assertNotNull(theme.theme(), "Theme string should not be null");
+
+        String themeStr = theme.theme();
+        System.out.println("Generated Theme: " + themeStr);
+
+        // Verification of the 5 lowercase words, no punctuation constraint
+        // The pattern in GameTheme is ^[a-z]+( [a-z]+){4}$
+        assertTrue(themeStr.matches("^[a-z]+( [a-z]+){4}$"),
+                "Theme should consist of exactly 5 lowercase words separated by single spaces, but was: " + themeStr);
     }
 }
