@@ -14,8 +14,8 @@ public class TerminalSseService extends AbstractSseService {
         return true;
     }
 
-    public void sendTerminalText(String text, SseEventType eventType, int delayMillis) {
-        sendText(text, eventType, delayMillis);
+    public void sendTerminalText(String text, SseEventType eventType) {
+        sendText(text, eventType);
     }
 
     public void clearTerminal() {

@@ -58,7 +58,6 @@ public abstract class AbstractSseService {
 
     private final List<SseEmitter> emitters = new CopyOnWriteArrayList<>();
     private final List<HistoryEvent> history = new CopyOnWriteArrayList<>();
-    private final Random random = new Random();
 
     private record HistoryEvent(SseEventName name, String data, SseEventType type) {}
 
@@ -91,13 +90,18 @@ public abstract class AbstractSseService {
         log.info("New SSE subscriber for stream {}. Total emitters: {}", getStreamId(), emitters.size());
 
         try {
-            emitter.send(SseEmitter.event().name(SseEventName.PING.getValue()).data(OBJECT_MAPPER.writeValueAsString("connected")));
+            emitter.send(SseEmitter.event().name(SseEventName.PING.getValue()).data(serializeData("connected")));
 
             if (!history.isEmpty()) {
                 for (HistoryEvent event : history) {
-                    emitter.send(SseEmitter.event()
-                            .name(event.name().getValue())
-                            .data(OBJECT_MAPPER.writeValueAsString(event.data())));
+                    try {
+                        emitter.send(SseEmitter.event()
+                                .name(event.name().getValue())
+                                .data(serializeData(event.data())));
+                    } catch (IOException e) {
+                        log.debug("Failed to send history event for stream {}: {}", getStreamId(), e.getMessage());
+                        break;
+                    }
                 }
             }
         } catch (IOException e) {
@@ -108,8 +112,9 @@ public abstract class AbstractSseService {
         return emitter;
     }
 
-    protected synchronized void sendText(String text, SseEventType eventType, int delayMillis) {
+    protected void sendText(String text, SseEventType eventType) {
         log.info("Sending text to {}: eventType={}, length={}", getStreamId(), eventType != null ? eventType.getValue() : "null", text.length());
+        
         if (eventType != null) {
             broadcast(SseEventName.START, eventType.getValue());
             if (isHistoryEnabled()) {
@@ -117,21 +122,10 @@ public abstract class AbstractSseService {
             }
         }
 
-        text.codePoints().forEach(cp -> {
-            if (delayMillis > 0) {
-                try {
-                    Thread.sleep(random.nextInt(delayMillis));
-                } catch (InterruptedException e) {
-                    Thread.currentThread().interrupt();
-                    throw new RuntimeException(e);
-                }
-            }
-            String character = Character.toString(cp);
-            broadcast(SseEventName.MESSAGE, character);
-            if (isHistoryEnabled()) {
-                history.add(new HistoryEvent(SseEventName.MESSAGE, character, eventType));
-            }
-        });
+        broadcast(SseEventName.MESSAGE, text);
+        if (isHistoryEnabled()) {
+            history.add(new HistoryEvent(SseEventName.MESSAGE, text, eventType));
+        }
 
         if (eventType != null) {
             broadcast(SseEventName.END, eventType.getValue());
@@ -141,31 +135,25 @@ public abstract class AbstractSseService {
         }
     }
 
-    protected synchronized void sendClearCommand() {
+    protected void sendClearCommand() {
         if (isHistoryEnabled()) {
             history.clear();
         }
         broadcast(SseEventName.CLEAR, "");
     }
 
-    protected synchronized void broadcast(SseEventName eventName, Object data) {
+    protected void broadcast(SseEventName eventName, Object data) {
         broadcast(eventName, null, data);
     }
 
-    protected synchronized void broadcast(SseEventName eventName, SseEventType eventType, Object data) {
+    protected void broadcast(SseEventName eventName, SseEventType eventType, Object data) {
         if (emitters.isEmpty()) {
             return;
         }
 
         String jsonData;
         try {
-            if (data instanceof String && !isValidJson((String) data)) {
-                jsonData = OBJECT_MAPPER.writeValueAsString(data);
-            } else if (data instanceof String) {
-                jsonData = (String) data;
-            } else {
-                jsonData = OBJECT_MAPPER.writeValueAsString(data);
-            }
+            jsonData = serializeData(data);
         } catch (JsonProcessingException e) {
             log.error("Failed to serialize SSE data to JSON for stream {}", getStreamId(), e);
             return;
@@ -195,16 +183,19 @@ public abstract class AbstractSseService {
         if (json == null || json.trim().isEmpty()) {
             return false;
         }
-        String trimmed = json.trim();
-        if (!((trimmed.startsWith("{") && trimmed.endsWith("}")) || (trimmed.startsWith("[") && trimmed.endsWith("]")))) {
-            return false;
-        }
         try {
             OBJECT_MAPPER.readTree(json);
             return true;
         } catch (Exception e) {
             return false;
         }
+    }
+
+    private String serializeData(Object data) throws JsonProcessingException {
+        if (data instanceof String str && isValidJson(str)) {
+            return str;
+        }
+        return OBJECT_MAPPER.writeValueAsString(data);
     }
 
     private void addEmitter(SseEmitter emitter) {
