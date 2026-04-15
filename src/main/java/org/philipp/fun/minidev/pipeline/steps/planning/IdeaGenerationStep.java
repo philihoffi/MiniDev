@@ -28,9 +28,9 @@ public class IdeaGenerationStep extends AbstractStep {
 
     @Override
     protected PipelineResult doExecute(PipelineContext context) throws Exception {
-        GameTheme theme = context.getValue(ContextKeys.THEME);
-        LlmClient llmClient = context.getValue(ContextKeys.LLM_CLIENT);
-        String sessionId = context.getValue(ContextKeys.SESSION_ID);
+        GameTheme theme = context.getValue(ContextKeys.PlanningStage.THEME);
+        LlmClient llmClient = context.getValue(ContextKeys.System.LLM_CLIENT);
+        String sessionId = context.getValue(ContextKeys.System.SESSION_ID);
 
         if (theme == null) {
             return PipelineResult.failed(getName(), "No theme provided in context", context);
@@ -53,7 +53,7 @@ public class IdeaGenerationStep extends AbstractStep {
         }
 
         GameIdeas ideas = response.getContentAs(GameIdeas.class);
-        context.putValue(ContextKeys.IDEAS, ideas);
+        context.putValue(ContextKeys.PlanningStage.IDEAS_ALL, ideas);
         return PipelineResult.success(getName(), "Idea generation completed: " + ideas.ideas().size() + " ideas generated", context);
     }
 }

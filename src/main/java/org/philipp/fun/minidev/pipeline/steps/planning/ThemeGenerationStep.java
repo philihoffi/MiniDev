@@ -34,12 +34,12 @@ public class ThemeGenerationStep extends AbstractStep {
     protected PipelineResult doExecute(PipelineContext context) throws Exception {
         if (fixedTheme != null) {
             GameTheme theme = new GameTheme(fixedTheme);
-            context.putValue(ContextKeys.THEME, theme);
+            context.putValue(ContextKeys.PlanningStage.THEME, theme);
             return PipelineResult.success(getName(), "Using fixed theme: " + fixedTheme, context);
         }
 
-        LlmClient llmClient = context.getValue(ContextKeys.LLM_CLIENT);
-        String sessionId = context.getValue(ContextKeys.SESSION_ID);
+        LlmClient llmClient = context.getValue(ContextKeys.System.LLM_CLIENT);
+        String sessionId = context.getValue(ContextKeys.System.SESSION_ID);
 
         if (llmClient == null) {
             return PipelineResult.failed(getName(), "No LlmClient provided in context", context);
@@ -59,7 +59,7 @@ public class ThemeGenerationStep extends AbstractStep {
         }
 
         GameTheme theme = response.getContentAs(GameTheme.class);
-        context.putValue(ContextKeys.THEME, theme);
+        context.putValue(ContextKeys.PlanningStage.THEME, theme);
         return PipelineResult.success(getName(), "Theme generation completed: " + theme.theme(), context);
     }
 }

@@ -27,9 +27,9 @@ public class EvaluationStep extends AbstractStep {
 
     @Override
     protected PipelineResult doExecute(PipelineContext context) throws Exception {
-        Concepts concepts = context.getValue(ContextKeys.ELABORATED_CONCEPTS);
-        LlmClient llmClient = context.getValue(ContextKeys.LLM_CLIENT);
-        String sessionId = context.getValue(ContextKeys.SESSION_ID);
+        Concepts concepts = context.getValue(ContextKeys.PlanningStage.ELABORATED_CONCEPTS);
+        LlmClient llmClient = context.getValue(ContextKeys.System.LLM_CLIENT);
+        String sessionId = context.getValue(ContextKeys.System.SESSION_ID);
 
         if (concepts == null) {
             return PipelineResult.failed(getName(), "No concepts provided in context", context);
@@ -57,7 +57,7 @@ public class EvaluationStep extends AbstractStep {
         }
 
         Evaluation evaluation = response.getContentAs(Evaluation.class);
-        context.putValue(ContextKeys.EVALUATION, evaluation);
+        context.putValue(ContextKeys.PlanningStage.EVALUATION, evaluation);
         return PipelineResult.success(getName(), "Evaluation completed: chosen concept " + evaluation.chosenConcept(), context);
     }
 }

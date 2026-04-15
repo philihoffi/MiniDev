@@ -25,9 +25,9 @@ public class NarrowingDownStep extends AbstractStep {
 
     @Override
     protected PipelineResult doExecute(PipelineContext context) throws Exception {
-        GameIdeas allIdeas = context.getValue(ContextKeys.IDEAS);
-        LlmClient llmClient = context.getValue(ContextKeys.LLM_CLIENT);
-        String sessionId = context.getValue(ContextKeys.SESSION_ID);
+        GameIdeas allIdeas = context.getValue(ContextKeys.PlanningStage.IDEAS_ALL);
+        LlmClient llmClient = context.getValue(ContextKeys.System.LLM_CLIENT);
+        String sessionId = context.getValue(ContextKeys.System.SESSION_ID);
 
         if (allIdeas == null) {
             return PipelineResult.failed(getName(), "No ideas provided in context", context);
@@ -61,7 +61,7 @@ public class NarrowingDownStep extends AbstractStep {
             selectedIdeas = new GameIdeas(selectedIdeas.ideas().stream().sorted(Comparator.comparing(GameIdea::feasibility).reversed()).limit(3).toList());
         }
 
-        context.putValue(ContextKeys.SELECTED_IDEAS, selectedIdeas);
+        context.putValue(ContextKeys.PlanningStage.IDEAS_SELECTED, selectedIdeas);
         return PipelineResult.success(getName(), "Narrowing down completed: selected " + selectedIdeas.ideas().size() + " ideas", context);
     }
 }

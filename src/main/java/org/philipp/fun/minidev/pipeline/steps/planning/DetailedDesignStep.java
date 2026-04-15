@@ -27,9 +27,9 @@ public class DetailedDesignStep extends AbstractStep {
 
     @Override
     protected PipelineResult doExecute(PipelineContext context) throws Exception {
-        Evaluation evaluation = context.getValue(ContextKeys.EVALUATION);
-        LlmClient llmClient = context.getValue(ContextKeys.LLM_CLIENT);
-        String sessionId = context.getValue(ContextKeys.SESSION_ID);
+        Evaluation evaluation = context.getValue(ContextKeys.PlanningStage.EVALUATION);
+        LlmClient llmClient = context.getValue(ContextKeys.System.LLM_CLIENT);
+        String sessionId = context.getValue(ContextKeys.System.SESSION_ID);
 
         if (evaluation == null) {
             return PipelineResult.failed(getName(), "Evaluation not provided in context", context);
@@ -52,7 +52,7 @@ public class DetailedDesignStep extends AbstractStep {
         }
 
         Design design = response.getContentAs(Design.class);
-        context.putValue(ContextKeys.DETAILED_DESIGN, design.content());
+        context.putValue(ContextKeys.PlanningStage.DETAILED_DESIGN, design.content());
         return PipelineResult.success(getName(), "Detailed design completed: " + design.content().length() + " characters", context);
     }
 }

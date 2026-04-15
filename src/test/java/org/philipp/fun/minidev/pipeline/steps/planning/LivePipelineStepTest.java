@@ -30,8 +30,8 @@ public class LivePipelineStepTest {
 
         OpenRouterClient llmClient = new OpenRouterClient(properties);
         PipelineContext context = new PipelineContext();
-        context.putValue(ContextKeys.LLM_CLIENT, llmClient);
-        context.putValue(ContextKeys.SESSION_ID, "live-demo-session: " + UUID.randomUUID());
+        context.putValue(ContextKeys.System.LLM_CLIENT, llmClient);
+        context.putValue(ContextKeys.System.SESSION_ID, "live-demo-session: " + UUID.randomUUID());
 
         // 2. Pipeline Execution
         DefaultPipeline pipeline = new DefaultPipeline("Live Demo");
@@ -54,12 +54,12 @@ public class LivePipelineStepTest {
         assertEquals(PipelineResult.Status.SUCCESS, result.status(), "Pipeline execution failed: " + result.message());
 
         // 3. Verifications
-        assertNotNull(context.getValue(ContextKeys.THEME), "Theme should be in context");
-        assertNotNull(context.getValue(ContextKeys.IDEAS), "Ideas should be in context");
-        assertNotNull(context.getValue(ContextKeys.SELECTED_IDEAS), "Selected ideas should be in context");
-        assertNotNull(context.getValue(ContextKeys.ELABORATED_CONCEPTS), "Elaborated concepts should be in context");
-        assertNotNull(context.getValue(ContextKeys.EVALUATION), "Evaluation should be in context");
-        assertNotNull(context.getValue(ContextKeys.DETAILED_DESIGN), "Detailed design should be in context");
+        assertNotNull(context.getValue(ContextKeys.PlanningStage.THEME), "Theme should be in context");
+        assertNotNull(context.getValue(ContextKeys.PlanningStage.IDEAS_ALL), "Ideas should be in context");
+        assertNotNull(context.getValue(ContextKeys.PlanningStage.IDEAS_SELECTED), "Selected ideas should be in context");
+        assertNotNull(context.getValue(ContextKeys.PlanningStage.ELABORATED_CONCEPTS), "Elaborated concepts should be in context");
+        assertNotNull(context.getValue(ContextKeys.PlanningStage.EVALUATION), "Evaluation should be in context");
+        assertNotNull(context.getValue(ContextKeys.PlanningStage.DETAILED_DESIGN), "Detailed design should be in context");
     }
 
     @Test
@@ -70,8 +70,8 @@ public class LivePipelineStepTest {
 
         OpenRouterClient llmClient = new OpenRouterClient(properties);
         PipelineContext context = new PipelineContext();
-        context.putValue(ContextKeys.LLM_CLIENT, llmClient);
-        context.putValue(ContextKeys.SESSION_ID, "live-theme-gen-test: " + UUID.randomUUID());
+        context.putValue(ContextKeys.System.LLM_CLIENT, llmClient);
+        context.putValue(ContextKeys.System.SESSION_ID, "live-theme-gen-test: " + UUID.randomUUID());
 
         // 2. Execution
         ThemeGenerationStep step = new ThemeGenerationStep();
@@ -81,7 +81,7 @@ public class LivePipelineStepTest {
         System.out.println("Result Message: " + result.message());
         assertEquals(PipelineResult.Status.SUCCESS, result.status(), "Step execution failed: " + result.message());
 
-        GameTheme theme = context.getValue(ContextKeys.THEME);
+        GameTheme theme = context.getValue(ContextKeys.PlanningStage.THEME);
         assertNotNull(theme, "Theme should be in context");
         assertNotNull(theme.theme(), "Theme string should not be null");
 

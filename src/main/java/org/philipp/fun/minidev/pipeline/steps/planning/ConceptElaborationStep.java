@@ -28,9 +28,9 @@ public class ConceptElaborationStep extends AbstractStep {
 
     @Override
     protected PipelineResult doExecute(PipelineContext context) throws Exception {
-        GameIdeas selectedIdeas = context.getValue(ContextKeys.SELECTED_IDEAS);
-        LlmClient llmClient = context.getValue(ContextKeys.LLM_CLIENT);
-        String sessionId = context.getValue(ContextKeys.SESSION_ID);
+        GameIdeas selectedIdeas = context.getValue(ContextKeys.PlanningStage.IDEAS_SELECTED);
+        LlmClient llmClient = context.getValue(ContextKeys.System.LLM_CLIENT);
+        String sessionId = context.getValue(ContextKeys.System.SESSION_ID);
 
         if (selectedIdeas == null || selectedIdeas.ideas().isEmpty()) {
             return PipelineResult.failed(getName(), "No selected ideas provided in context", context);
@@ -58,7 +58,7 @@ public class ConceptElaborationStep extends AbstractStep {
             elaboratedConcepts.add(concept.content());
         }
 
-        context.putValue(ContextKeys.ELABORATED_CONCEPTS, new Concepts(elaboratedConcepts));
+        context.putValue(ContextKeys.PlanningStage.ELABORATED_CONCEPTS, new Concepts(elaboratedConcepts));
         return PipelineResult.success(getName(), "Concept elaboration completed for " + elaboratedConcepts.size() + " ideas", context);
     }
 }
