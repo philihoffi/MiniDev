@@ -18,17 +18,31 @@ import java.util.List;
  */
 public class ThemeGenerationStep extends AbstractStep {
 
+    private String fixedTheme;
+    
     public ThemeGenerationStep() {
         super("Theme Generation");
+        this.fixedTheme = null;
+    }
+    
+    public ThemeGenerationStep(String theme) {
+        this();
+        this.fixedTheme = theme;
     }
 
     @Override
     protected PipelineResult doExecute(PipelineContext context) throws Exception {
+        if (fixedTheme != null) {
+            GameTheme theme = new GameTheme(fixedTheme);
+            context.putValue(ContextKeys.THEME, theme);
+            return PipelineResult.success(getName(), "Using fixed theme: " + fixedTheme);
+        }
+
         LlmClient llmClient = context.getValue(ContextKeys.LLM_CLIENT);
         String sessionId = context.getValue(ContextKeys.SESSION_ID);
 
         if (llmClient == null) {
-            return new PipelineResult(getName(), PipelineResult.Status.FAILED, "No LlmClient provided in context", null);
+            return PipelineResult.failed(getName(), "No LlmClient provided in context");
         }
 
         JsonSchema schema = new JsonSchema("game_theme", true, GameTheme.schema());
@@ -41,11 +55,11 @@ public class ThemeGenerationStep extends AbstractStep {
         LlmResponse response = llmClient.chat(request);
 
         if (!response.success()) {
-            return new PipelineResult(getName(), PipelineResult.Status.FAILED, "LLM API call failed: " + response.errorMessage(), null);
+            return PipelineResult.failed(getName(), "LLM API call failed: " + response.errorMessage());
         }
 
         GameTheme theme = response.getContentAs(GameTheme.class);
         context.putValue(ContextKeys.THEME, theme);
-        return new PipelineResult(getName(), PipelineResult.Status.SUCCESS, "Theme generation completed: " + theme.theme(), null);
+        return PipelineResult.success(getName(), "Theme generation completed: " + theme.theme());
     }
 }

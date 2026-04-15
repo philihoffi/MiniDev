@@ -32,10 +32,10 @@ public class DetailedDesignStep extends AbstractStep {
         String sessionId = context.getValue(ContextKeys.SESSION_ID);
 
         if (evaluation == null) {
-            return new PipelineResult(getName(), PipelineResult.Status.FAILED, "Evaluation not provided in context", null);
+            return PipelineResult.failed(getName(), "Evaluation not provided in context");
         }
         if (llmClient == null) {
-            return new PipelineResult(getName(), PipelineResult.Status.FAILED, "No LlmClient provided in context", null);
+            return PipelineResult.failed(getName(), "No LlmClient provided in context");
         }
 
         JsonSchema schema = new JsonSchema("design", true, Design.schema());
@@ -48,11 +48,11 @@ public class DetailedDesignStep extends AbstractStep {
         LlmResponse response = llmClient.chat(request);
 
         if (!response.success()) {
-            return new PipelineResult(getName(), PipelineResult.Status.FAILED, "LLM API call failed: " + response.errorMessage(), null);
+            return PipelineResult.failed(getName(), "LLM API call failed: " + response.errorMessage());
         }
 
         Design design = response.getContentAs(Design.class);
         context.putValue(ContextKeys.DETAILED_DESIGN, design.content());
-        return new PipelineResult(getName(), PipelineResult.Status.SUCCESS, "Detailed design completed", null);
+        return PipelineResult.success(getName(), "Detailed design completed: " + design.content().length() + " characters");
     }
 }
