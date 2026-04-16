@@ -3,15 +3,14 @@ package org.philipp.fun.minidev.pipeline.impl;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
-import org.philipp.fun.minidev.pipeline.core.PipelineContext;
-import org.philipp.fun.minidev.pipeline.core.PipelineElement;
-import org.philipp.fun.minidev.pipeline.core.PipelineListener;
-import org.philipp.fun.minidev.pipeline.core.Step;
+import org.philipp.fun.minidev.pipeline.core.*;
 import org.philipp.fun.minidev.pipeline.model.PipelineResult;
 import java.util.Collections;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
+import java.time.Duration;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
@@ -28,7 +27,9 @@ class ParallelStageTest {
 
     @BeforeEach
     void setUp() {
-        executor = Executors.newFixedThreadPool(4);
+        int numThreads = Runtime.getRuntime().availableProcessors()*2;
+        executor = Executors.newFixedThreadPool(numThreads);
+        System.out.println("Executor Threads: " + numThreads);
 
         stage = new ParallelStage(executor, "Test Stage");
         context = new PipelineContext();
@@ -45,6 +46,63 @@ class ParallelStageTest {
     @Nested
     @DisplayName("Execution Logic")
     class ExecutionTests {
+
+        @Test
+        @DisplayName("Parallel execution of multiple steps can handle 1000 Parallel Steps")
+        void testParallelExecution() throws Exception {
+            // Arrange
+            int numSteps = 10000;
+            for (int i = 0; i < numSteps; i++) {
+                Step step = Step.create("step-" + i, ctx -> {
+                    //random code to simulate long running step the ThreadRunning
+                    double sum = 0;
+                    for (long j = 0; j < 1000; j++) {
+                        sum = Math.sqrt(sum);
+                        sum = Math.sin(sum);
+                        sum = Math.cos(sum);
+                    }
+                    return PipelineResult.success("step", "OK", ctx);
+                });
+
+                stage.addElement(step);
+            }
+
+            Pipeline pipeline = new DefaultPipeline("Test Pipeline");
+            pipeline.addElement(stage);
+
+            AtomicInteger activeSteps = new AtomicInteger(0);
+            AtomicInteger completedSteps = new AtomicInteger(0);
+            long startTime = System.currentTimeMillis();
+
+            PipelineListener listener = new PipelineListener() {
+                @Override
+                public void onStepStart(PipelineElement step, PipelineContext context) {
+                    activeSteps.incrementAndGet();
+                }
+
+                @Override
+                public void onStepEnd(PipelineElement step, PipelineContext context, PipelineResult result) {
+                    activeSteps.decrementAndGet();
+                    completedSteps.incrementAndGet();
+
+                    int completed = completedSteps.get();
+                    if (completed > 0) {
+                        long elapsed = System.currentTimeMillis() - startTime;
+                        double avgTimePerStep = (double) elapsed / completed;
+                        int remaining = numSteps - completed;
+                        double estimatedRemainingTimeMs = avgTimePerStep * remaining;
+                        
+                        //System.out.println("Completed: " + completed + ", Active: " + activeSteps.get() + ", Remaining: " + remaining + ", ETA: " + Duration.ofMillis((long) estimatedRemainingTimeMs));
+                    }
+                }
+            };
+            stage.setListeners(Collections.singletonList(listener));
+
+            // Act
+            stage.execute(context);
+
+
+        }
 
         @Test
         @DisplayName("Execute successful step")
