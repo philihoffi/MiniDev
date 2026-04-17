@@ -1,50 +1,31 @@
 package org.philipp.fun.minidev.services;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.Test;
-import org.philipp.fun.minidev.model.AgentRun;
-import org.philipp.fun.minidev.repository.FileAgentRunRepository;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
+import org.philipp.fun.minidev.spring.model.AgentRun;
 
 import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.util.Optional;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.mockito.Mockito.verify;
 
+@ExtendWith(MockitoExtension.class)
 class AgentServiceTest {
 
-    @Test
-    void testStartRunSavesMetadata() throws IOException {
-        AgentService agentService = new AgentService(new FileAgentRunRepository(new ObjectMapper()));
-        AgentRun run = agentService.startRun();
-        
-        Path metadataPath = Paths.get("generated-games", "run-" + run.getId(), "metadata.json");
-        assertTrue(Files.exists(metadataPath));
-        
-        // Clean up
-        Files.deleteIfExists(metadataPath);
-        Files.deleteIfExists(Paths.get("generated-games", "run-" + run.getId()));
-    }
+    @Mock
+    private DataBaseService dataBaseService;
+
+    @InjectMocks
+    private AgentService agentService;
 
     @Test
-    void testLoadExistingRun() throws IOException {
-        ObjectMapper objectMapper = new ObjectMapper();
-        FileAgentRunRepository repository = new FileAgentRunRepository(objectMapper);
-        AgentService agentService = new AgentService(repository);
+    void testStartRunSavesToRepository() throws IOException {
+        AgentRun run = agentService.startRun();
         
-        AgentRun originalRun = agentService.startRun();
-        
-        Optional<AgentRun> loadedRun = repository.findById(originalRun.getId());
-        
-        assertTrue(loadedRun.isPresent());
-        assertEquals(originalRun.getId(), loadedRun.get().getId());
-        
-        // Clean up
-        Path metadataPath = Paths.get("generated-games", "run-" + originalRun.getId(), "metadata.json");
-        Files.deleteIfExists(metadataPath);
-        Files.deleteIfExists(Paths.get("generated-games", "run-" + originalRun.getId()));
+        verify(dataBaseService).addToRepository(run);
+        assertNotNull(run);
     }
 }
