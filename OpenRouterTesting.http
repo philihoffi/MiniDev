@@ -1,0 +1,116 @@
+@baseUrl = https://openrouter.ai/api/v1
+@token = {{$env.OPENROUTER_API_KEY}}
+//Authorization: Bearer {{token}}
+//Content-Type: application/json
+
+
+### 1. Tool Call anfordern
+POST {{baseUrl}}/chat/completions
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "model": "openai/gpt-5-nano",
+  "messages": [
+    {
+      "role": "system",
+      "content": "You are a helpful assistant. Always use the weather tool."
+    },
+    {
+      "role": "user",
+      "content": "What's the weather in Berlin?"
+    }
+  ],
+  "tools": [
+    {
+      "type": "function",
+      "function": {
+        "name": "get_weather",
+        "description": "Get the current weather",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "location": { "type": "string" },
+            "unit": {
+              "type": "string",
+              "enum": ["celsius", "fahrenheit"]
+            }
+          },
+          "required": ["location"]
+        }
+      }
+    }
+  ],
+  "tool_choice": "auto"
+}
+
+> {%
+    const msg = response.body.choices[0].message;
+    const toolCall = msg.tool_calls[0];
+
+    client.global.set("tool_call_id", toolCall.id);
+    client.global.set("tool_name", toolCall.function.name);
+    client.global.set("tool_args", toolCall.function.arguments);
+    client.global.set("assistant_tool_calls", JSON.stringify(msg.tool_calls));
+
+    //Output for debugging
+    console.log("tool_call_id: " + client.global.get("tool_call_id"));
+    console.log("tool_name: " + client.global.get("tool_name"));
+    console.log("tool_args: " + client.global.get("tool_args"));
+    console.log("assistant_tool_calls: " + client.global.get("assistant_tool_calls"));
+%}
+
+### 2. Tool lokal "ausführen" und Ergebnis zurückgeben
+POST {{baseUrl}}/chat/completions
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "model": "openai/gpt-5-nano",
+  "messages": [
+    {
+      "role": "system",
+      "content": "You are a helpful assistant. Always use the weather tool."
+    },
+    {
+      "role": "user",
+      "content": "What's the weather in Berlin?"
+    },
+    {
+      "role": "assistant",
+      "content": null,
+      "tool_calls": {{assistant_tool_calls}}
+    },
+    {
+      "role": "tool",
+      "tool_call_id": "{{tool_call_id}}",
+      "content": "{\"temperature\":21,\"condition\":\"sunny\"}"
+    }
+  ],
+  "tools": [
+    {
+      "type": "function",
+      "function": {
+        "name": "get_weather",
+        "description": "Get the current weather",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "location": { "type": "string" },
+            "unit": {
+              "type": "string",
+              "enum": ["celsius", "fahrenheit"]
+            }
+          },
+          "required": ["location"]
+        }
+      }
+    }
+  ]
+}
+
+> {%
+    const assistantResponse = response.body.choices[0].message.content;
+    console.log("Assistant Response: " + assistantResponse);
+%}
+
