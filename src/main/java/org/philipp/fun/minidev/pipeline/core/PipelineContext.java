@@ -4,13 +4,13 @@ import java.util.HashMap;
 import java.util.Map;
 
 public class PipelineContext extends HashMap<ContextKey<?>, Object> {
-    private Pipeline pipeline;
+    private PipelineElement pipeline;
 
-    public void setPipeline(Pipeline pipeline) {
+    public void setPipeline(PipelineElement pipeline) {
         this.pipeline = pipeline;
     }
 
-    public Pipeline getPipeline() {
+    public PipelineElement getPipeline() {
         return pipeline;
     }
 

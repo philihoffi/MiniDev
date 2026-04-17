@@ -2,7 +2,6 @@ package org.philipp.fun.minidev.pipeline.impl;
 
 import org.philipp.fun.minidev.pipeline.abstracts.AbstractPipelineElement;
 import org.philipp.fun.minidev.pipeline.core.*;
-import org.philipp.fun.minidev.pipeline.model.PipelineResult;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -30,47 +29,21 @@ public class SequenzStage extends AbstractPipelineElement implements Stage {
     }
 
     @Override
-    public PipelineResult execute(PipelineContext context) {
-        if (cachedResult != null) {
-            return cachedResult;
-        }
+    public boolean execute(PipelineContext context) {
 
         List<PipelineListener> currentListeners = getListeners();
-        for (int i = 0; i < elements.size(); i++) {
-            PipelineElement element = elements.get(i);
+        for (PipelineElement element : elements) {
             element.setListeners(currentListeners);
             notifyStepStart(element, context);
             try {
-                PipelineResult result = element.execute(context);
+                boolean result = element.execute(context);
                 notifyStepEnd(element, context, result);
-
-                if (!result.isSuccess()) {
-                    cachedResult = PipelineResult.failed(
-                            getName(),
-                            "Element failed: " + element.getName(),
-                            result,
-                            result.context()
-                    );
-                    return cachedResult;
-                }
+                if (!result) return false;
             } catch (Exception e) {
                 notifyError(element, context, e);
-                cachedResult = PipelineResult.failed(
-                        getName(),
-                        "Exception in element " + element.getName() + ": " + e.getMessage(),
-                        PipelineResult.failed(element.getName(), e.getMessage(), context),
-                        context
-                );
-                return cachedResult;
+                return false;
             }
         }
-
-        cachedResult = PipelineResult.success(getName(), "Completed", context);
-        return cachedResult;
-    }
-
-    @Override
-    public PipelineResult getCachedResult() {
-        return super.getCachedResult();
+        return true;
     }
 }

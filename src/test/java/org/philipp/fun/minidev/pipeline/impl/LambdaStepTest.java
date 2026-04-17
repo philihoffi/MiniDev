@@ -4,8 +4,6 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.philipp.fun.minidev.pipeline.core.PipelineContext;
-import org.philipp.fun.minidev.pipeline.model.PipelineResult;
-import org.philipp.fun.minidev.pipeline.impl.LambdaStep;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -19,31 +17,29 @@ class LambdaStepTest {
 
         @Test
         @DisplayName("Execute lambda function")
-        void testLambdaExecution() {
+        void testLambdaExecution() throws Exception {
             // Arrange
-            PipelineResult expected = new PipelineResult("Test Step", PipelineResult.Status.SUCCESS, "OK", null);
-            LambdaStep step = new LambdaStep("Test Step", context -> expected);
+            LambdaStep step = new LambdaStep("Test Step", context -> true);
             PipelineContext context = new PipelineContext();
 
             // Act
-            PipelineResult result = step.execute(context);
+            boolean success = step.execute(context);
 
             // Assert
-            assertThat(result).isSameAs(expected);
+            assertThat(success).isTrue();
         }
 
         @Test
         @DisplayName("Validation fails for null context")
-        void testNullContext() {
+        void testNullContext() throws Exception {
             // Arrange
-            LambdaStep step = new LambdaStep("Test Step", context -> null);
+            LambdaStep step = new LambdaStep("Test Step", context -> true);
 
             // Act
-            PipelineResult result = step.execute(null);
+            boolean success = step.execute(null);
 
             // Assert
-            assertThat(result.isSuccess()).isFalse();
-            assertThat(result.message()).contains("context must not be null");
+            assertThat(success).isFalse();
         }
     }
 
@@ -55,7 +51,7 @@ class LambdaStepTest {
         void testGetName() {
             // Arrange
             String name = "Custom Name";
-            LambdaStep step = new LambdaStep(name, context -> null);
+            LambdaStep step = new LambdaStep(name, context -> true);
 
             // Act & Assert
             assertThat(step.getName()).isEqualTo(name);

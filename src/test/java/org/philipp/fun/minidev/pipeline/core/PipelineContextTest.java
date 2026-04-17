@@ -6,8 +6,8 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
-import org.philipp.fun.minidev.pipeline.impl.DefaultPipeline;
-import org.philipp.fun.minidev.pipeline.model.PipelineResult;
+import org.philipp.fun.minidev.pipeline.impl.SequenzStage;
+import org.philipp.fun.minidev.pipeline.impl.LambdaStep;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -108,11 +108,11 @@ class PipelineContextTest {
         @DisplayName("set and get pipeline reference")
         void testPipelineRef() {
             // Arrange
-            Pipeline pipeline = mock(Pipeline.class);
+            PipelineElement pipeline = mock(PipelineElement.class);
 
             // Act
             context.setPipeline(pipeline);
-            Pipeline retrieved = context.getPipeline();
+            PipelineElement retrieved = context.getPipeline();
 
             // Assert
             assertThat(retrieved).isSameAs(pipeline);
@@ -124,28 +124,27 @@ class PipelineContextTest {
     class NestedStageContextTests {
         @Test
         @DisplayName("nested stages share the same context")
-        void testNestedStageContext() {
+        void testNestedStageContext() throws Exception {
             // Arrange
-            Pipeline pipeline = new DefaultPipeline("Test Pipeline");
-            pipeline.addStage("Outer Stage", outer -> {
-                outer.addStep("Outer Step", ctx -> {
-                    ctx.putValue(new ContextKey<>("key", String.class), "value");
-                    return PipelineResult.success("Outer Step");
-                });
-                outer.addStage("Inner Stage", inner -> {
-                    inner.addStep("Inner Step", ctx -> {
-                        String value = ctx.getValue(new ContextKey<>("key", String.class));
-                        assertThat(value).isEqualTo("value");
-                        return PipelineResult.success("Inner Step");
-                    });
-                });
-            });
+            SequenzStage stage = new SequenzStage("Test Pipeline");
+            stage.addElement(new LambdaStep("Outer Step", ctx -> {
+                ctx.putValue(new ContextKey<>("key", String.class), "value");
+                return true;
+            }));
+            
+            SequenzStage inner = new SequenzStage("Inner Stage");
+            inner.addElement(new LambdaStep("Inner Step", ctx -> {
+                String value = ctx.getValue(new ContextKey<>("key", String.class));
+                assertThat(value).isEqualTo("value");
+                return true;
+            }));
+            stage.addElement(inner);
 
             // Act
-            PipelineResult result = pipeline.execute(new PipelineContext());
+            boolean success = stage.execute(new PipelineContext());
 
             // Assert
-            assertThat(result.isSuccess()).isTrue();
+            assertThat(success).isTrue();
         }
     }
 }

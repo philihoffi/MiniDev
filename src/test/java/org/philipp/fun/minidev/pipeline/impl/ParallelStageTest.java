@@ -4,12 +4,11 @@ import org.junit.jupiter.api.*;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 import org.philipp.fun.minidev.pipeline.core.*;
-import org.philipp.fun.minidev.pipeline.model.PipelineResult;
+
 import java.util.Collections;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
-import java.time.Duration;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -61,14 +60,14 @@ class ParallelStageTest {
                         sum = Math.sin(sum);
                         sum = Math.cos(sum);
                     }
-                    return PipelineResult.success("step", "OK", ctx);
+                    return true;
                 });
 
                 stage.addElement(step);
             }
 
-            Pipeline pipeline = new DefaultPipeline("Test Pipeline");
-            pipeline.addElement(stage);
+            // Pipeline pipeline = new DefaultPipeline("Test Pipeline");
+            // pipeline.addElement(stage);
 
             AtomicInteger activeSteps = new AtomicInteger(0);
             AtomicInteger completedSteps = new AtomicInteger(0);
@@ -81,7 +80,7 @@ class ParallelStageTest {
                 }
 
                 @Override
-                public void onStepEnd(PipelineElement step, PipelineContext context, PipelineResult result) {
+                public void onStepEnd(PipelineElement step, PipelineContext context, boolean result) {
                     activeSteps.decrementAndGet();
                     completedSteps.incrementAndGet();
 
@@ -106,52 +105,45 @@ class ParallelStageTest {
 
         @Test
         @DisplayName("Execute successful step")
-        void testSuccessfulStep() {
+        void testSuccessfulStep() throws Exception {
             // Arrange
             PipelineElement step = mock(PipelineElement.class);
-            PipelineResult successResult = new PipelineResult("step", PipelineResult.Status.SUCCESS, "OK", null);
-            when(step.execute(context)).thenReturn(successResult);
+            when(step.execute(context)).thenReturn(true);
             when(step.getName()).thenReturn("step");
             stage.addElement(step);
 
             // Act
-            PipelineResult result = stage.execute(context);
+            boolean success = stage.execute(context);
 
             // Assert
-            assertThat(result.isSuccess()).isTrue();
-            assertThat(result.name()).isEqualTo(stage.getName());
+            assertThat(success).isTrue();
             verify(step).execute(context);
         }
 
         @Test
         @DisplayName("Collect results from all steps even if one fails")
-        void testFailedStep() {
+        void testFailedStep() throws Exception {
             // Arrange
             PipelineElement step1 = mock(PipelineElement.class);
             PipelineElement step2 = mock(PipelineElement.class);
-            PipelineResult failureResult = new PipelineResult("step1", PipelineResult.Status.FAILED, "Error", null);
-            PipelineResult successResult = new PipelineResult("step2", PipelineResult.Status.SUCCESS, "OK", null);
-
-            when(step1.execute(context)).thenReturn(failureResult);
+            when(step1.execute(context)).thenReturn(false);
             when(step1.getName()).thenReturn("step1");
-            when(step2.execute(context)).thenReturn(successResult);
+            when(step2.execute(context)).thenReturn(true);
             when(step2.getName()).thenReturn("step2");
             stage.addElement(step1).addElement(step2);
 
             // Act
-            PipelineResult result = stage.execute(context);
+            boolean success = stage.execute(context);
 
             // Assert
-            assertThat(result.isSuccess()).isFalse();
-            // ParallelStage returns the first failure it encounters in the loop
-            assertThat(result.status()).isEqualTo(PipelineResult.Status.FAILED);
+            assertThat(success).isFalse();
             verify(step1).execute(context);
             verify(step2).execute(context);
         }
 
         @Test
         @DisplayName("Handle exception in step as failure")
-        void testStepException() {
+        void testStepException() throws Exception {
             // Arrange
             PipelineElement step = mock(PipelineElement.class);
             when(step.execute(context)).thenThrow(new RuntimeException("Crash"));
@@ -159,17 +151,16 @@ class ParallelStageTest {
             stage.addElement(step);
 
             // Act
-            PipelineResult result = stage.execute(context);
+            boolean success = stage.execute(context);
 
             // Assert
-            assertThat(result.isSuccess()).isFalse();
-            assertThat(result.status()).isEqualTo(PipelineResult.Status.FAILED);
+            assertThat(success).isFalse();
             // In ParallelStage, an exception in a step is caught in the async lambda
             // and returns a failed result with the message "Exception: Crash"
             // The stage then returns a failed result wrapping this one.
-            assertThat(result.message()).contains("Element failed: step");
-            assertThat(result.cause()).isNotNull();
-            assertThat(result.cause().message()).contains("Crash");
+            // Note: ParallelStage implementation seems to have changed significantly,
+            // we are just checking if it returns false now.
+            assertThat(success).isFalse();
         }
     }
 
@@ -179,14 +170,13 @@ class ParallelStageTest {
 
         @Test
         @DisplayName("Notify listener on step events")
-        void testListenerNotification() {
+        void testListenerNotification() throws Exception {
             // Arrange
             PipelineListener listener = mock(PipelineListener.class);
             stage.setListeners(Collections.singletonList(listener));
 
             PipelineElement step = mock(PipelineElement.class);
-            PipelineResult successResult = new PipelineResult("step", PipelineResult.Status.SUCCESS, "OK", null);
-            when(step.execute(context)).thenReturn(successResult);
+            when(step.execute(context)).thenReturn(true);
             when(step.getName()).thenReturn("step");
             stage.addElement(step);
 
@@ -195,7 +185,7 @@ class ParallelStageTest {
 
             // Assert
             verify(listener).onStepStart(step, context);
-            verify(listener).onStepEnd(step, context, successResult);
+            verify(listener).onStepEnd(step, context, true);
         }
 
         @Test
@@ -226,7 +216,7 @@ class ParallelStageTest {
             stage.setListeners(Collections.singletonList(listener));
 
             PipelineElement step = mock(PipelineElement.class);
-            when(step.execute(context)).thenReturn(new PipelineResult("step", PipelineResult.Status.SUCCESS, "OK", null));
+            when(step.execute(context)).thenReturn(true);
             when(step.getName()).thenReturn("step");
             stage.addElement(step);
 
@@ -244,46 +234,41 @@ class ParallelStageTest {
 
         @Test
         @DisplayName("Execute nested successful stages")
-        void testNestedSuccessfulStages() {
+        void testNestedSuccessfulStages() throws Exception {
             // Arrange
             SequenzStage innerStage = new SequenzStage("Inner Stage");
             PipelineElement step = mock(PipelineElement.class);
-            PipelineResult successResult = new PipelineResult("step", PipelineResult.Status.SUCCESS, "OK", null);
-            when(step.execute(context)).thenReturn(successResult);
+            when(step.execute(context)).thenReturn(true);
             when(step.getName()).thenReturn("step");
 
             innerStage.addElement(step);
             stage.addElement(innerStage);
 
             // Act
-            PipelineResult result = stage.execute(context);
+            boolean success = stage.execute(context);
 
             // Assert
-            assertThat(result.isSuccess()).isTrue();
+            assertThat(success).isTrue();
             verify(step).execute(context);
         }
 
         @Test
         @DisplayName("Fail outer stage if nested stage fails")
-        void testNestedFailedStage() {
+        void testNestedFailedStage() throws Exception {
             // Arrange
             SequenzStage innerStage = new SequenzStage("Inner Stage");
             PipelineElement step = mock(PipelineElement.class);
-            PipelineResult failureResult = new PipelineResult("step", PipelineResult.Status.FAILED, "Error", null);
-            when(step.execute(context)).thenReturn(failureResult);
+            when(step.execute(context)).thenReturn(false);
             when(step.getName()).thenReturn("step");
 
             innerStage.addElement(step);
             stage.addElement(innerStage);
 
             // Act
-            PipelineResult result = stage.execute(context);
+            boolean success = stage.execute(context);
 
             // Assert
-            assertThat(result.isSuccess()).isFalse();
-            assertThat(result.cause()).isNotNull();
-            assertThat(result.cause().name()).isEqualTo("Inner Stage");
-            assertThat(result.cause().cause()).isEqualTo(failureResult);
+            assertThat(success).isFalse();
         }
     }
 
@@ -292,22 +277,22 @@ class ParallelStageTest {
     class ParameterizedTests {
         @ParameterizedTest
         @CsvSource({
-                "SUCCESS, true",
-                "FAILED, false"
+                "true, true",
+                "false, false"
         })
         @DisplayName("Stage result depends on step status")
-        void testStepStatusEffect(PipelineResult.Status stepStatus, boolean expectedStageSuccess) {
+        void testStepStatusEffect(boolean stepStatus, boolean expectedStageSuccess) throws Exception {
             // Arrange
             PipelineElement step = mock(PipelineElement.class);
-            when(step.execute(context)).thenReturn(new PipelineResult("step", stepStatus, "Msg", null));
+            when(step.execute(context)).thenReturn(stepStatus);
             when(step.getName()).thenReturn("step");
             stage.addElement(step);
 
             // Act
-            PipelineResult result = stage.execute(context);
+            boolean success = stage.execute(context);
 
             // Assert
-            assertThat(result.isSuccess()).isEqualTo(expectedStageSuccess);
+            assertThat(success).isEqualTo(expectedStageSuccess);
         }
     }
 }

@@ -1,7 +1,6 @@
 package org.philipp.fun.minidev.pipeline.abstracts;
 
 import org.philipp.fun.minidev.pipeline.core.*;
-import org.philipp.fun.minidev.pipeline.model.PipelineResult;
 
 import java.util.Collections;
 import java.util.List;
@@ -10,7 +9,6 @@ import java.util.Objects;
 public abstract class AbstractPipelineElement implements PipelineElement {
     private final String name;
     private List<PipelineListener> listeners = Collections.emptyList();
-    protected PipelineResult cachedResult;
 
     protected AbstractPipelineElement(String name) {
         this.name = Objects.requireNonNull(name, "name must not be null");
@@ -31,16 +29,11 @@ public abstract class AbstractPipelineElement implements PipelineElement {
         this.listeners = listeners != null ? listeners : Collections.emptyList();
     }
 
-    @Override
-    public PipelineResult getCachedResult() {
-        return cachedResult;
-    }
-
     protected void notifyStepStart(PipelineElement step, PipelineContext context) {
         getListeners().forEach(l -> l.onStepStart(step, context));
     }
 
-    protected void notifyStepEnd(PipelineElement step, PipelineContext context, PipelineResult result) {
+    protected void notifyStepEnd(PipelineElement step, PipelineContext context, boolean result) {
         getListeners().forEach(l -> l.onStepEnd(step, context, result));
     }
 
