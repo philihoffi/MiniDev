@@ -1,19 +1,33 @@
 import { Component, inject, OnInit, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { AuthService, User } from '../../core/services/auth.service';
+import { FormsModule } from '@angular/forms';
+import { AuthService, User, UserRole, UserRequest } from '../../core/services/auth.service';
 
 @Component({
   selector: 'app-user-management',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, FormsModule],
   templateUrl: './user-management.component.html',
   styleUrl: './user-management.component.scss'
 })
 export class UserManagementComponent implements OnInit {
   private authService = inject(AuthService);
+
   users = signal<User[]>([]);
   loading = signal(false);
   error = signal<string | null>(null);
+
+  // Form state
+  showForm = signal(false);
+  isEditing = signal(false);
+  currentUser = signal<UserRequest>({
+    username: '',
+    password: '',
+    displayName: '',
+    role: 'USER'
+  });
+
+  roles: UserRole[] = ['ADMIN', 'USER', 'GUEST'];
 
   ngOnInit() {
     this.loadUsers();
@@ -31,5 +45,62 @@ export class UserManagementComponent implements OnInit {
         this.loading.set(false);
       }
     });
+  }
+
+  openCreateForm() {
+    this.isEditing.set(false);
+    this.currentUser.set({
+      username: '',
+      password: '',
+      displayName: '',
+      role: 'USER'
+    });
+    this.showForm.set(true);
+  }
+
+  openEditForm(user: User) {
+    this.isEditing.set(true);
+    this.currentUser.set({
+      username: user.username,
+      password: '', // Don't show password
+      displayName: user.username, // Using username as default displayname if not present
+      role: user.role
+    });
+    this.showForm.set(true);
+  }
+
+  cancelForm() {
+    this.showForm.set(false);
+  }
+
+  saveUser() {
+    const user = this.currentUser();
+    const userId = this.users().find(u => u.username === user.username)?.id;
+    if (this.isEditing() && userId) {
+      this.authService.updateUser(userId, user).subscribe({
+        next: () => {
+          this.loadUsers();
+          this.showForm.set(false);
+        },
+        error: () => this.error.set('Error updating user')
+      });
+    } else {
+      this.authService.createUser(user).subscribe({
+        next: () => {
+          this.loadUsers();
+          this.showForm.set(false);
+        },
+        error: () => this.error.set('Error creating user')
+      });
+    }
+  }
+
+  deleteUser(id: string) {
+    if (confirm('Are you sure you want to delete this user?')) {
+      this.authService.deleteUser(id).subscribe({
+        next: () => this.loadUsers(),
+        error: () => this.error.set('Error deleting user')
+      });
+    }
   }
 }

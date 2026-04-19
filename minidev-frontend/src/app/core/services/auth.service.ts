@@ -11,6 +11,13 @@ export interface User {
   token?: string;
 }
 
+export interface UserRequest {
+  username: string;
+  password?: string;
+  displayName?: string;
+  role?: UserRole;
+}
+
 @Injectable({
   providedIn: 'root'
 })
@@ -29,7 +36,8 @@ export class AuthService {
   }
 
   login(username: string, password: string) {
-    return this.http.post<User>('/api/auth/login', { username, password })
+    const request: UserRequest = { username, password };
+    return this.http.post<User>('/api/auth/login', request)
       .pipe(
         tap(user => {
           this.currentUserSignal.set(user);
@@ -49,6 +57,18 @@ export class AuthService {
 
   getUsers() {
     return this.http.get<User[]>('/api/admin/users');
+  }
+
+  createUser(user: UserRequest) {
+    return this.http.post<User>('/api/admin/users', user);
+  }
+
+  updateUser(id: string, user: UserRequest) {
+    return this.http.put<User>(`/api/admin/users/${id}`, user);
+  }
+
+  deleteUser(id: string) {
+    return this.http.delete(`/api/admin/users/${id}`);
   }
 
   hasRole(role: UserRole): boolean {

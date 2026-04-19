@@ -1,16 +1,51 @@
 <div class="card">
-  <h2 class="page-title danger">User Management</h2>
-  <p class="description">Here you can view all registered users.</p>
+  <div class="header-actions">
+    <h2 class="page-title danger">User Management</h2>
+    <button class="btn btn-primary" (click)="openCreateForm()">Add User</button>
+  </div>
+  <p class="description">Here you can view and manage all registered users.</p>
 
   <div *ngIf="loading()" class="loading">Loading users...</div>
   <div *ngIf="error()" class="error-message">{{ error() }}</div>
+
+  <!-- User Form Popup (Modal) -->
+  <div *ngIf="showForm()" class="modal-backdrop">
+    <div class="modal-container">
+      <div class="form-container">
+        <h3 class="form-title">{{ isEditing() ? 'Edit User' : 'Create New User' }}</h3>
+        <div class="form-group">
+          <label for="username">Username</label>
+          <input type="text" id="username" [(ngModel)]="currentUser().username" class="form-control" placeholder="Username">
+        </div>
+        <div class="form-group">
+          <label for="displayName">Display Name</label>
+          <input type="text" id="displayName" [(ngModel)]="currentUser().displayName" class="form-control" placeholder="Display Name">
+        </div>
+        <div class="form-group">
+          <label for="password">Password {{ isEditing() ? '(leave empty to keep current)' : '' }}</label>
+          <input type="password" id="password" [(ngModel)]="currentUser().password" class="form-control" placeholder="Password">
+        </div>
+        <div class="form-group">
+          <label for="role">Role</label>
+          <select id="role" [(ngModel)]="currentUser().role" class="form-control">
+            <option *ngFor="let role of roles" [value]="role">{{ role }}</option>
+          </select>
+        </div>
+        <div class="form-actions">
+          <button class="btn btn-secondary" (click)="cancelForm()">Cancel</button>
+          <button class="btn btn-primary" (click)="saveUser()">Save</button>
+        </div>
+      </div>
+    </div>
+  </div>
 
   <table *ngIf="!loading() && !error()" class="data-table">
     <thead class="table-head">
       <tr>
         <th class="table-header">ID</th>
-        <th class="table-header">Name</th>
+        <th class="table-header">Username</th>
         <th class="table-header">Role</th>
+        <th class="table-header">Actions</th>
       </tr>
     </thead>
     <tbody>
@@ -21,6 +56,10 @@
           <span class="badge" [ngClass]="{'badge-admin': user.role === 'ADMIN', 'badge-user': user.role === 'USER'}">
             {{ user.role }}
           </span>
+        </td>
+        <td class="table-cell">
+          <button class="btn btn-sm btn-outline" (click)="openEditForm(user)">Edit</button>
+          <button class="btn btn-sm btn-danger" (click)="deleteUser(user.id)">Delete</button>
         </td>
       </tr>
     </tbody>

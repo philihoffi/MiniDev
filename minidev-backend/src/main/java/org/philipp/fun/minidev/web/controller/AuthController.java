@@ -4,7 +4,7 @@ import jakarta.servlet.http.HttpSession;
 import org.philipp.fun.minidev.spring.model.User;
 import org.philipp.fun.minidev.spring.repository.UserRepository;
 import org.philipp.fun.minidev.web.objects.AuthResponse;
-import org.philipp.fun.minidev.web.objects.LoginRequest;
+import org.philipp.fun.minidev.web.objects.UserRequest;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -42,7 +42,7 @@ public class AuthController {
     }
 
     @PostMapping("/login")
-    public ResponseEntity<AuthResponse> login(@RequestBody LoginRequest request,
+    public ResponseEntity<AuthResponse> login(@RequestBody UserRequest request,
                                             HttpServletRequest servletRequest,
                                             HttpServletResponse servletResponse) {
         Optional<User> userOpt = userRepository.findByUsername(request.username());
