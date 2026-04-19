@@ -8,6 +8,6 @@ public class PageController {
 
     @GetMapping("/")
     public String index() {
-        return "forward:/browser/index.html";
+        return "forward:/index.html";
     }
 }

@@ -30,6 +30,5 @@ build/
 /generated-games/
 
 ### Frontend Build Artifacts ###
-/src/main/resources/static/browser/
-/src/main/resources/static/3rdpartylicenses.txt
-/src/main/resources/static/prerendered-routes.json
+/src/main/resources/static/
+!/src/main/resources/static/favicon.ico
