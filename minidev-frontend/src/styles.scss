@@ -1,5 +1,10 @@
 /* You can add global styles to this file, and also import other style files */
-
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+// Global Components & Elements
+@import 'styles/buttons';
+@import 'styles/forms';
+@import 'styles/layout';
+@import 'styles/tables';

@@ -1,0 +1,15 @@
+<nav class="navbar">
+  <div class="nav-links">
+    <h1 class="nav-brand">MiniDev</h1>
+    <a routerLink="/dashboard" class="nav-link">Dashboard</a>
+    <a *ngIf="isAdmin" routerLink="/user-management" class="nav-link">Benutzerverwaltung</a>
+  </div>
+  <div class="nav-user">
+    <span class="welcome-text">Willkommen, {{ username }} ({{ role }})</span>
+    <button (click)="logout()" class="btn-logout">Logout</button>
+  </div>
+</nav>
+
+<main class="content-area">
+  <router-outlet></router-outlet>
+</main>

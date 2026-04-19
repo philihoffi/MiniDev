@@ -1,0 +1,22 @@
+.card {
+  @apply bg-white p-6 rounded shadow;
+}
+
+.navbar {
+  @apply bg-blue-600 text-white p-4 flex justify-between items-center;
+}
+
+.content-area {
+  @apply p-6;
+}
+
+.page-title {
+  @apply text-2xl font-bold mb-4;
+  &.danger {
+    @apply text-red-600;
+  }
+}
+
+.description {
+  @apply mb-4 text-gray-600;
+}

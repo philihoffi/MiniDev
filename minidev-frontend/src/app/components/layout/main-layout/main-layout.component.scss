@@ -1,0 +1,23 @@
+:host {
+  display: block;
+}
+
+.nav-links {
+  @apply flex gap-4 items-center;
+}
+
+.nav-brand {
+  @apply text-xl font-bold;
+}
+
+.nav-link {
+  @apply hover:underline;
+}
+
+.nav-user {
+  @apply flex gap-4 items-center;
+}
+
+.welcome-text {
+  @apply hidden sm:inline;
+}

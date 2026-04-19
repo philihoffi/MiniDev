@@ -1,0 +1,15 @@
+.data-table {
+  @apply min-w-full border;
+}
+
+.table-head {
+  @apply bg-gray-50;
+}
+
+.table-header {
+  @apply border p-2 text-left font-semibold;
+}
+
+.table-cell {
+  @apply border p-2;
+}

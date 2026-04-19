@@ -1,0 +1,19 @@
+:host {
+  display: block;
+}
+
+.login-container {
+  @apply min-h-screen flex items-center justify-center bg-gray-100 p-4;
+}
+
+.login-card {
+  @apply bg-white p-8 rounded shadow-md w-full max-w-md;
+}
+
+.login-title {
+  @apply text-2xl font-bold mb-6 text-center text-gray-800;
+}
+
+.login-form {
+  @apply flex flex-col gap-4;
+}
