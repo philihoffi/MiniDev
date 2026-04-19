@@ -21,6 +21,7 @@
         <maven.enforcer.plugin.version>3.6.1</maven.enforcer.plugin.version>
         <maven.minimum.version>3.9.0</maven.minimum.version>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <skipFrontendBuild>false</skipFrontendBuild>
     </properties>
 
     <dependencies>
@@ -99,6 +100,7 @@
                         </goals>
                         <configuration>
                             <nodeVersion>v20.11.0</nodeVersion>
+                            <skip>${skipFrontendBuild}</skip>
                         </configuration>
                     </execution>
                     <execution>
@@ -108,6 +110,7 @@
                         </goals>
                         <configuration>
                             <arguments>install</arguments>
+                            <skip>${skipFrontendBuild}</skip>
                         </configuration>
                     </execution>
                     <execution>
@@ -118,6 +121,7 @@
                         </goals>
                         <configuration>
                             <arguments>run build</arguments>
+                            <skip>${skipFrontendBuild}</skip>
                         </configuration>
                     </execution>
                 </executions>

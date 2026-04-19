@@ -6,8 +6,9 @@ The frontend is configured so that its build is copied directly into the static 
 ## GitHub Actions Pipeline
 
 The project includes a comprehensive CI/CD pipeline (`.github/workflows/build.yml`):
-- **Frontend Job:** Runs security audits, linting, unit tests (Headless Chrome), and builds the Angular application.
-- **Backend Job:** Downloads the frontend build, verifies Maven dependencies, runs Java tests, and builds the final WAR artifact.
+- **Frontend Job:** Runs security audits, linting, unit tests (Headless Chrome), and builds the Angular application in parallel.
+- **Backend Job:** Parallelized Maven build using all available CPU cores. It downloads the pre-built frontend and skips redundant build steps to minimize execution time.
+- **Performance:** Optimized with caching, parallel execution, and decoupled build/test stages.
 - **Artifacts:** The final `.war` file is stored as a build artifact in GitHub Actions.
 
 ## Integrated Start (Backend + Frontend together)

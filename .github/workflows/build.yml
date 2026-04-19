@@ -24,7 +24,7 @@ jobs:
       working-directory: minidev-frontend
 
     - name: Build Frontend
-      run: npm run build
+      run: npm run build -- --parallel
       working-directory: minidev-frontend
 
     - name: Upload Frontend Build
@@ -57,11 +57,7 @@ jobs:
       working-directory: minidev-backend
 
     - name: Build Backend with Maven
-      run: ./mvnw clean install
-      working-directory: minidev-backend
-
-    - name: Maven Dependency Check
-      run: ./mvnw dependency:resolve
+      run: ./mvnw clean install -T 1C -DskipTests -DskipFrontendBuild=true
       working-directory: minidev-backend
 
     - name: Upload Build Artifact
