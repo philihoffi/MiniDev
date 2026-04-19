@@ -16,7 +16,7 @@ export class MainLayoutComponent {
 
   user = this.authService.currentUser;
 
-  get username() { return this.user()?.username || ''; }
+  get displayName() { return this.user()?.displayName || ''; }
   get role() { return this.user()?.role || ''; }
   get isAdmin() { return this.authService.hasRole('ADMIN'); }
 
