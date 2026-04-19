@@ -1,37 +1,41 @@
 package org.philipp.fun.minidev.web.controller;
 
+import org.philipp.fun.minidev.spring.model.User;
+import org.philipp.fun.minidev.spring.repository.UserRepository;
 import org.philipp.fun.minidev.web.objects.AuthResponse;
 import org.philipp.fun.minidev.web.objects.LoginRequest;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import java.util.UUID;
+import java.util.Optional;
 
 @RestController
 @RequestMapping("/api/auth")
 public class AuthController {
 
+    private final UserRepository userRepository;
+    private final PasswordEncoder passwordEncoder;
 
-    //TODO Real Login with DB and JWT
+    public AuthController(UserRepository userRepository, PasswordEncoder passwordEncoder) {
+        this.userRepository = userRepository;
+        this.passwordEncoder = passwordEncoder;
+    }
+
     @PostMapping("/login")
     public ResponseEntity<AuthResponse> login(@RequestBody LoginRequest request) {
-        if ("admin".equals(request.username()) && "password".equals(request.password())) {
+        Optional<User> userOpt = userRepository.findByUsername(request.username());
+
+        if (userOpt.isPresent() && passwordEncoder.matches(request.password(), userOpt.get().getPassword())) {
+            User user = userOpt.get();
             return ResponseEntity.ok(new AuthResponse(
-                    UUID.randomUUID().toString(),
-                    "Admin",
-                    "ADMIN",
-                    "fake-jwt-token-admin"
-            ));
-        } else if ("user".equals(request.username()) && "password".equals(request.password())) {
-            return ResponseEntity.ok(new AuthResponse(
-                    UUID.randomUUID().toString(),
-                    "Standard User",
-                    "USER",
-                    "fake-jwt-token-user"
+                    String.valueOf(user.getId()),
+                    user.getDisplayName(),
+                    user.getRole().name()
             ));
         }
 

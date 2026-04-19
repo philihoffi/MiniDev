@@ -1,6 +1,6 @@
 import { Component, computed, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { RouterLink, RouterOutlet } from '@angular/router';
+import { Router, RouterLink, RouterOutlet } from '@angular/router';
 import { AuthService } from '../../../core/services/auth.service';
 
 @Component({
@@ -12,6 +12,7 @@ import { AuthService } from '../../../core/services/auth.service';
 })
 export class MainLayoutComponent {
   private authService = inject(AuthService);
+  private router = inject(Router);
 
   user = this.authService.currentUser;
 
@@ -21,6 +22,8 @@ export class MainLayoutComponent {
 
   logout() {
     this.authService.logout();
-    location.reload(); // Einfachster Weg um Guard zu triggern
+    this.router.navigate(['/login']).then(() => {
+      location.reload();
+    });
   }
 }
