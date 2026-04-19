@@ -7,6 +7,7 @@ export type UserRole = 'ADMIN' | 'USER' | 'GUEST';
 export interface User {
   id: string;
   username: string;
+  displayName: string;
   role: UserRole;
   token?: string;
 }

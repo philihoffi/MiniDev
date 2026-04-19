@@ -44,6 +44,7 @@
       <tr>
         <th class="table-header">ID</th>
         <th class="table-header">Username</th>
+        <th class="table-header">Display Name</th>
         <th class="table-header">Role</th>
         <th class="table-header">Actions</th>
       </tr>
@@ -52,6 +53,7 @@
       <tr *ngFor="let user of users()">
         <td class="table-cell">{{ user.id }}</td>
         <td class="table-cell">{{ user.username }}</td>
+        <td class="table-cell">{{ user.displayName }}</td>
         <td class="table-cell">
           <span class="badge" [ngClass]="{'badge-admin': user.role === 'ADMIN', 'badge-user': user.role === 'USER'}">
             {{ user.role }}

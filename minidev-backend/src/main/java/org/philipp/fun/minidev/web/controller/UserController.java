@@ -71,6 +71,7 @@ public class UserController {
         return new AuthResponse(
                 String.valueOf(user.getId()),
                 user.getUsername(),
+                user.getDisplayName(),
                 user.getRole().name()
         );
     }

@@ -20,6 +20,7 @@ export class UserManagementComponent implements OnInit {
   // Form state
   showForm = signal(false);
   isEditing = signal(false);
+  editingUserId = signal<string | null>(null);
   currentUser = signal<UserRequest>({
     username: '',
     password: '',
@@ -49,6 +50,7 @@ export class UserManagementComponent implements OnInit {
 
   openCreateForm() {
     this.isEditing.set(false);
+    this.editingUserId.set(null);
     this.currentUser.set({
       username: '',
       password: '',
@@ -60,10 +62,11 @@ export class UserManagementComponent implements OnInit {
 
   openEditForm(user: User) {
     this.isEditing.set(true);
+    this.editingUserId.set(user.id);
     this.currentUser.set({
       username: user.username,
       password: '', // Don't show password
-      displayName: user.username, // Using username as default displayname if not present
+      displayName: user.displayName,
       role: user.role
     });
     this.showForm.set(true);
@@ -75,7 +78,7 @@ export class UserManagementComponent implements OnInit {
 
   saveUser() {
     const user = this.currentUser();
-    const userId = this.users().find(u => u.username === user.username)?.id;
+    const userId = this.editingUserId();
     if (this.isEditing() && userId) {
       this.authService.updateUser(userId, user).subscribe({
         next: () => {
