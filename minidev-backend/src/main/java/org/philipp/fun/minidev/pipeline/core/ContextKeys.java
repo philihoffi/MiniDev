@@ -17,4 +17,11 @@ public class ContextKeys {
         /** Key for the current session identifier. */
         public static final ContextKey<AgentRun> AGENT_RUN_CONTEXT_KEY = new ContextKey<>("AgentRun", AgentRun.class);
     }
+
+    public static final class WallpaperPipeline {
+        /** Key for the generated wallpaper theme. */
+        public static final ContextKey<String> GENERATED_THEME = new ContextKey<>("generatedTheme", String.class);
+        /** Key for the generated wallpaper code. */
+        public static final ContextKey<String> GENERATED_CODE = new ContextKey<>("generatedCode", String.class);
+    }
 }

@@ -1,4 +1,11 @@
 <div class="login-container">
+  <iframe
+    *ngIf="wallpaperCode()"
+    class="wallpaper-bg"
+    [srcdoc]="wallpaperCode()"
+    sandbox="allow-scripts">
+  </iframe>
+
   <div class="login-card">
     <h2 class="login-title">Login</h2>
 
