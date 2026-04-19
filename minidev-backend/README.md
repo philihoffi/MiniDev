@@ -12,6 +12,7 @@ MiniDev is a Java-based framework designed to explore the boundaries of autonomo
 - **Agentic Workflow:** Intelligent task management that aligns code with design goals.
 - **Iterative Development:** Continuous loop of design, implementation, and verification.
 - **Modular Architecture:** Extensible stages for planning, architecture, and coding.
+- **CI/CD Integration:** Automated builds and tests via GitHub Actions.
 
 ## Getting Started
 
@@ -28,6 +29,12 @@ You can run the application using the Maven wrapper:
 ```
 
 The application will start on `http://localhost:8080`.
+
+## Continuous Integration
+This project uses GitHub Actions for continuous integration. The workflow is defined in `.github/workflows/build.yml` and performs the following:
+- Automated frontend builds and tests.
+- Automated backend builds and unit testing.
+- Packaging and artifact storage of the application.
 
 ## Tech Stack
 - **Language:** Java 25+

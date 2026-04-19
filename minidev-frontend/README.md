@@ -2,6 +2,11 @@
 
 This project was generated using [Angular CLI](https://github.com/angular/angular-cli) version 19.2.24.
 
+## CI/CD Pipeline
+This project is part of an integrated build pipeline.
+- **Local Build:** `npm run build` copies artifacts to the backend's static resource folder.
+- **CI Build:** GitHub Actions automatically runs `npm audit`, `npm run lint`, `npm test`, and `npm run build`.
+
 ## Development server
 
 To start a local development server, run:
