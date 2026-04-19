@@ -24,7 +24,7 @@ jobs:
       working-directory: minidev-frontend
 
     - name: Build Frontend
-      run: npm run build -- --parallel
+      run: npm run build
       working-directory: minidev-frontend
 
     - name: Upload Frontend Build
