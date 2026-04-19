@@ -1,5 +1,6 @@
-### IntelliJ IDEA ###
+### IDEs ###
 .idea/
+.vscode/
 *.iws
 *.iml
 *.ipr
