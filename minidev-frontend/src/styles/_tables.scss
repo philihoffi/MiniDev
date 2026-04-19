@@ -1,15 +1,15 @@
 .data-table {
-  @apply min-w-full border;
+  @apply min-w-full border-collapse bg-white rounded-lg overflow-hidden shadow-sm;
 }
 
 .table-head {
-  @apply bg-gray-50;
+  @apply bg-gray-100 border-b border-gray-200;
 }
 
 .table-header {
-  @apply border p-2 text-left font-semibold;
+  @apply px-4 py-3 text-left text-xs font-bold text-gray-600 uppercase tracking-wider;
 }
 
 .table-cell {
-  @apply border p-2;
+  @apply px-4 py-3 border-b border-gray-100 text-sm text-gray-700;
 }

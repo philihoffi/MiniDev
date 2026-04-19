@@ -1,7 +1,8 @@
 .btn-primary {
-  @apply bg-blue-600 text-white p-2 rounded hover:bg-blue-700 transition-colors disabled:bg-blue-300;
+  @apply bg-blue-600 text-white font-bold py-3 px-6 rounded-lg shadow-sm transition-all duration-200;
+  @apply hover:bg-blue-700 hover:shadow-md active:scale-[0.98] disabled:bg-blue-300 disabled:shadow-none disabled:cursor-not-allowed;
 }
 
 .btn-logout {
-  @apply bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600 transition-colors;
+  @apply bg-red-500 text-white px-4 py-2 rounded-md font-medium hover:bg-red-600 transition-colors shadow-sm;
 }
