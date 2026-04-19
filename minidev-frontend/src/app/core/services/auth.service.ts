@@ -43,6 +43,10 @@ export class AuthService {
     localStorage.removeItem('user');
   }
 
+  getUsers() {
+    return this.http.get<User[]>('/api/admin/users');
+  }
+
   hasRole(role: UserRole): boolean {
     const user = this.currentUserSignal();
     if (!user) return false;

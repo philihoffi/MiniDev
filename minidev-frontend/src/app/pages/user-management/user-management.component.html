@@ -1,25 +1,27 @@
 <div class="card">
-  <h2 class="page-title danger">Benutzerverwaltung</h2>
-  <p class="description">Diese Seite ist nur für Administratoren zugänglich.</p>
+  <h2 class="page-title danger">User Management</h2>
+  <p class="description">Here you can view all registered users.</p>
 
-  <table class="data-table">
+  <div *ngIf="loading()" class="loading">Loading users...</div>
+  <div *ngIf="error()" class="error-message">{{ error() }}</div>
+
+  <table *ngIf="!loading() && !error()" class="data-table">
     <thead class="table-head">
       <tr>
         <th class="table-header">ID</th>
         <th class="table-header">Name</th>
-        <th class="table-header">Rolle</th>
+        <th class="table-header">Role</th>
       </tr>
     </thead>
     <tbody>
-      <tr>
-        <td class="table-cell">1</td>
-        <td class="table-cell">Admin</td>
-        <td class="table-cell">ADMIN</td>
-      </tr>
-      <tr>
-        <td class="table-cell">2</td>
-        <td class="table-cell">User</td>
-        <td class="table-cell">USER</td>
+      <tr *ngFor="let user of users()">
+        <td class="table-cell">{{ user.id }}</td>
+        <td class="table-cell">{{ user.username }}</td>
+        <td class="table-cell">
+          <span class="badge" [ngClass]="{'badge-admin': user.role === 'ADMIN', 'badge-user': user.role === 'USER'}">
+            {{ user.role }}
+          </span>
+        </td>
       </tr>
     </tbody>
   </table>

@@ -16,7 +16,7 @@ public class DataInitializer {
         return args -> {
             if (userRepository.count() == 0) {
                 userRepository.save(new User("admin", passwordEncoder.encode("password"), "Admin", Role.ADMIN));
-                userRepository.save(new User("user", passwordEncoder.encode("password"), "Standard User", Role.USER));
+                userRepository.save(new User("user", passwordEncoder.encode("password"), "User", Role.USER));
             }
         };
     }

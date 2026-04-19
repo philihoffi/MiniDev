@@ -33,9 +33,9 @@ export class LoginComponent {
       error: (err) => {
         this.isLoading.set(false);
         if (err.status === 401) {
-          this.errorMessage.set('Ungültiger Benutzername oder Passwort');
+          this.errorMessage.set('Invalid username or password');
         } else {
-          this.errorMessage.set('Ein Fehler ist aufgetreten. Bitte versuchen Sie es später erneut.');
+          this.errorMessage.set('An error occurred. Please try again later.');
         }
       }
     });
