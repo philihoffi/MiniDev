@@ -1,4 +1,4 @@
-import { Component, computed, inject } from '@angular/core';
+import { Component, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router, RouterLink, RouterOutlet } from '@angular/router';
 import { AuthService } from '../../../core/services/auth.service';
@@ -21,9 +21,10 @@ export class MainLayoutComponent {
   get isAdmin() { return this.authService.hasRole('ADMIN'); }
 
   logout() {
-    this.authService.logout();
-    this.router.navigate(['/login']).then(() => {
-      location.reload();
+    this.authService.logout().subscribe(() => {
+      this.router.navigate(['/login']).then(() => {
+        location.reload();
+      });
     });
   }
 }

@@ -39,8 +39,12 @@ export class AuthService {
   }
 
   logout() {
-    this.currentUserSignal.set(null);
-    localStorage.removeItem('user');
+    return this.http.post('/api/auth/logout', {}).pipe(
+      tap(() => {
+        this.currentUserSignal.set(null);
+        localStorage.removeItem('user');
+      })
+    );
   }
 
   getUsers() {
