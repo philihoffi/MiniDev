@@ -1,0 +1,10 @@
+<component name="ProjectRunConfigurationManager">
+  <configuration default="false" name="MiniDevApplication" type="SpringBootApplicationConfigurationType" factoryName="Spring Boot">
+    <module name="MiniDev" />
+    <option name="SPRING_BOOT_MAIN_CLASS" value="org.philipp.fun.minidev.MiniDevApplication" />
+    <method v="2">
+      <option name="Maven.BeforeRunTask" enabled="true" file="$PROJECT_DIR$/minidev-backend/pom.xml" goal="generate-resources" />
+      <option name="Make" enabled="true" />
+    </method>
+  </configuration>
+</component>
