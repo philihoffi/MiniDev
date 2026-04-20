@@ -41,6 +41,17 @@ public class SecurityConfig {
             .securityContext(context -> context
                 .securityContextRepository(securityContextRepository())
             )
+            .headers(headers -> headers
+                .xssProtection(xss -> xss.disable()) // Modern browsers handle this, or use CSP
+                .contentSecurityPolicy(csp -> csp
+                    .policyDirectives("default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data:;")
+                )
+                .frameOptions(frame -> frame.sameOrigin())
+                .httpStrictTransportSecurity(hsts -> hsts
+                    .includeSubDomains(true)
+                    .maxAgeInSeconds(31536000)
+                )
+            )
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers("/api/auth/login", "/api/auth/logout", "/api/wallpaper/latest").permitAll()
                 .requestMatchers("/api/admin/**").hasRole("ADMIN")

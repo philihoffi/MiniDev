@@ -9,7 +9,6 @@ public class Wallpaper extends BaseEntity{
     @Column(columnDefinition = "TEXT")
     private String theme;
 
-    @Lob
     @Column(columnDefinition = "TEXT")
     private String code;
 

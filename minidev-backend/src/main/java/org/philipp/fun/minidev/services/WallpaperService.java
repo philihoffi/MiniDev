@@ -8,6 +8,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.Optional;
@@ -25,33 +27,28 @@ public class WallpaperService {
         this.wallPaperPipeline = wallPaperPipeline;
     }
 
+    @Transactional()
     public Optional<Wallpaper> getRandomWallpaper() {
-        checkAndGenerateIfEmpty();
         return wallpaperRepository.findRandomWallpaper();
     }
 
-    private void checkAndGenerateIfEmpty() {
-        if (wallpaperRepository.count() == 0) {
-            log.info("No wallpapers found in DB. Generating a new one.");
-            generateNewWallpaper();
-        }
-    }
-
-    @Scheduled(cron = "0 0 0 * * *")
+    @Scheduled(cron = "${minidev.wallpaper.cron:0 0 0 * * *}")
+    @Transactional
     public void generateDailyWallpaper() {
         log.info("Generating daily wallpaper.");
         generateNewWallpaper();
     }
 
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void generateNewWallpaper() {
         PipelineContext context = new PipelineContext();
         try {
             boolean success = wallPaperPipeline.execute(context);
             if (!success) {
-                log.error("Failed to generate wallpaper");
+                log.error("Failed to generate wallpaper: Pipeline execution returned false");
             }
         } catch (Exception e) {
-            log.error("Error during wallpaper generation", e);
+            log.error("Error during wallpaper generation: {}", e.getMessage(), e);
         }
     }
 }

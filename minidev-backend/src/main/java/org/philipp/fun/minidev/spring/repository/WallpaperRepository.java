@@ -9,6 +9,6 @@ import java.util.Optional;
 public interface WallpaperRepository extends JpaRepository<Wallpaper,Long> {
     Optional<Wallpaper> findTopByOrderByCreatedAtDesc();
 
-    @Query(value = "SELECT * FROM wallpapers ORDER BY RAND() LIMIT 1", nativeQuery = true)
+    @Query(value = "SELECT * FROM wallpapers ORDER BY RANDOM() LIMIT 1", nativeQuery = true)
     Optional<Wallpaper> findRandomWallpaper();
 }
