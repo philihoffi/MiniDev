@@ -1,6 +1,7 @@
 package org.philipp.fun.minidev.services;
 
 import org.philipp.fun.minidev.spring.model.AgentRun;
+import org.philipp.fun.minidev.spring.repository.SpringDataAgentRunRepository;
 import org.springframework.stereotype.Service;
 
 import java.io.IOException;
@@ -8,15 +9,15 @@ import java.io.IOException;
 @Service
 public class AgentService {
 
-    private final DataBaseService dataSource;
+    private final SpringDataAgentRunRepository agentRunRepository;
 
-    public AgentService(DataBaseService dataSource) {
-        this.dataSource = dataSource;
+    public AgentService(SpringDataAgentRunRepository agentRunRepository) {
+        this.agentRunRepository = agentRunRepository;
     }
 
     public AgentRun startRun() throws IOException {
         AgentRun run = new AgentRun();
-        dataSource.addToRepository(run);
+        agentRunRepository.save(run);
         return run;
     }
 }
