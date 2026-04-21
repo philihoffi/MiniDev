@@ -27,5 +27,9 @@
 }
 
 .content-area {
-  @apply p-8 bg-gray-50 min-h-[calc(100vh-64px)];
+  @apply bg-gray-50 min-h-[calc(100vh-64px)];
+
+  &:not(.full-bleed) {
+    @apply p-8;
+  }
 }

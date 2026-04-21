@@ -1,4 +1,4 @@
-import { Component, inject } from '@angular/core';
+import { Component, inject, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router, RouterLink, RouterOutlet } from '@angular/router';
 import { AuthService } from '../../../core/services/auth.service';
@@ -15,6 +15,7 @@ export class MainLayoutComponent {
   private router = inject(Router);
 
   user = this.authService.currentUser;
+  isFullBleed = computed(() => this.router.url.includes('wallpaper-gallery'));
 
   get displayName() { return this.user()?.displayName || ''; }
   get role() { return this.user()?.role || ''; }

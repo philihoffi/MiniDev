@@ -12,4 +12,16 @@ export class WallpaperService {
   getLatestWallpaper() {
     return this.http.get<Wallpaper>('/api/wallpaper/latest');
   }
+
+  getWallpapers() {
+    return this.http.get<Wallpaper[]>('/api/wallpaper');
+  }
+
+  getWallpaper(id: number) {
+    return this.http.get<Wallpaper>(`/api/wallpaper/${id}`);
+  }
+
+  generateWallpaper() {
+    return this.http.post<void>('/api/wallpaper/generate?count=1', {});
+  }
 }

@@ -37,6 +37,16 @@ public class WallpaperService {
         return wallpaper;
     }
 
+    @Transactional(readOnly = true)
+    public java.util.List<Wallpaper> getAllWallpapers() {
+        return wallpaperRepository.findAll();
+    }
+
+    @Transactional(readOnly = true)
+    public Optional<Wallpaper> getWallpaperById(Long id) {
+        return wallpaperRepository.findById(id);
+    }
+
     @Scheduled(cron = "${minidev.wallpaper.cron:0 0 0 * * *}")
     @Transactional
     public void generateDailyWallpaper() {

@@ -21,6 +21,10 @@ export const routes: Routes = [
         loadComponent: () => import('./pages/user-management/user-management.component').then(m => m.UserManagementComponent),
         data: { role: 'ADMIN' }
       },
+      {
+        path: 'wallpaper-gallery',
+        loadComponent: () => import('./pages/wallpaper-gallery/wallpaper-gallery.component').then(m => m.WallpaperGalleryComponent)
+      },
       { path: '', redirectTo: 'dashboard', pathMatch: 'full' }
     ]
   },

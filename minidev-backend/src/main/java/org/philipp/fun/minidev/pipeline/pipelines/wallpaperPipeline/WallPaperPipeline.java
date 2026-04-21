@@ -2,6 +2,7 @@ package org.philipp.fun.minidev.pipeline.pipelines.wallpaperPipeline;
 
 import org.philipp.fun.minidev.llm.LlmClient;
 import org.philipp.fun.minidev.pipeline.core.PipelineContext;
+import org.philipp.fun.minidev.pipeline.impl.RetryStage;
 import org.philipp.fun.minidev.pipeline.impl.SequenzStage;
 import org.philipp.fun.minidev.pipeline.pipelines.wallpaperPipeline.stages.CodeGeneratorStage;
 import org.philipp.fun.minidev.pipeline.pipelines.wallpaperPipeline.stages.ThemeGeneratorStage;
@@ -20,10 +21,13 @@ public class WallPaperPipeline extends SequenzStage {
         super("WallPaperPipeline");
         this.llmClient = llmClient;
 
-        addElement(new WallpaperCacheStage(repository));
-        addElement(new ThemeGeneratorStage());
-        addElement(new CodeGeneratorStage());
-        addElement(new ValidateCodeStage());
+
+
+        addElement(new RetryStage("GenerationRetryStage", 5)
+                .addElement(new ThemeGeneratorStage())
+                .addElement(new CodeGeneratorStage())
+                .addElement(new ValidateCodeStage()));
+
         addElement(new WallpaperCacheStage(repository));
     }
 

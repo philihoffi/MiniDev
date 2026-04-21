@@ -35,8 +35,6 @@ public class ThemeGeneratorStage extends AbstractStep {
     public boolean execute(PipelineContext context) throws Exception {
         LlmClient llmClient = context.getValue(LLM_CLIENT);
 
-        String model = selectRandomModel(llmClient);
-
         JsonSchema schema = JsonSchema.defaultSchema(Map.of(
                 "type", "object",
                 "properties", Map.of(
@@ -74,15 +72,9 @@ public class ThemeGeneratorStage extends AbstractStep {
                 )
         );
 
-        LlmRequest request = new LlmRequest(messages, 1.0, null, schema, null, model);
+        LlmRequest request = new LlmRequest(messages, 2.0, null, schema, null, null);
 
         LlmResponse response = llmClient.chat(request);
-
-        if (!response.success() && model != null) {
-            log.warn("Random model {} failed, falling back to default model", model);
-            request = new LlmRequest(messages, 1.0, null, schema, null, null);
-            response = llmClient.chat(request);
-        }
 
         if (!response.success()) {
             return false;
@@ -93,38 +85,5 @@ public class ThemeGeneratorStage extends AbstractStep {
         context.putValue(ContextKeys.WallpaperPipeline.GENERATED_THEME, (String) content.get("theme"));
 
         return true;
-    }
-
-    private String selectRandomModel(LlmClient llmClient) {
-        List<LlmModel> models = llmClient.getModels();
-        if (models == null || models.isEmpty()) {
-            return null;
-        }
-
-        // Filter models suitable for structured output/chat
-        List<String> suitableModels = models.stream()
-                .filter(m -> {
-                    // Priority 1: Explicitly supports structured outputs
-                    if (Boolean.TRUE.equals(m.structuredOutputs())) {
-                        return true;
-                    }
-                    // Priority 2: Supports response_format parameter (but exclude known incompatible models)
-                    if (m.supportedParameters() != null && m.supportedParameters().contains("response_format")) {
-                        // Exclude older OpenAI models that only support json_object, not json_schema
-                        return (!m.id().startsWith("openai/gpt-4") || m.id().contains("gpt-4o") || m.id().contains("gpt-4-turbo")) && !m.id().equals("openai/gpt-3.5-turbo");
-                    }
-                    return false;
-                })
-                .filter(m -> m.architecture() != null &&
-                        m.architecture().inputModalities() != null && m.architecture().inputModalities().contains("text") &&
-                        m.architecture().outputModalities() != null && m.architecture().outputModalities().contains("text"))
-                .map(LlmModel::id)
-                .toList();
-
-        if (suitableModels.isEmpty()) {
-            return null;
-        }
-
-        return suitableModels.get(random.nextInt(suitableModels.size()));
     }
 }

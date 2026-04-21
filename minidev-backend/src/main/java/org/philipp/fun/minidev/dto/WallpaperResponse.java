@@ -1,3 +1,3 @@
 package org.philipp.fun.minidev.dto;
 
-public record WallpaperResponse(String code) {}
+public record WallpaperResponse(long id, String theme, String code) {}

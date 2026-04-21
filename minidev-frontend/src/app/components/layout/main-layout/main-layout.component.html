@@ -2,6 +2,7 @@
   <div class="nav-links">
     <h1 class="nav-brand">MiniDev</h1>
     <a routerLink="/dashboard" class="nav-link">Dashboard</a>
+    <a routerLink="/wallpaper-gallery" class="nav-link">Wallpapers</a>
     <a *ngIf="isAdmin" routerLink="/user-management" class="nav-link">User Management</a>
   </div>
   <div class="nav-user">
@@ -10,6 +11,6 @@
   </div>
 </nav>
 
-<main class="content-area">
+<main class="content-area" [class.full-bleed]="isFullBleed()">
   <router-outlet></router-outlet>
 </main>
