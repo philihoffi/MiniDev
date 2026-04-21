@@ -1,10 +1,7 @@
 package org.philipp.fun.minidev.llm;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import org.philipp.fun.minidev.dto.llm.LlmRequest;
-import org.philipp.fun.minidev.dto.llm.LlmResponse;
-import org.philipp.fun.minidev.dto.llm.OpenRouterRequest;
-import org.philipp.fun.minidev.dto.llm.OpenRouterResponse;
+import org.philipp.fun.minidev.dto.llm.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
@@ -53,9 +50,11 @@ public class OpenRouterClient implements LlmClient {
                 );
             }
 
+            String model = request.model() != null ? request.model() : properties.getModel();
+
             OpenRouterRequest requestBody = new OpenRouterRequest(
                     messages,
-                    properties.getModel(),
+                    model,
                     request.temperature(),
                     request.maxTokens(),
                     responseFormat,
@@ -66,8 +65,10 @@ public class OpenRouterClient implements LlmClient {
             log.info("Sending chat request to OpenRouter. Model: {}, Messages: {}", requestBody.model(), messages.size());
             log.debug("Request body: {}", requestJson);
             String responseBody = restClient.post()
+                    .uri("chat/completions")
                     .body(requestJson)
                     .retrieve()
+                    .onStatus(status -> status.is4xxClientError() || status.is5xxServerError(), (req, res) -> log.error("API Error: {} {} - Body: {}", res.getStatusCode(), res.getStatusText(), new String(res.getBody().readAllBytes())))
                     .body(String.class);
 
             if (responseBody == null) {
@@ -86,13 +87,75 @@ public class OpenRouterClient implements LlmClient {
             OpenRouterResponse.Choice firstChoice = response.choices().getFirst();
             String content = firstChoice.message().content();
             Integer totalTokens = response.usage() != null ? response.usage().totalTokens() : null;
-            String model = response.model();
+            String responseModel = response.model();
 
-            return LlmResponse.success(content, model, totalTokens);
+            return LlmResponse.success(content, responseModel, totalTokens);
 
         } catch (Exception e) {
             log.error("Error calling OpenRouter API", e);
             return LlmResponse.failure("API call failed: " + e.getMessage());
+        }
+    }
+
+    @Override
+    public List<LlmModel> getModels() {
+        return getModels(null, null, null);
+    }
+
+    @Override
+    public List<LlmModel> getModels(String category, String supportedParameters, String outputModalities) {
+        try {
+            log.info("Fetching models from OpenRouter: {}/models", properties.getBaseUrl());
+
+            String responseBody = restClient.get()
+                    .uri(uriBuilder -> {
+                        uriBuilder.path("models");
+                        if (category != null) uriBuilder.queryParam("category", category);
+                        if (supportedParameters != null) uriBuilder.queryParam("supported_parameters", supportedParameters);
+                        if (outputModalities != null) uriBuilder.queryParam("output_modalities", outputModalities);
+                        return uriBuilder.build();
+                    })
+                    .retrieve()
+                    .onStatus(status -> status.is4xxClientError() || status.is5xxServerError(), (req, res) -> log.error("API Error fetching models: {} {} - Body: {}", res.getStatusCode(), res.getStatusText(), new String(res.getBody().readAllBytes())))
+                    .body(String.class);
+
+            if (responseBody == null) {
+                log.warn("Received empty response when fetching models");
+                return List.of();
+            }
+
+            OpenRouterModelsResponse response = OBJECT_MAPPER.readValue(responseBody, OpenRouterModelsResponse.class);
+            if (response.data() == null) {
+                return List.of();
+            }
+
+            return response.data().stream()
+                    .map(m -> new LlmModel(
+                            m.id(),
+                            m.name(),
+                            m.description(),
+                            m.contextLength(),
+                            m.created(),
+                            m.architecture() != null ? new LlmModel.Architecture(
+                                    m.architecture().inputModalities(),
+                                    m.architecture().modality(),
+                                    m.architecture().outputModalities(),
+                                    m.architecture().instructType(),
+                                    m.architecture().tokenizer()
+                            ) : null,
+                            m.pricing() != null ? new LlmModel.Pricing(
+                                    m.pricing().prompt(),
+                                    m.pricing().completion(),
+                                    m.pricing().request(),
+                                    m.pricing().image()
+                            ) : null,
+                            m.supportedParameters(),
+                            m.structuredOutputs()
+                    ))
+                    .toList();
+        } catch (Exception e) {
+            log.error("Error fetching models from OpenRouter", e);
+            return List.of();
         }
     }
 

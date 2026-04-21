@@ -8,11 +8,15 @@ import org.philipp.fun.minidev.pipeline.core.ContextKeys;
 import org.philipp.fun.minidev.pipeline.core.PipelineContext;
 
 import org.philipp.fun.minidev.dto.llm.JsonSchema;
+import org.philipp.fun.minidev.dto.llm.LlmModel;
 import java.util.Map;
 import java.util.List;
+import java.util.Random;
+
 import static org.philipp.fun.minidev.pipeline.core.ContextKeys.System.LLM_CLIENT;
 
 public class CodeGeneratorStage extends AbstractStep {
+
     public CodeGeneratorStage() {
         super("CodeGeneratorStage");
     }
@@ -28,7 +32,11 @@ public class CodeGeneratorStage extends AbstractStep {
                 "html", Map.of("type", "string", "description", "The body content or canvas element"),
                 "css", Map.of("type", "string", "description", "The CSS for styling"),
                 "js", Map.of("type", "string", "description", "The JavaScript code for the animation"),
-                "description", Map.of("type", "string", "description", "Brief description of the animation")
+                "description", Map.of("type", "string", "description", "Brief description of the animation"),
+                "technical_details", Map.of("type", "object", "properties", Map.of(
+                    "performance_tricks", Map.of("type", "array", "items", Map.of("type", "string")),
+                    "visual_techniques", Map.of("type", "array", "items", Map.of("type", "string"))
+                ))
             ),
             "required", List.of("html", "css", "js")
         ));
@@ -42,23 +50,50 @@ public class CodeGeneratorStage extends AbstractStep {
                         "3. Colors should be modern, sophisticated, and suitable for a background (not too bright or distracting). " +
                         "4. Code MUST be self-contained (no external libraries). " +
                         "5. Use requestAnimationFrame for smooth 60fps movement. " +
-                        "6. Implement clean, readable, and optimized JavaScript code. " +
-                        "7. Ensure the CSS makes the canvas cover the full background without scrollbars. " +
+                        "6. Implement high-DPI (Retina) support by scaling the canvas context. " +
+                        "7. Use modern ES6+ features where appropriate. " +
+                        "8. Ensure the CSS makes the canvas cover the full background without scrollbars. " +
                         "The output MUST be a valid JSON object matching the provided schema."),
                 LlmRequest.Message.user("Create a 'Live Wallpaper' for the theme: '" + theme + "'. " +
                         "Include subtle interactions (e.g., mouse parallax or hover effects) if appropriate for the theme. " +
                         "Ensure the animation is loopable and aesthetically pleasing.")
         );
 
-        LlmRequest request = new LlmRequest(messages, schema);
+        LlmRequest request = new LlmRequest(messages, null, null, schema, null, null);
 
-        LlmResponse response = llmClient.chat(request);
-
-        if (!response.success()) {
+        LlmResponse initialResponse = llmClient.chat(request);
+        if (!initialResponse.success()) {
             return false;
         }
 
-        context.put(ContextKeys.WallpaperPipeline.GENERATED_CODE, response.content());
+        String initialRawJson = initialResponse.content();
+
+        // Step 2: Refinement Step
+        List<LlmRequest.Message> refinementMessages = List.of(
+                LlmRequest.Message.system("You are an expert creative coder and code reviewer. " +
+                        "Your task is to refine and improve the provided HTML5 Canvas wallpaper code. " +
+                        "CRITICAL REQUIREMENTS: " +
+                        "1. Performance optimization (use Typed Arrays for particle data, minimize canvas state changes). " +
+                        "2. Visual polish (smooth gradients, easing functions, bloom effects). " +
+                        "3. Code quality (ES6+ features, modular structure, helpful comments). " +
+                        "4. Robustness (graceful resize handling, high-DPI/Retina display support). " +
+                        "The output MUST be a valid JSON object matching the provided schema."),
+                LlmRequest.Message.user("Refine this wallpaper code for the theme '" + theme + "':\n\n" + initialRawJson)
+        );
+
+        LlmRequest refinementRequest = new LlmRequest(refinementMessages, null, null, schema, null, null);
+        LlmResponse refinedResponse = llmClient.chat(refinementRequest);
+
+        if (!refinedResponse.success()) {
+            context.putValue(ContextKeys.WallpaperPipeline.GENERATED_CODE, initialRawJson);
+            return true;
+        }
+
+        try {
+            context.putValue(ContextKeys.WallpaperPipeline.GENERATED_CODE, refinedResponse.content());
+        } catch (Exception e) {
+            context.putValue(ContextKeys.WallpaperPipeline.GENERATED_CODE, initialRawJson);
+        }
 
         return true;
     }

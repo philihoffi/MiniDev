@@ -9,14 +9,19 @@ public record LlmRequest(
         Double temperature,
         Integer maxTokens,
         JsonSchema jsonSchema,
-        String sessionId
+        String sessionId,
+        String model
 ) {
     public LlmRequest(List<Message> messages) {
-        this(messages, null, null, null, null);
+        this(messages, null, null, null, null, null);
     }
 
     public LlmRequest(List<Message> messages, JsonSchema jsonSchema) {
-        this(messages, null, null, jsonSchema, null);
+        this(messages, null, null, jsonSchema, null, null);
+    }
+
+    public LlmRequest(List<Message> messages, String model) {
+        this(messages, null, null, null, null, model);
     }
 
     public record Message(

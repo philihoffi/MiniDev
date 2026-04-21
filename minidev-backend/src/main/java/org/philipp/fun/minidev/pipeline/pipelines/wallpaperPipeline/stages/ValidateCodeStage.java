@@ -1,5 +1,6 @@
 package org.philipp.fun.minidev.pipeline.pipelines.wallpaperPipeline.stages;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.philipp.fun.minidev.pipeline.abstracts.AbstractStep;
 import org.philipp.fun.minidev.pipeline.core.ContextKeys;
@@ -44,7 +45,7 @@ public class ValidateCodeStage extends AbstractStep {
             </html>
             """, response.css(), response.html(), response.js());
 
-        context.put(ContextKeys.WallpaperPipeline.GENERATED_CODE, fullHtml);
+        context.putValue(ContextKeys.WallpaperPipeline.GENERATED_CODE, fullHtml);
 
         return true;
     }
@@ -52,5 +53,6 @@ public class ValidateCodeStage extends AbstractStep {
     /**
      * Internal record to match the JSON schema used in CodeGeneratorStage.
      */
+    @JsonIgnoreProperties(ignoreUnknown = true)
     public record WallpaperResponse(String html, String css, String js, String description) {}
 }

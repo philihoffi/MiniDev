@@ -8,7 +8,7 @@ import org.springframework.context.annotation.Configuration;
 public class LlmProperties {
     private String openrouterApiKey;
     private String model = "openrouter/auto";
-    private String baseUrl = "https://openrouter.ai/api/v1/chat/completions";
+    private String baseUrl = "https://openrouter.ai/api/v1/";
 
     public String getOpenrouterApiKey() {
         return openrouterApiKey;

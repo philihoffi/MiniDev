@@ -29,7 +29,12 @@ public class WallpaperService {
 
     @Transactional()
     public Optional<Wallpaper> getRandomWallpaper() {
-        return wallpaperRepository.findRandomWallpaper();
+        Optional<Wallpaper> wallpaper = wallpaperRepository.findRandomWallpaper();
+        if (wallpaper.isEmpty()) {
+            generateNewWallpaper();
+            return wallpaperRepository.findRandomWallpaper();
+        }
+        return wallpaper;
     }
 
     @Scheduled(cron = "${minidev.wallpaper.cron:0 0 0 * * *}")
