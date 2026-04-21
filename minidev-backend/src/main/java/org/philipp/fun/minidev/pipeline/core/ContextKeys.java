@@ -1,7 +1,7 @@
 package org.philipp.fun.minidev.pipeline.core;
 
 import org.philipp.fun.minidev.llm.LlmClient;
-import org.philipp.fun.minidev.spring.model.AgentRun;
+import org.philipp.fun.minidev.model.AgentRun;
 
 /**
  * Central registry for all context keys used within the pipeline.

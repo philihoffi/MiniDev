@@ -1,10 +1,10 @@
 package org.philipp.fun.minidev.llm;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import org.philipp.fun.minidev.llm.objects.LlmRequest;
-import org.philipp.fun.minidev.llm.objects.LlmResponse;
-import org.philipp.fun.minidev.llm.objects.OpenRouterRequest;
-import org.philipp.fun.minidev.llm.objects.OpenRouterResponse;
+import org.philipp.fun.minidev.dto.llm.LlmRequest;
+import org.philipp.fun.minidev.dto.llm.LlmResponse;
+import org.philipp.fun.minidev.dto.llm.OpenRouterRequest;
+import org.philipp.fun.minidev.dto.llm.OpenRouterResponse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;

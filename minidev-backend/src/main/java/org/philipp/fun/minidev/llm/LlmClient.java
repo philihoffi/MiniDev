@@ -1,7 +1,7 @@
 package org.philipp.fun.minidev.llm;
 
-import org.philipp.fun.minidev.llm.objects.LlmRequest;
-import org.philipp.fun.minidev.llm.objects.LlmResponse;
+import org.philipp.fun.minidev.dto.llm.LlmRequest;
+import org.philipp.fun.minidev.dto.llm.LlmResponse;
 
 public interface LlmClient {
 

@@ -2,8 +2,8 @@ package org.philipp.fun.minidev.services;
 
 import org.philipp.fun.minidev.pipeline.core.PipelineContext;
 import org.philipp.fun.minidev.pipeline.pipelines.wallpaperPipeline.WallPaperPipeline;
-import org.philipp.fun.minidev.spring.model.Wallpaper;
-import org.philipp.fun.minidev.spring.repository.WallpaperRepository;
+import org.philipp.fun.minidev.model.Wallpaper;
+import org.philipp.fun.minidev.repository.WallpaperRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.scheduling.annotation.Scheduled;

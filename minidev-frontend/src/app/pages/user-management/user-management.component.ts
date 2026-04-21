@@ -1,7 +1,8 @@
 import { Component, inject, OnInit, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { AuthService, User, UserRole, UserRequest } from '../../core/services/auth.service';
+import { AuthService } from '../../core/services/auth.service';
+import { User, UserRole, UserRequest } from '../../core/models/user.model';
 
 @Component({
   selector: 'app-user-management',

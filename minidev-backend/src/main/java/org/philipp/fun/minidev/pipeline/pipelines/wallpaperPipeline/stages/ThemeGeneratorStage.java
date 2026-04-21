@@ -1,8 +1,8 @@
 package org.philipp.fun.minidev.pipeline.pipelines.wallpaperPipeline.stages;
 
 import org.philipp.fun.minidev.llm.LlmClient;
-import org.philipp.fun.minidev.llm.objects.LlmRequest;
-import org.philipp.fun.minidev.llm.objects.LlmResponse;
+import org.philipp.fun.minidev.dto.llm.LlmRequest;
+import org.philipp.fun.minidev.dto.llm.LlmResponse;
 import org.philipp.fun.minidev.pipeline.abstracts.AbstractStep;
 import org.philipp.fun.minidev.pipeline.core.ContextKeys;
 import org.philipp.fun.minidev.pipeline.core.PipelineContext;

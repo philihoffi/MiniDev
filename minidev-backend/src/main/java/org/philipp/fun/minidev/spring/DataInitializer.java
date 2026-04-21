@@ -1,8 +1,8 @@
 package org.philipp.fun.minidev.spring;
 
-import org.philipp.fun.minidev.spring.model.Role;
-import org.philipp.fun.minidev.spring.model.User;
-import org.philipp.fun.minidev.spring.repository.UserRepository;
+import org.philipp.fun.minidev.model.Role;
+import org.philipp.fun.minidev.model.User;
+import org.philipp.fun.minidev.repository.UserRepository;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;

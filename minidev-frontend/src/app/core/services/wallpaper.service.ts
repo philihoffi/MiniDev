@@ -1,10 +1,7 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { map } from 'rxjs/operators';
-
-export interface Wallpaper {
-  code: string;
-}
+import { Wallpaper } from '../models/wallpaper.model';
 
 @Injectable({
   providedIn: 'root'

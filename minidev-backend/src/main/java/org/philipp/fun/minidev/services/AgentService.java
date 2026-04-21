@@ -1,7 +1,7 @@
 package org.philipp.fun.minidev.services;
 
-import org.philipp.fun.minidev.spring.model.AgentRun;
-import org.philipp.fun.minidev.spring.repository.SpringDataAgentRunRepository;
+import org.philipp.fun.minidev.model.AgentRun;
+import org.philipp.fun.minidev.repository.SpringDataAgentRunRepository;
 import org.springframework.stereotype.Service;
 
 import java.io.IOException;

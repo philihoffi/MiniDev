@@ -1,23 +1,7 @@
 import { Injectable, signal, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { tap } from 'rxjs/operators';
-
-export type UserRole = 'ADMIN' | 'USER' | 'GUEST';
-
-export interface User {
-  id: string;
-  username: string;
-  displayName: string;
-  role: UserRole;
-  token?: string;
-}
-
-export interface UserRequest {
-  username: string;
-  password?: string;
-  displayName?: string;
-  role?: UserRole;
-}
+import { User, UserRequest, UserRole } from '../models/user.model';
 
 @Injectable({
   providedIn: 'root'

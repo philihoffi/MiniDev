@@ -7,7 +7,7 @@ import org.philipp.fun.minidev.pipeline.pipelines.wallpaperPipeline.stages.CodeG
 import org.philipp.fun.minidev.pipeline.pipelines.wallpaperPipeline.stages.ThemeGeneratorStage;
 import org.philipp.fun.minidev.pipeline.pipelines.wallpaperPipeline.stages.ValidateCodeStage;
 import org.philipp.fun.minidev.pipeline.pipelines.wallpaperPipeline.stages.WallpaperCacheStage;
-import org.philipp.fun.minidev.spring.repository.WallpaperRepository;
+import org.philipp.fun.minidev.repository.WallpaperRepository;
 import org.springframework.stereotype.Component;
 
 import static org.philipp.fun.minidev.pipeline.core.ContextKeys.System.LLM_CLIENT;
