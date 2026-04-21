@@ -1,7 +1,7 @@
 package org.philipp.fun.minidev.llm;
 
 import org.junit.jupiter.api.Test;
-import org.philipp.fun.minidev.llm.objects.LlmResponse;
+import org.philipp.fun.minidev.dto.llm.LlmResponse;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
