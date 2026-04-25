@@ -56,8 +56,8 @@ public class WallpaperController {
 
     @PostMapping("/generate")
     public ResponseEntity<Void> generateWallpaper(@RequestParam(defaultValue = "1") int count) {
-        for (int i = 0; i < count; i++){
-            wallpaperService.generateNewWallpaper();
+        for (int i = 0; i < count; i++) {
+            wallpaperService.enqueueWallpaperGeneration();
         }
         return ResponseEntity.accepted().build();
     }

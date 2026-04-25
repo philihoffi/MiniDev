@@ -1,3 +1,105 @@
 :host {
   display: block;
 }
+
+.pipeline-dashboard {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.header-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.connection {
+  font-size: 0.875rem;
+  font-weight: 600;
+  padding: 0.25rem 0.6rem;
+  border-radius: 999px;
+}
+
+.connection.online {
+  background: #e6ffed;
+  color: #137333;
+}
+
+.connection.offline {
+  background: #fde7e9;
+  color: #b3261e;
+}
+
+.run-meta {
+  display: grid;
+  gap: 0.4rem;
+  font-size: 0.95rem;
+}
+
+.status[data-status='RUNNING'] {
+  color: #0b57d0;
+}
+
+.status[data-status='SUCCESS'] {
+  color: #137333;
+}
+
+.status[data-status='FAILED'] {
+  color: #b3261e;
+}
+
+.node-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.node-row {
+  display: grid;
+  grid-template-columns: minmax(220px, 1.6fr) minmax(70px, 0.5fr) minmax(90px, 0.6fr) minmax(120px, 1fr);
+  gap: 0.5rem;
+  align-items: center;
+  background: #f7f8fa;
+  border-radius: 0.5rem;
+  min-height: 2rem;
+  padding-top: 0.35rem;
+  padding-bottom: 0.35rem;
+}
+
+.node-name {
+  font-weight: 600;
+}
+
+.node-type {
+  font-size: 0.75rem;
+  opacity: 0.7;
+}
+
+.node-status {
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+.node-row[data-status='RUNNING'] .node-status {
+  color: #0b57d0;
+}
+
+.node-row[data-status='SUCCESS'] .node-status {
+  color: #137333;
+}
+
+.node-row[data-status='FAILED'] .node-status,
+.node-row[data-status='WARNING'] .node-status {
+  color: #b3261e;
+}
+
+.node-message {
+  font-size: 0.8rem;
+  opacity: 0.8;
+}
+
+.hint {
+  margin: 0;
+  opacity: 0.75;
+}

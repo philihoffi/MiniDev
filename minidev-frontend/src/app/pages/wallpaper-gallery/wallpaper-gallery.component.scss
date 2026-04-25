@@ -121,6 +121,11 @@
 
   .wallpaper-iframe {
     @apply w-full h-full border-none block;
+    //width: 200vw;
+    //height: 200vh;
+
+    //transform: scale(0.5);
+    //transform-origin: top left;
   }
 }
 

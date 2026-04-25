@@ -1,4 +1,32 @@
-<div class="card">
-  <h2 class="page-title">Dashboard</h2>
-  <p>Welcome to the MiniDev Dashboard!</p>
+<div class="card pipeline-dashboard">
+  <div class="header-row">
+    <h2 class="page-title">Pipeline Live</h2>
+    <span class="connection" [class.online]="pipelineProgress.connected()" [class.offline]="!pipelineProgress.connected()">
+      {{ pipelineProgress.connected() ? 'SSE verbunden' : 'SSE getrennt' }}
+    </span>
+  </div>
+
+  <div class="run-meta">
+    <div><strong>Run:</strong> {{ pipelineProgress.state().runId ?? '-' }}</div>
+    <div><strong>Pipeline:</strong> {{ pipelineProgress.state().pipelineName ?? '-' }}</div>
+    <div><strong>Status:</strong> <span class="status" [attr.data-status]="pipelineProgress.state().runStatus">{{ pipelineProgress.state().runStatus }}</span></div>
+  </div>
+
+  <div class="node-list" *ngIf="pipelineProgress.nodeViews().length > 0; else noRunData">
+    <div
+      class="node-row"
+      *ngFor="let node of pipelineProgress.nodeViews()"
+      [style.padding-left.px]="12 + (node.depth * 20)"
+      [attr.data-status]="node.status"
+    >
+      <span class="node-name">{{ node.name }}</span>
+      <span class="node-type">{{ node.type }}</span>
+      <span class="node-status">{{ node.status }}</span>
+      <span class="node-message" *ngIf="node.message">{{ node.message }}</span>
+    </div>
+  </div>
+
+  <ng-template #noRunData>
+    <p class="hint">Noch keine Pipeline-Events empfangen. Starte eine neue Wallpaper-Generierung.</p>
+  </ng-template>
 </div>

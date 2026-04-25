@@ -9,6 +9,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
 
 @Service
 public class WallpaperService {
@@ -17,13 +19,16 @@ public class WallpaperService {
 
     private final WallpaperRepository wallpaperRepository;
     private final WallpaperGenerationService wallpaperGenerationService;
+    private final PipelineExecutionQueueService pipelineExecutionQueueService;
 
     public WallpaperService(
             WallpaperRepository wallpaperRepository,
-            WallpaperGenerationService wallpaperGenerationService
+            WallpaperGenerationService wallpaperGenerationService,
+            PipelineExecutionQueueService pipelineExecutionQueueService
     ) {
         this.wallpaperRepository = wallpaperRepository;
         this.wallpaperGenerationService = wallpaperGenerationService;
+        this.pipelineExecutionQueueService = pipelineExecutionQueueService;
     }
 
     @Transactional()
@@ -60,13 +65,25 @@ public class WallpaperService {
     @Transactional
     public void generateDailyWallpaper() {
         log.info("Generating daily wallpaper.");
-        generateNewWallpaper();
+        enqueueWallpaperGeneration();
     }
 
     public void generateNewWallpaper() {
-        boolean success = wallpaperGenerationService.generateNewWallpaperInNewTransaction();
-        if (!success) {
-            log.warn("Wallpaper generation finished without success");
+        CompletableFuture<Boolean> generationFuture = enqueueWallpaperGeneration();
+        try {
+            boolean success = generationFuture.get();
+            if (!success) {
+                log.warn("Wallpaper generation finished without success");
+            }
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            log.warn("Wallpaper generation was interrupted while waiting for queue execution", e);
+        } catch (ExecutionException e) {
+            log.error("Wallpaper generation failed in queue execution", e.getCause());
         }
+    }
+
+    public CompletableFuture<Boolean> enqueueWallpaperGeneration() {
+        return pipelineExecutionQueueService.submit(wallpaperGenerationService::generateNewWallpaperInNewTransaction);
     }
 }
