@@ -48,4 +48,17 @@ export class WallpaperGalleryComponent implements OnInit {
     this.selectedWallpaper.set(wp);
     this.safeCode.set(this.sanitizer.bypassSecurityTrustHtml(wp.code));
   }
+
+  deleteWallpaper(wp: Wallpaper, event: Event) {
+    event.stopPropagation();
+    if (confirm(`Are you sure you want to delete "${wp.theme}"?`)) {
+      this.wallpaperService.deleteWallpaper(wp.id).subscribe(() => {
+        this.loadWallpapers();
+        if (this.selectedWallpaper()?.id === wp.id) {
+          this.selectedWallpaper.set(null);
+          this.safeCode.set('');
+        }
+      });
+    }
+  }
 }

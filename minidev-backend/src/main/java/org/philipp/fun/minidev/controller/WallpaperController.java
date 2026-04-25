@@ -25,6 +25,14 @@ public class WallpaperController {
                 .orElse(ResponseEntity.notFound().build());
     }
 
+    @GetMapping("/new")
+    public ResponseEntity<WallpaperResponse> getNewWallpaper() {
+        wallpaperService.generateNewWallpaper();
+        return wallpaperService.getLatestWallpaper()
+                .map(wallpaper -> ResponseEntity.ok(new WallpaperResponse(wallpaper.getId(), wallpaper.getTheme(), wallpaper.getCode())))
+                .orElse(ResponseEntity.notFound().build());
+    }
+
     @GetMapping
     public ResponseEntity<List<WallpaperResponse>> getAllWallpapers() {
         List<WallpaperResponse> wallpapers = wallpaperService.getAllWallpapers().stream()
@@ -38,6 +46,12 @@ public class WallpaperController {
         return wallpaperService.getWallpaperById(id)
                 .map(w -> ResponseEntity.ok(new WallpaperResponse(w.getId(), w.getTheme(), w.getCode())))
                 .orElse(ResponseEntity.notFound().build());
+    }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> deleteWallpaper(@PathVariable Long id) {
+        wallpaperService.deleteWallpaper(id);
+        return ResponseEntity.noContent().build();
     }
 
     @PostMapping("/generate")

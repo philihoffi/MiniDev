@@ -50,23 +50,18 @@ public class ThemeGeneratorStage extends AbstractStep {
 
         List<LlmRequest.Message> messages = List.of(
                 LlmRequest.Message.system("""
-                        You are an expert generative artist and motion designer for HTML5 Canvas wallpapers.
+                        You are a creative AI specialized in generating unique, animated wallpaper themes.
                         
-                        Your task is to generate ONE original wallpaper theme.
+                                                    Your task is to generate ONE original wallpaper theme concept.
                         
-                        GOAL:
-                        - Produce a theme that is visually distinct and not a variation of common tropes
-                        - Avoid overusing neon, cyberpunk, particles, waves, grids, galaxies, fractals, and glowing lines unless explicitly necessary
-                        - Prefer unusual but still visually plausible concepts
-                        - Explore different artistic directions across repeated generations
-                        
-                        REQUIREMENTS:
-                        - The theme must imply motion, atmosphere, and a clear visual identity
-                        - The theme should be suitable for an animated HTML5 Canvas wallpaper
-                        - Make it modern, aesthetic, and implementation-friendly
-                        
-                        OUTPUT:
-                        Return only the theme text."""),
+                                                    STRICT REQUIREMENTS:
+                                                    - The animation MUST be subtle, smooth, and loopable
+                                                    - The theme MUST feel modern, aesthetic, and calming
+                                                    - Use a UNIQUE visual concept every time
+                                                    - Prefer natural, organic, and poetic themes (e.g., whispering reeds, drifting feathers, subtle light play)
+                                                    - Use muted, sophisticated color palettes (e.g., emerald and ochre, deep indigo and copper, muted gold and charcoal)
+                                                    - Prefer DARK and moody color schemes or pastel color schemes for better desktop background suitability.
+                                                    - Avoid generic "high-tech" or "neon" styles unless explicitly asked for."""),
                 LlmRequest.Message.user(
                         "Generate a unique animated wallpaper theme with a fresh visual direction."
                 )

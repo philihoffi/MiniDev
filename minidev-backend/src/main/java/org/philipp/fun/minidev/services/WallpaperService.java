@@ -38,6 +38,11 @@ public class WallpaperService {
     }
 
     @Transactional(readOnly = true)
+    public Optional<Wallpaper> getLatestWallpaper() {
+        return wallpaperRepository.findTopByOrderByCreatedAtDesc();
+    }
+
+    @Transactional(readOnly = true)
     public java.util.List<Wallpaper> getAllWallpapers() {
         return wallpaperRepository.findAll();
     }
@@ -45,6 +50,11 @@ public class WallpaperService {
     @Transactional(readOnly = true)
     public Optional<Wallpaper> getWallpaperById(Long id) {
         return wallpaperRepository.findById(id);
+    }
+
+    @Transactional
+    public void deleteWallpaper(Long id) {
+        wallpaperRepository.deleteById(id);
     }
 
     @Scheduled(cron = "${minidev.wallpaper.cron:0 0 0 * * *}")

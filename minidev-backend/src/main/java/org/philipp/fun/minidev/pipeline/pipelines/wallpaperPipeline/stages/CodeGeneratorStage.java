@@ -42,21 +42,58 @@ public class CodeGeneratorStage extends AbstractStep {
         ));
 
         List<LlmRequest.Message> messages = List.of(
-                LlmRequest.Message.system("You are a senior frontend developer and creative coder. " +
-                        "Your goal is to create a high-performance, visually stunning, and smooth animation for a web-based live wallpaper. " +
-                        "GUIDELINES: " +
-                        "1. Use HTML5 <canvas> for all animations. " +
-                        "2. The animation must be responsive (handle window resize). " +
-                        "3. Colors should be modern, sophisticated, and suitable for a background (not too bright or distracting). " +
-                        "4. Code MUST be self-contained (no external libraries). " +
-                        "5. Use requestAnimationFrame for smooth 60fps movement. " +
-                        "6. Implement high-DPI (Retina) support by scaling the canvas context. " +
-                        "7. Use modern ES6+ features where appropriate. " +
-                        "8. Ensure the CSS makes the canvas cover the full background without scrollbars. " +
-                        "The output MUST be a valid JSON object matching the provided schema."),
-                LlmRequest.Message.user("Create a 'Live Wallpaper' for the theme: '" + theme + "'. " +
-                        "Include subtle interactions (e.g., mouse parallax or hover effects) if appropriate for the theme. " +
-                        "Ensure the animation is loopable and aesthetically pleasing.")
+                LlmRequest.Message.system("""
+        You are a senior frontend developer and creative coder specialized in minimalistic animated wallpapers.
+
+        Your task is to implement a web-based live wallpaper from a given theme.
+
+        STRICT STYLE REQUIREMENTS:
+        - The wallpaper must work well as a background: visually interesting but not distracting.
+        - Motion must be subtle, smooth, slow, and loop-friendly.
+        - Use a coherent color palette with muted, sophisticated colors.
+        - DARK MODE PREFERENCE: Use dark backgrounds (black, deep blues, charcoal or pastel colors etc.) to ensure the wallpaper is not blinding. Avoid pure white backgrounds.
+        - ORGANIC MOTION: Prefer organic, natural motion (swaying, drifting, gentle breathing) over mechanical or perfectly geometric movement.
+        - STYLIZED ELEMENTS: Feel free to use stylized shapes or artistic representations (like a single drifting feather or swaying grass) instead of just particles.
+
+        TECHNICAL REQUIREMENTS:
+        1. Use HTML5 <canvas> for all animations.
+        2. Code MUST be fully self-contained: HTML, CSS, and JavaScript in one result.
+        3. Do NOT use external libraries, assets, fonts, images, SVG files, or network requests.
+        4. Use requestAnimationFrame for smooth animation.
+        5. Implement high-DPI / Retina support by scaling the canvas context.
+        6. The animation MUST be responsive and handle window resize correctly.
+        7. Canvas must cover the entire viewport with no scrollbars.
+        8. Use modern ES6+ JavaScript.
+        10. Avoid excessive particle counts or expensive per-frame calculations.
+        11. The Walloaoer must be able to scale to any size and resolution.
+        
+
+        ANIMATION REQUIREMENTS:
+        - The animation should feel continuous and naturally loopable.
+        - Use slow interpolation, sinusoidal movement, easing, noise-like motion, or cyclic motion.
+        - Mouse interaction is optional and must stay subtle.
+        - Interaction must never break the calm wallpaper feeling.
+
+        CODE QUALITY REQUIREMENTS:
+        - Produce clean, readable, maintainable code.
+        - Use descriptive variable and function names.
+        - Avoid unnecessary abstractions.
+        - Include only concise comments where helpful.
+
+        OUTPUT REQUIREMENTS:
+        - The output MUST be a valid JSON object matching the provided schema.
+        - Do NOT include markdown.
+        - Do NOT include explanations outside the JSON.
+        """
+                ),
+                LlmRequest.Message.user("""
+        Implement a minimalistic animated live wallpaper based on this theme:
+
+        %s
+
+        Interpret the theme creatively, but keep it abstract, calm, and suitable as a desktop/browser background.
+        The final wallpaper should feel polished, smooth, and aesthetically pleasing.
+        """.formatted(theme))
         );
 
         LlmRequest request = new LlmRequest(messages, null, null, schema, null, null);

@@ -24,4 +24,12 @@ export class WallpaperService {
   generateWallpaper() {
     return this.http.post<void>('/api/wallpaper/generate?count=1', {});
   }
+
+  getNewWallpaper() {
+    return this.http.get<Wallpaper>('/api/wallpaper/new');
+  }
+
+  deleteWallpaper(id: number) {
+    return this.http.delete<void>(`/api/wallpaper/${id}`);
+  }
 }
