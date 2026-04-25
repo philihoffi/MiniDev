@@ -1,41 +1,73 @@
-# MiniDev - Fullstack Start Guide
+# MiniDev
 
-This project consists of a Spring Boot backend and an Angular frontend.
-The frontend is configured so that its build is copied directly into the static resources of the backend.
+MiniDev besteht aus einem Spring-Boot-Backend und einem Angular-Frontend.
+Das Frontend wird beim Build in die statischen Ressourcen des Backends geschrieben, sodass die App auch als ein gemeinsames Deployable gestartet werden kann.
 
-## GitHub Actions Pipeline
+## Projektstruktur
 
-The project includes a comprehensive CI/CD pipeline (`.github/workflows/build.yml`):
-- **Frontend Job:** Runs security audits, linting, unit tests (Headless Chrome), and builds the Angular application in parallel.
-- **Backend Job:** Parallelized Maven build using all available CPU cores. It downloads the pre-built frontend and skips redundant build steps to minimize execution time.
-- **Performance:** Optimized with caching, parallel execution, and decoupled build/test stages.
-- **Artifacts:** The final `.war` file is stored as a build artifact in GitHub Actions.
+- `minidev-backend`: Java/Spring Boot API + Hosting der gebauten Frontend-Dateien
+- `minidev-frontend`: Angular App
+- `logs/`: Laufzeit-Logs
 
-## Integrated Start (Backend + Frontend together)
+## Voraussetzungen
 
-To integrate the frontend into the backend and run both together on one port (8080):
+- Java 25+
+- Maven 3.9+
+- Node.js (für lokale Frontend-Entwicklung)
+- PostgreSQL (für lokalen Backend-Betrieb)
 
-1. **Full Build:**
-   Simply run Maven in the `minidev-backend` directory (it will automatically build the frontend):
-   ```powershell
-   cd minidev-backend
-   ./mvnw clean install
-   ```
-   The frontend files will be copied to `minidev-backend/src/main/resources/static/browser`.
+## Schnellstart (integriert auf Port 8080)
 
-2. **Start Application:**
-   ```powershell
-   ./mvnw spring-boot:run
-   ```
+Im integrierten Modus baut Maven das Frontend automatisch und legt die Artefakte unter `minidev-backend/src/main/resources/static` ab.
 
-3. **Open Application:**
-   Navigate to `http://localhost:8080` in your browser.
+```powershell
+Set-Location .\minidev-backend
+.\mvnw.cmd clean install
+.\mvnw.cmd spring-boot:run
+```
 
-## Development (Separate Servers)
+Danach ist die App unter `http://localhost:8080` erreichbar.
 
-For active development, it is recommended to start both servers separately:
+## Entwicklung mit getrennten Servern
 
-- **Backend:** `cd minidev-backend; ./mvnw spring-boot:run` (Port 8080)
-- **Frontend:** `cd minidev-frontend; npm start` (Port 4200)
+Backend (Port 8080):
 
-The frontend automatically forwards API requests to port 8080.
+```powershell
+Set-Location .\minidev-backend
+.\mvnw.cmd spring-boot:run
+```
+
+Frontend (Port 4200):
+
+```powershell
+Set-Location .\minidev-frontend
+npm install
+npm start
+```
+
+API-Aufrufe auf `/api` werden im Frontend per `minidev-frontend/proxy.conf.json` an `http://localhost:8080` weitergeleitet.
+
+## Wichtige Umgebungsvariablen
+
+Konfiguriert über `minidev-backend/src/main/resources/application.properties`:
+
+- `POSTGRES_HOST`
+- `POSTGRES_PORT`
+- `POSTGRES_DB`
+- `POSTGRES_USER`
+- `POSTGRES_PASSWORD`
+- `OPENROUTER_API_KEY`
+
+## Nützliche Build-Optionen
+
+- Frontend-Build im Maven-Lauf überspringen:
+
+```powershell
+Set-Location .\minidev-backend
+.\mvnw.cmd clean verify -DskipFrontendBuild=true
+```
+
+## Weitere Dokumentation
+
+- `minidev-backend/README.md`
+- `minidev-frontend/README.md`
