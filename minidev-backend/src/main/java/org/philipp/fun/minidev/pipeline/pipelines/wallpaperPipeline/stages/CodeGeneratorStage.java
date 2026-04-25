@@ -6,15 +6,15 @@ import org.philipp.fun.minidev.dto.llm.LlmResponse;
 import org.philipp.fun.minidev.pipeline.abstracts.AbstractStep;
 import org.philipp.fun.minidev.pipeline.core.ContextKeys;
 import org.philipp.fun.minidev.pipeline.core.PipelineContext;
+import org.springframework.stereotype.Component;
 
 import org.philipp.fun.minidev.dto.llm.JsonSchema;
-import org.philipp.fun.minidev.dto.llm.LlmModel;
 import java.util.Map;
 import java.util.List;
-import java.util.Random;
 
 import static org.philipp.fun.minidev.pipeline.core.ContextKeys.System.LLM_CLIENT;
 
+@Component
 public class CodeGeneratorStage extends AbstractStep {
 
     public CodeGeneratorStage() {

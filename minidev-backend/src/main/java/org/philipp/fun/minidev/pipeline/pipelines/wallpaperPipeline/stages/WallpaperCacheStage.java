@@ -5,7 +5,9 @@ import org.philipp.fun.minidev.pipeline.core.ContextKeys;
 import org.philipp.fun.minidev.pipeline.core.PipelineContext;
 import org.philipp.fun.minidev.model.Wallpaper;
 import org.philipp.fun.minidev.repository.WallpaperRepository;
+import org.springframework.stereotype.Component;
 
+@Component
 public class WallpaperCacheStage extends AbstractStep {
     private final WallpaperRepository repository;
 

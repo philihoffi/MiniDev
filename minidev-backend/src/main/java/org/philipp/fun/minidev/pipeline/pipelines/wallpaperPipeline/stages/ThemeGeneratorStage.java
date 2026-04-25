@@ -2,25 +2,21 @@ package org.philipp.fun.minidev.pipeline.pipelines.wallpaperPipeline.stages;
 
 import org.philipp.fun.minidev.dto.llm.JsonSchema;
 import org.philipp.fun.minidev.llm.LlmClient;
-import org.philipp.fun.minidev.dto.llm.LlmModel;
 import org.philipp.fun.minidev.dto.llm.LlmRequest;
 import org.philipp.fun.minidev.dto.llm.LlmResponse;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.philipp.fun.minidev.pipeline.abstracts.AbstractStep;
 import org.philipp.fun.minidev.pipeline.core.ContextKeys;
 import org.philipp.fun.minidev.pipeline.core.PipelineContext;
+import org.springframework.stereotype.Component;
 
 import java.util.List;
 import java.util.Map;
-import java.util.Random;
 
 import static org.philipp.fun.minidev.pipeline.core.ContextKeys.System.LLM_CLIENT;
 
+@Component
 public class ThemeGeneratorStage extends AbstractStep {
 
-    private static final Logger log = LoggerFactory.getLogger(ThemeGeneratorStage.class);
-    private final Random random = new Random();
 
     public ThemeGeneratorStage() {
         super("ThemeGeneratorStage");

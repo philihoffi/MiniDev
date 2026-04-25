@@ -11,12 +11,14 @@ import org.philipp.fun.minidev.pipeline.core.ContextKeys;
 import org.philipp.fun.minidev.pipeline.core.PipelineContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.stereotype.Component;
 
 import java.util.List;
 import java.util.Map;
 
 import static org.philipp.fun.minidev.pipeline.core.ContextKeys.System.LLM_CLIENT;
 
+@Component
 public class ValidateCodeStage extends AbstractStep {
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
     private static final Logger log = LoggerFactory.getLogger(ValidateCodeStage.class);
@@ -72,8 +74,8 @@ public class ValidateCodeStage extends AbstractStep {
             </html>
             """
             .replace("{{CSS}}", response.css() != null ? response.css() : "")
-            .replace("{{HTML}}", response.html() != null ? response.html() : "")
-            .replace("{{JS}}", response.js() != null ? response.js() : "");
+            .replace("{{HTML}}", response.html())
+            .replace("{{JS}}", response.js());
 
         context.putValue(ContextKeys.WallpaperPipeline.GENERATED_CODE, fullHtml);
 

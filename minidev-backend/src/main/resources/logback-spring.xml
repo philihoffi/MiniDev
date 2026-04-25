@@ -24,8 +24,7 @@
     </root>
 
     <logger name="org.philipp.fun.minidev" level="DEBUG"/>
-    
-    <!-- Activate JSON logging only in a specific profile if needed, or keep it on -->
+
     <springProfile name="json-logs">
         <appender name="JSON_FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
             <file>logs/minidev-json.log</file>

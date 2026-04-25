@@ -8,7 +8,6 @@ import org.philipp.fun.minidev.pipeline.pipelines.wallpaperPipeline.stages.CodeG
 import org.philipp.fun.minidev.pipeline.pipelines.wallpaperPipeline.stages.ThemeGeneratorStage;
 import org.philipp.fun.minidev.pipeline.pipelines.wallpaperPipeline.stages.ValidateCodeStage;
 import org.philipp.fun.minidev.pipeline.pipelines.wallpaperPipeline.stages.WallpaperCacheStage;
-import org.philipp.fun.minidev.repository.WallpaperRepository;
 import org.springframework.stereotype.Component;
 
 import static org.philipp.fun.minidev.pipeline.core.ContextKeys.System.LLM_CLIENT;
@@ -17,18 +16,22 @@ import static org.philipp.fun.minidev.pipeline.core.ContextKeys.System.LLM_CLIEN
 public class WallPaperPipeline extends SequenzStage {
     private final LlmClient llmClient;
 
-    public WallPaperPipeline(LlmClient llmClient, WallpaperRepository repository) {
+    public WallPaperPipeline(
+            LlmClient llmClient,
+            ThemeGeneratorStage themeGeneratorStage,
+            CodeGeneratorStage codeGeneratorStage,
+            ValidateCodeStage validateCodeStage,
+            WallpaperCacheStage wallpaperCacheStage
+    ) {
         super("WallPaperPipeline");
         this.llmClient = llmClient;
 
-
-
         addElement(new RetryStage("GenerationRetryStage", 5)
-                .addElement(new ThemeGeneratorStage())
-                .addElement(new CodeGeneratorStage())
-                .addElement(new ValidateCodeStage()));
+                .addElement(themeGeneratorStage)
+                .addElement(codeGeneratorStage)
+                .addElement(validateCodeStage));
 
-        addElement(new WallpaperCacheStage(repository));
+        addElement(wallpaperCacheStage);
     }
 
     @Override

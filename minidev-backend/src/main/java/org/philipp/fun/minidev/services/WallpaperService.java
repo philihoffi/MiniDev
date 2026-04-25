@@ -1,17 +1,13 @@
 package org.philipp.fun.minidev.services;
 
-import org.philipp.fun.minidev.pipeline.core.PipelineContext;
-import org.philipp.fun.minidev.pipeline.pipelines.wallpaperPipeline.WallPaperPipeline;
 import org.philipp.fun.minidev.model.Wallpaper;
 import org.philipp.fun.minidev.repository.WallpaperRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.LocalDateTime;
 import java.util.Optional;
 
 @Service
@@ -20,11 +16,14 @@ public class WallpaperService {
     private static final Logger log = LoggerFactory.getLogger(WallpaperService.class);
 
     private final WallpaperRepository wallpaperRepository;
-    private final WallPaperPipeline wallPaperPipeline;
+    private final WallpaperGenerationService wallpaperGenerationService;
 
-    public WallpaperService(WallpaperRepository wallpaperRepository, WallPaperPipeline wallPaperPipeline) {
+    public WallpaperService(
+            WallpaperRepository wallpaperRepository,
+            WallpaperGenerationService wallpaperGenerationService
+    ) {
         this.wallpaperRepository = wallpaperRepository;
-        this.wallPaperPipeline = wallPaperPipeline;
+        this.wallpaperGenerationService = wallpaperGenerationService;
     }
 
     @Transactional()
@@ -64,16 +63,10 @@ public class WallpaperService {
         generateNewWallpaper();
     }
 
-    @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void generateNewWallpaper() {
-        PipelineContext context = new PipelineContext();
-        try {
-            boolean success = wallPaperPipeline.execute(context);
-            if (!success) {
-                log.error("Failed to generate wallpaper: Pipeline execution returned false");
-            }
-        } catch (Exception e) {
-            log.error("Error during wallpaper generation: {}", e.getMessage(), e);
+        boolean success = wallpaperGenerationService.generateNewWallpaperInNewTransaction();
+        if (!success) {
+            log.warn("Wallpaper generation finished without success");
         }
     }
 }

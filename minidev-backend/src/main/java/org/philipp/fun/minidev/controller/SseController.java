@@ -4,10 +4,12 @@ import org.philipp.fun.minidev.services.AbstractSseService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.MediaType;
+import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.server.ResponseStatusException;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
 import java.util.List;
@@ -38,6 +40,6 @@ public class SseController {
             return service.subscribe();
         }
         log.warn("Stream not found: {}", streamId);
-        return null;
+        throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Unknown stream: " + streamId);
     }
 }
