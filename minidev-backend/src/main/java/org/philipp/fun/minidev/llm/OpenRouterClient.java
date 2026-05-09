@@ -17,6 +17,7 @@ public class OpenRouterClient implements LlmClient {
 
     private static final Logger log = LoggerFactory.getLogger(OpenRouterClient.class);
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
+    private static final int MAX_ERROR_BODY_LENGTH = 600;
 
     private final RestClient restClient;
     private final LlmProperties properties;
@@ -62,13 +63,21 @@ public class OpenRouterClient implements LlmClient {
             );
 
             String requestJson = OBJECT_MAPPER.writeValueAsString(requestBody);
-            log.info("Sending chat request to OpenRouter. Model: {}, Messages: {}", requestBody.model(), messages.size());
-            log.debug("Request body: {}", requestJson);
+            log.info("openrouter_chat_request model={} messages={} maxTokens={} temperature={} schema={}",
+                    requestBody.model(),
+                    messages.size(),
+                    request.maxTokens(),
+                    request.temperature(),
+                    request.jsonSchema() != null);
             String responseBody = restClient.post()
                     .uri("chat/completions")
                     .body(requestJson)
                     .retrieve()
-                    .onStatus(status -> status.is4xxClientError() || status.is5xxServerError(), (req, res) -> log.error("API Error: {} {} - Body: {}", res.getStatusCode(), res.getStatusText(), new String(res.getBody().readAllBytes())))
+                    .onStatus(status -> status.is4xxClientError() || status.is5xxServerError(), (req, res) ->
+                            log.error("openrouter_chat_error status={} reason={} body={}",
+                                    res.getStatusCode(),
+                                    res.getStatusText(),
+                                    abbreviate(new String(res.getBody().readAllBytes()))))
                     .body(String.class);
 
             if (responseBody == null) {
@@ -76,7 +85,7 @@ public class OpenRouterClient implements LlmClient {
                 return LlmResponse.failure("Empty response from OpenRouter");
             }
             responseBody = responseBody.trim();
-            log.debug("Received response from OpenRouter: {}", responseBody);
+            log.debug("openrouter_chat_response_received size={} chars", responseBody.length());
 
             OpenRouterResponse response = OBJECT_MAPPER.readValue(responseBody, OpenRouterResponse.class);
 
@@ -88,6 +97,8 @@ public class OpenRouterClient implements LlmClient {
             String content = firstChoice.message().content();
             Integer totalTokens = response.usage() != null ? response.usage().totalTokens() : null;
             String responseModel = response.model();
+
+            log.info("openrouter_chat_success model={} tokens={}", responseModel, totalTokens);
 
             return LlmResponse.success(content, responseModel, totalTokens);
 
@@ -105,7 +116,8 @@ public class OpenRouterClient implements LlmClient {
     @Override
     public List<LlmModel> getModels(String category, String supportedParameters, String outputModalities) {
         try {
-            log.info("Fetching models from OpenRouter: {}/models", properties.getBaseUrl());
+            log.info("openrouter_models_request baseUrl={} category={} supportedParameters={} outputModalities={}",
+                    properties.getBaseUrl(), category, supportedParameters, outputModalities);
 
             String responseBody = restClient.get()
                     .uri(uriBuilder -> {
@@ -116,7 +128,11 @@ public class OpenRouterClient implements LlmClient {
                         return uriBuilder.build();
                     })
                     .retrieve()
-                    .onStatus(status -> status.is4xxClientError() || status.is5xxServerError(), (req, res) -> log.error("API Error fetching models: {} {} - Body: {}", res.getStatusCode(), res.getStatusText(), new String(res.getBody().readAllBytes())))
+                    .onStatus(status -> status.is4xxClientError() || status.is5xxServerError(), (req, res) ->
+                            log.error("openrouter_models_error status={} reason={} body={}",
+                                    res.getStatusCode(),
+                                    res.getStatusText(),
+                                    abbreviate(new String(res.getBody().readAllBytes()))))
                     .body(String.class);
 
             if (responseBody == null) {
@@ -129,7 +145,7 @@ public class OpenRouterClient implements LlmClient {
                 return List.of();
             }
 
-            return response.data().stream()
+            List<LlmModel> models = response.data().stream()
                     .map(m -> new LlmModel(
                             m.id(),
                             m.name(),
@@ -153,10 +169,23 @@ public class OpenRouterClient implements LlmClient {
                             m.structuredOutputs()
                     ))
                     .toList();
+
+            log.info("openrouter_models_success count={}", models.size());
+            return models;
         } catch (Exception e) {
             log.error("Error fetching models from OpenRouter", e);
             return List.of();
         }
+    }
+
+    private static String abbreviate(String value) {
+        if (value == null) {
+            return null;
+        }
+        if (value.length() <= MAX_ERROR_BODY_LENGTH) {
+            return value;
+        }
+        return value.substring(0, MAX_ERROR_BODY_LENGTH) + "...";
     }
 
 }

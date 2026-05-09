@@ -21,3 +21,7 @@ out/
 ### Temporary ###
 /generated-games/
 /temp/
+
+### Local environment ###
+.env
+

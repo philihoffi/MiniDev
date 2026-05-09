@@ -1,0 +1,31 @@
+# Git / IDE
+.git
+.gitignore
+.env
+.idea
+.vscode
+
+# Build outputs
+**/target
+**/build
+**/dist
+**/out
+**/.angular
+
+# Dependencies / local toolchains
+**/node_modules
+minidev-frontend/node
+
+# Runtime data
+logs
+generated-games
+temp
+
+# Misc
+**/*.log
+Dockerfile*
+docker-compose*.yml
+!Dockerfile
+!docker-compose.yml
+
+

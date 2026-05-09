@@ -4,6 +4,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { AuthService } from '../../core/services/auth.service';
 import { WallpaperService } from '../../core/services/wallpaper.service';
+import { LoggerService } from '../../core/services/logger.service';
 import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
 
 @Component({
@@ -17,6 +18,7 @@ export class LoginComponent implements OnInit {
   private authService = inject(AuthService);
   private router = inject(Router);
   private wallpaperService = inject(WallpaperService);
+  private logger = inject(LoggerService);
   private sanitizer = inject(DomSanitizer);
 
   username = '';
@@ -35,7 +37,7 @@ export class LoginComponent implements OnInit {
         this.wallpaperCode.set(this.sanitizer.bypassSecurityTrustHtml(wp.code));
       },
       error: (err) => {
-        console.error('Failed to load wallpaper', err);
+        this.logger.error('login_wallpaper_load_failed', err);
       }
     });
   }

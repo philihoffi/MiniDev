@@ -1,73 +1,56 @@
 # MiniDev
 
-MiniDev besteht aus einem Spring-Boot-Backend und einem Angular-Frontend.
-Das Frontend wird beim Build in die statischen Ressourcen des Backends geschrieben, sodass die App auch als ein gemeinsames Deployable gestartet werden kann.
+MiniDev kombiniert ein Spring-Boot-Backend mit einem Angular-Frontend.
+Beim Backend-Build wird das Frontend automatisch gebaut und in die statischen Ressourcen eingebettet, sodass die App als ein gemeinsames Deployable auf `:8080` laufen kann.
 
-## Projektstruktur
+## Kurzuberblick
 
-- `minidev-backend`: Java/Spring Boot API + Hosting der gebauten Frontend-Dateien
-- `minidev-frontend`: Angular App
-- `logs/`: Laufzeit-Logs
+- `minidev-backend`: API, Persistenz, Security, Hosting der gebauten Frontend-Artefakte
+- `minidev-frontend`: Angular-App fur UI und lokale Entwicklung auf `:4200`
+- `docker-compose.yml`: Startet App + PostgreSQL fur den containerisierten Betrieb
+- `logs/`: Laufzeit-Logs im lokalen Betrieb (in Docker primar uber `docker compose logs`)
 
 ## Voraussetzungen
 
+- Docker Desktop mit Docker Compose (empfohlen)
 - Java 25+
 - Maven 3.9+
-- Node.js (für lokale Frontend-Entwicklung)
-- PostgreSQL (für lokalen Backend-Betrieb)
+- Node.js
+- PostgreSQL
 
-## Schnellstart (integriert auf Port 8080)
+## Schnellstart mit Docker (empfohlen)
 
-Im integrierten Modus baut Maven das Frontend automatisch und legt die Artefakte unter `minidev-backend/src/main/resources/static` ab.
-
-```powershell
-Set-Location .\minidev-backend
-.\mvnw.cmd clean install
-.\mvnw.cmd spring-boot:run
-```
-
-Danach ist die App unter `http://localhost:8080` erreichbar.
-
-## Entwicklung mit getrennten Servern
-
-Backend (Port 8080):
+1. Konfiguration anlegen:
 
 ```powershell
-Set-Location .\minidev-backend
-.\mvnw.cmd spring-boot:run
+Copy-Item .env.example .env
 ```
 
-Frontend (Port 4200):
+2. Container bauen und starten:
 
 ```powershell
-Set-Location .\minidev-frontend
-npm install
-npm start
+docker compose up --build
 ```
 
-API-Aufrufe auf `/api` werden im Frontend per `minidev-frontend/proxy.conf.json` an `http://localhost:8080` weitergeleitet.
+3. Anwendung offnen:
+
+- App: `http://localhost:8080`
+- Datenbank: intern als Host `postgres` im Compose-Netz
+- PostgreSQL hat bewusst keinen veroffentlichten Host-Port
 
 ## Wichtige Umgebungsvariablen
 
-Konfiguriert über `minidev-backend/src/main/resources/application.properties`:
+Aus `docker-compose.yml` und der Backend-Konfiguration:
 
+- `MINIDEV_PORT`
 - `POSTGRES_HOST`
 - `POSTGRES_PORT`
 - `POSTGRES_DB`
 - `POSTGRES_USER`
 - `POSTGRES_PASSWORD`
+- `SPRING_PROFILES_ACTIVE`
 - `OPENROUTER_API_KEY`
+- `SESSION_COOKIE_SECURE`
+- `JAVA_OPTS`
 
-## Nützliche Build-Optionen
-
-- Frontend-Build im Maven-Lauf überspringen:
-
-```powershell
-Set-Location .\minidev-backend
-.\mvnw.cmd clean verify -DskipFrontendBuild=true
-```
-
-## Weitere Dokumentation
-
-- `minidev-backend/README.md`
-- `minidev-frontend/README.md`
+Beispielwerte findest du in `.env.example`.

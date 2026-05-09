@@ -3,6 +3,8 @@ package org.philipp.fun.minidev.exception;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.ConstraintViolationException;
 import org.philipp.fun.minidev.dto.ApiErrorResponse;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -19,6 +21,8 @@ import java.util.Map;
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
+    private static final Logger log = LoggerFactory.getLogger(GlobalExceptionHandler.class);
+
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<ApiErrorResponse> handleMethodArgumentNotValid(
             MethodArgumentNotValidException exception,
@@ -30,6 +34,8 @@ public class GlobalExceptionHandler {
         }
 
         HttpStatus status = HttpStatus.BAD_REQUEST;
+        log.warn("validation_failed method={} path={} fieldErrors={}",
+                request.getMethod(), request.getRequestURI(), validationErrors.size());
         return ResponseEntity.status(status).body(new ApiErrorResponse(
                 Instant.now(),
                 status.value(),
@@ -46,6 +52,8 @@ public class GlobalExceptionHandler {
             HttpServletRequest request
     ) {
         HttpStatus status = HttpStatus.BAD_REQUEST;
+        log.warn("constraint_violation method={} path={} message={}",
+                request.getMethod(), request.getRequestURI(), exception.getMessage());
         return ResponseEntity.status(status).body(new ApiErrorResponse(
                 Instant.now(),
                 status.value(),
@@ -65,6 +73,8 @@ public class GlobalExceptionHandler {
         String message = exception.getMostSpecificCause() != null
                 ? exception.getMostSpecificCause().getMessage()
                 : "Data integrity violation";
+        log.warn("data_integrity_violation method={} path={} message={}",
+                request.getMethod(), request.getRequestURI(), message);
         return ResponseEntity.status(status).body(new ApiErrorResponse(
                 Instant.now(),
                 status.value(),
@@ -82,6 +92,8 @@ public class GlobalExceptionHandler {
     ) {
         HttpStatus status = HttpStatus.valueOf(exception.getStatusCode().value());
         String message = exception.getReason() != null ? exception.getReason() : status.getReasonPhrase();
+        log.warn("response_status_exception method={} path={} status={} message={}",
+                request.getMethod(), request.getRequestURI(), status.value(), message);
 
         return ResponseEntity.status(status).body(new ApiErrorResponse(
                 Instant.now(),
@@ -96,6 +108,7 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ApiErrorResponse> handleGenericException(Exception exception, HttpServletRequest request) {
         HttpStatus status = HttpStatus.INTERNAL_SERVER_ERROR;
+        log.error("unhandled_exception method={} path={}", request.getMethod(), request.getRequestURI(), exception);
         return ResponseEntity.status(status).body(new ApiErrorResponse(
                 Instant.now(),
                 status.value(),
