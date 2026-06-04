@@ -1,21 +1,21 @@
 package org.philipp.fun.minidev.pipeline.pipelines.wallpaperPipeline.stages;
 
-import org.philipp.fun.minidev.llm.LlmClient;
+import org.philipp.fun.minidev.dto.llm.JsonSchema;
 import org.philipp.fun.minidev.dto.llm.LlmRequest;
 import org.philipp.fun.minidev.dto.llm.LlmResponse;
-import org.philipp.fun.minidev.pipeline.abstracts.AbstractStep;
-import org.philipp.fun.minidev.pipeline.core.ContextKeys;
-import org.philipp.fun.minidev.pipeline.core.PipelineContext;
+import org.philipp.fun.minidev.llm.LlmClient;
+import org.philipp.fun.minidev.pipeline.BaseElement;
+import org.philipp.fun.minidev.pipeline.ContextKeys;
+import org.philipp.fun.minidev.pipeline.PipelineContext;
 import org.springframework.stereotype.Component;
 
-import org.philipp.fun.minidev.dto.llm.JsonSchema;
-import java.util.Map;
 import java.util.List;
+import java.util.Map;
 
-import static org.philipp.fun.minidev.pipeline.core.ContextKeys.System.LLM_CLIENT;
+import static org.philipp.fun.minidev.pipeline.ContextKeys.System.LLM_CLIENT;
 
 @Component
-public class CodeGeneratorStage extends AbstractStep {
+public class CodeGeneratorStage extends BaseElement {
 
     public CodeGeneratorStage() {
         super("CodeGeneratorStage");
@@ -24,7 +24,7 @@ public class CodeGeneratorStage extends AbstractStep {
     @Override
     public boolean execute(PipelineContext context) throws Exception {
         LlmClient llmClient = context.getValue(LLM_CLIENT);
-        String theme = context.getValue(ContextKeys.WallpaperPipeline.GENERATED_THEME);
+        String theme = context.getValue(ContextKeys.Wallpaper.THEME);
 
         JsonSchema schema = JsonSchema.defaultSchema(Map.of(
             "type", "object",
@@ -122,14 +122,14 @@ public class CodeGeneratorStage extends AbstractStep {
         LlmResponse refinedResponse = llmClient.chat(refinementRequest);
 
         if (!refinedResponse.success()) {
-            context.putValue(ContextKeys.WallpaperPipeline.GENERATED_CODE, initialRawJson);
+            context.putValue(ContextKeys.Wallpaper.CODE, initialRawJson);
             return true;
         }
 
         try {
-            context.putValue(ContextKeys.WallpaperPipeline.GENERATED_CODE, refinedResponse.content());
+            context.putValue(ContextKeys.Wallpaper.CODE, refinedResponse.content());
         } catch (Exception e) {
-            context.putValue(ContextKeys.WallpaperPipeline.GENERATED_CODE, initialRawJson);
+            context.putValue(ContextKeys.Wallpaper.CODE, initialRawJson);
         }
 
         return true;

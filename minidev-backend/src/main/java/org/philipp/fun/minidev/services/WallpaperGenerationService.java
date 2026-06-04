@@ -1,6 +1,6 @@
 package org.philipp.fun.minidev.services;
 
-import org.philipp.fun.minidev.pipeline.core.PipelineContext;
+import org.philipp.fun.minidev.pipeline.PipelineContext;
 import org.philipp.fun.minidev.pipeline.pipelines.wallpaperPipeline.WallPaperPipeline;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

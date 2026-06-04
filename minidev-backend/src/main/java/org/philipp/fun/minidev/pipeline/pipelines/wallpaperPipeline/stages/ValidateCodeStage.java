@@ -3,12 +3,12 @@ package org.philipp.fun.minidev.pipeline.pipelines.wallpaperPipeline.stages;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.philipp.fun.minidev.dto.llm.JsonSchema;
-import org.philipp.fun.minidev.llm.LlmClient;
 import org.philipp.fun.minidev.dto.llm.LlmRequest;
 import org.philipp.fun.minidev.dto.llm.LlmResponse;
-import org.philipp.fun.minidev.pipeline.abstracts.AbstractStep;
-import org.philipp.fun.minidev.pipeline.core.ContextKeys;
-import org.philipp.fun.minidev.pipeline.core.PipelineContext;
+import org.philipp.fun.minidev.llm.LlmClient;
+import org.philipp.fun.minidev.pipeline.BaseElement;
+import org.philipp.fun.minidev.pipeline.ContextKeys;
+import org.philipp.fun.minidev.pipeline.PipelineContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
@@ -16,10 +16,10 @@ import org.springframework.stereotype.Component;
 import java.util.List;
 import java.util.Map;
 
-import static org.philipp.fun.minidev.pipeline.core.ContextKeys.System.LLM_CLIENT;
+import static org.philipp.fun.minidev.pipeline.ContextKeys.System.LLM_CLIENT;
 
 @Component
-public class ValidateCodeStage extends AbstractStep {
+public class ValidateCodeStage extends BaseElement {
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
     private static final Logger log = LoggerFactory.getLogger(ValidateCodeStage.class);
 
@@ -29,7 +29,7 @@ public class ValidateCodeStage extends AbstractStep {
 
     @Override
     public boolean execute(PipelineContext context) throws Exception {
-        String rawJson = context.getValue(ContextKeys.WallpaperPipeline.GENERATED_CODE);
+        String rawJson = context.getValue(ContextKeys.Wallpaper.CODE);
         if (rawJson == null || rawJson.isBlank()) {
             return false;
         }
@@ -77,7 +77,7 @@ public class ValidateCodeStage extends AbstractStep {
             .replace("{{HTML}}", response.html())
             .replace("{{JS}}", response.js());
 
-        context.putValue(ContextKeys.WallpaperPipeline.GENERATED_CODE, fullHtml);
+        context.putValue(ContextKeys.Wallpaper.CODE, fullHtml);
 
         return true;
     }

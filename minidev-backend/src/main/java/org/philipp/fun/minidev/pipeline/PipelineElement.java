@@ -1,13 +1,10 @@
-package org.philipp.fun.minidev.pipeline.core;
+package org.philipp.fun.minidev.pipeline;
 
 import java.util.List;
 
 public interface PipelineElement {
     String getName();
-
     List<PipelineListener> getListeners();
-
     void setListeners(List<PipelineListener> listeners);
-
     boolean execute(PipelineContext context) throws Exception;
 }

@@ -1,19 +1,19 @@
 package org.philipp.fun.minidev.pipeline.pipelines.wallpaperPipeline;
 
 import org.philipp.fun.minidev.llm.LlmClient;
-import org.philipp.fun.minidev.pipeline.core.PipelineContext;
-import org.philipp.fun.minidev.pipeline.impl.RetryStage;
-import org.philipp.fun.minidev.pipeline.impl.SequenzStage;
+import org.philipp.fun.minidev.pipeline.PipelineContext;
+import org.philipp.fun.minidev.pipeline.Retry;
+import org.philipp.fun.minidev.pipeline.Sequence;
 import org.philipp.fun.minidev.pipeline.pipelines.wallpaperPipeline.stages.CodeGeneratorStage;
 import org.philipp.fun.minidev.pipeline.pipelines.wallpaperPipeline.stages.ThemeGeneratorStage;
 import org.philipp.fun.minidev.pipeline.pipelines.wallpaperPipeline.stages.ValidateCodeStage;
 import org.philipp.fun.minidev.pipeline.pipelines.wallpaperPipeline.stages.WallpaperCacheStage;
 import org.springframework.stereotype.Component;
 
-import static org.philipp.fun.minidev.pipeline.core.ContextKeys.System.LLM_CLIENT;
+import static org.philipp.fun.minidev.pipeline.ContextKeys.System.LLM_CLIENT;
 
 @Component
-public class WallPaperPipeline extends SequenzStage {
+public class WallPaperPipeline extends Sequence {
     private final LlmClient llmClient;
 
     public WallPaperPipeline(
@@ -26,12 +26,12 @@ public class WallPaperPipeline extends SequenzStage {
         super("WallPaperPipeline");
         this.llmClient = llmClient;
 
-        addElement(new RetryStage("GenerationRetryStage", 5)
-                .addElement(themeGeneratorStage)
-                .addElement(codeGeneratorStage)
-                .addElement(validateCodeStage));
+        add(new Retry("GenerationRetry", 5)
+                .add(themeGeneratorStage)
+                .add(codeGeneratorStage)
+                .add(validateCodeStage));
 
-        addElement(wallpaperCacheStage);
+        add(wallpaperCacheStage);
     }
 
     @Override

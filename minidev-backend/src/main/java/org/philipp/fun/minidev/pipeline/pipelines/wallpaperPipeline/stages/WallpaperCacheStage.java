@@ -1,14 +1,14 @@
 package org.philipp.fun.minidev.pipeline.pipelines.wallpaperPipeline.stages;
 
-import org.philipp.fun.minidev.pipeline.abstracts.AbstractStep;
-import org.philipp.fun.minidev.pipeline.core.ContextKeys;
-import org.philipp.fun.minidev.pipeline.core.PipelineContext;
 import org.philipp.fun.minidev.model.Wallpaper;
+import org.philipp.fun.minidev.pipeline.BaseElement;
+import org.philipp.fun.minidev.pipeline.ContextKeys;
+import org.philipp.fun.minidev.pipeline.PipelineContext;
 import org.philipp.fun.minidev.repository.WallpaperRepository;
 import org.springframework.stereotype.Component;
 
 @Component
-public class WallpaperCacheStage extends AbstractStep {
+public class WallpaperCacheStage extends BaseElement {
     private final WallpaperRepository repository;
 
     public WallpaperCacheStage(WallpaperRepository repository) {
@@ -18,8 +18,8 @@ public class WallpaperCacheStage extends AbstractStep {
 
     @Override
     public boolean execute(PipelineContext context) throws Exception {
-        String code = context.getValue(ContextKeys.WallpaperPipeline.GENERATED_CODE);
-        String theme = context.getValue(ContextKeys.WallpaperPipeline.GENERATED_THEME);
+        String code = context.getValue(ContextKeys.Wallpaper.CODE);
+        String theme = context.getValue(ContextKeys.Wallpaper.THEME);
 
         if (code != null && theme != null) {
             Wallpaper wallpaper = new Wallpaper();

@@ -1,30 +1,25 @@
 package org.philipp.fun.minidev.pipeline.pipelines.wallpaperPipeline.stages;
 
 import org.philipp.fun.minidev.dto.llm.JsonSchema;
-import org.philipp.fun.minidev.llm.LlmClient;
 import org.philipp.fun.minidev.dto.llm.LlmRequest;
 import org.philipp.fun.minidev.dto.llm.LlmResponse;
-import org.philipp.fun.minidev.pipeline.abstracts.AbstractStep;
-import org.philipp.fun.minidev.pipeline.core.ContextKeys;
-import org.philipp.fun.minidev.pipeline.core.PipelineContext;
+import org.philipp.fun.minidev.llm.LlmClient;
+import org.philipp.fun.minidev.pipeline.BaseElement;
+import org.philipp.fun.minidev.pipeline.ContextKeys;
+import org.philipp.fun.minidev.pipeline.PipelineContext;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
 import java.util.Map;
 
-import static org.philipp.fun.minidev.pipeline.core.ContextKeys.System.LLM_CLIENT;
+import static org.philipp.fun.minidev.pipeline.ContextKeys.System.LLM_CLIENT;
 
 @Component
-public class ThemeGeneratorStage extends AbstractStep {
+public class ThemeGeneratorStage extends BaseElement {
 
 
     public ThemeGeneratorStage() {
         super("ThemeGeneratorStage");
-    }
-
-    @Override
-    public String getName() {
-        return "ThemeGeneratorStage";
     }
 
     @Override
@@ -73,7 +68,7 @@ public class ThemeGeneratorStage extends AbstractStep {
 
         @SuppressWarnings("unchecked")
         Map<String, Object> content = response.getContentAs(Map.class);
-        context.putValue(ContextKeys.WallpaperPipeline.GENERATED_THEME, (String) content.get("theme"));
+        context.putValue(ContextKeys.Wallpaper.THEME, (String) content.get("theme"));
 
         return true;
     }

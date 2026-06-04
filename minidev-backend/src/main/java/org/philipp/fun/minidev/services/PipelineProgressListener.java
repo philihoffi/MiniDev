@@ -1,9 +1,9 @@
 package org.philipp.fun.minidev.services;
 
-import org.philipp.fun.minidev.pipeline.core.PipelineContext;
-import org.philipp.fun.minidev.pipeline.core.PipelineElement;
-import org.philipp.fun.minidev.pipeline.core.PipelineListener;
-import org.philipp.fun.minidev.pipeline.core.Stage;
+import org.philipp.fun.minidev.pipeline.PipelineContext;
+import org.philipp.fun.minidev.pipeline.PipelineElement;
+import org.philipp.fun.minidev.pipeline.PipelineListener;
+import org.philipp.fun.minidev.pipeline.Sequence;
 
 import java.util.ArrayDeque;
 import java.util.Deque;
@@ -49,7 +49,7 @@ public class PipelineProgressListener implements PipelineListener {
     }
 
     @Override
-    public void onStepStart(PipelineElement step, PipelineContext context) {
+    public void onStart(PipelineElement step, PipelineContext context) {
         Deque<String> stack = executionStack.get();
         if (stack.isEmpty()) {
             stack.addLast(getOrRegisterNode(rootElement, null).nodeId());
@@ -63,7 +63,7 @@ public class PipelineProgressListener implements PipelineListener {
     }
 
     @Override
-    public void onStepEnd(PipelineElement step, PipelineContext context, boolean result) {
+    public void onEnd(PipelineElement step, PipelineContext context, boolean result) {
         NodeMeta node = getOrRegisterNode(step, null);
         progressSseService.nodeFinished(runId, pipelineName, node.nodeId(), node.parentNodeId(), node.name(), node.type(), result);
 
@@ -85,7 +85,7 @@ public class PipelineProgressListener implements PipelineListener {
 
     private void discoverTree(PipelineElement element, String parentNodeId) {
         NodeMeta node = getOrRegisterNode(element, parentNodeId);
-        if (element instanceof Stage stage) {
+        if (element instanceof Sequence stage) {
             for (PipelineElement child : stage.getElements()) {
                 discoverTree(child, node.nodeId());
             }
@@ -99,7 +99,7 @@ public class PipelineProgressListener implements PipelineListener {
         }
 
         String nodeId = "node-" + nodeCounter.incrementAndGet();
-        String nodeType = element instanceof Stage ? NODE_TYPE_STAGE : NODE_TYPE_STEP;
+        String nodeType = element instanceof Sequence ? NODE_TYPE_STAGE : NODE_TYPE_STEP;
         NodeMeta created = new NodeMeta(nodeId, parentNodeId, element.getName(), nodeType);
         nodes.put(element, created);
 

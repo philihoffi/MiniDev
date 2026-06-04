@@ -89,12 +89,7 @@ public class DatabaseLogAppender extends AppenderBase<ILoggingEvent> {
                 )
                 """
         );
-        template.execute("ALTER TABLE application_logs ADD COLUMN IF NOT EXISTS request_id VARCHAR(255)");
-        template.execute("ALTER TABLE application_logs ADD COLUMN IF NOT EXISTS username VARCHAR(255)");
-        template.execute("ALTER TABLE application_logs ADD COLUMN IF NOT EXISTS path VARCHAR(255)");
         template.execute("CREATE INDEX IF NOT EXISTS idx_application_logs_created_at ON application_logs (created_at DESC)");
-        template.execute("CREATE INDEX IF NOT EXISTS idx_application_logs_level ON application_logs (level)");
-        template.execute("CREATE INDEX IF NOT EXISTS idx_application_logs_request_id ON application_logs (request_id)");
         SCHEMA_READY.set(true);
     }
 
@@ -106,20 +101,14 @@ public class DatabaseLogAppender extends AppenderBase<ILoggingEvent> {
     }
 
     private String trim(String value) {
-        if (value == null) {
-            return null;
-        }
-        if (value.length() <= MAX_VARCHAR) {
+        if (value == null || value.length() <= MAX_VARCHAR) {
             return value;
         }
         return value.substring(0, MAX_VARCHAR);
     }
 
     private String trimText(String value) {
-        if (value == null) {
-            return null;
-        }
-        if (value.length() <= MAX_TEXT) {
+        if (value == null || value.length() <= MAX_TEXT) {
             return value;
         }
         return value.substring(0, MAX_TEXT);
