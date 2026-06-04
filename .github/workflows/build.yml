@@ -27,6 +27,10 @@ jobs:
       run: npm run build
       working-directory: minidev-frontend
 
+    - name: Run Frontend Tests
+      run: npm test -- --watch=false --browsers=ChromeHeadless
+      working-directory: minidev-frontend
+
     - name: Upload Frontend Build
       uses: actions/upload-artifact@v4
       with:
@@ -57,8 +61,17 @@ jobs:
       working-directory: minidev-backend
 
     - name: Build Backend with Maven
-      run: ./mvnw clean install -T 1C -DskipTests -DskipFrontendBuild=true
+      run: ./mvnw clean install -T 1C -DskipFrontendBuild=true
       working-directory: minidev-backend
+
+    - name: Upload Test Report
+      uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: test-reports
+        path: |
+          minidev-backend/target/surefire-reports/
+          minidev-backend/target/site/jacoco/
 
     - name: Upload Build Artifact
       uses: actions/upload-artifact@v4
