@@ -1,32 +1,98 @@
-<div class="card pipeline-dashboard">
-  <div class="header-row">
-    <h2 class="page-title">Pipeline Live</h2>
-    <span class="connection" [class.online]="pipelineProgress.connected()" [class.offline]="!pipelineProgress.connected()">
-      {{ pipelineProgress.connected() ? 'SSE verbunden' : 'SSE getrennt' }}
-    </span>
-  </div>
-
-  <div class="run-meta">
-    <div><strong>Run:</strong> {{ pipelineProgress.state().runId ?? '-' }}</div>
-    <div><strong>Pipeline:</strong> {{ pipelineProgress.state().pipelineName ?? '-' }}</div>
-    <div><strong>Status:</strong> <span class="status" [attr.data-status]="pipelineProgress.state().runStatus">{{ pipelineProgress.state().runStatus }}</span></div>
-  </div>
-
-  <div class="node-list" *ngIf="pipelineProgress.nodeViews().length > 0; else noRunData">
-    <div
-      class="node-row"
-      *ngFor="let node of pipelineProgress.nodeViews()"
-      [style.padding-left.px]="12 + (node.depth * 20)"
-      [attr.data-status]="node.status"
-    >
-      <span class="node-name">{{ node.name }}</span>
-      <span class="node-type">{{ node.type }}</span>
-      <span class="node-status">{{ node.status }}</span>
-      <span class="node-message" *ngIf="node.message">{{ node.message }}</span>
+<div class="dashboard">
+  <!-- Header -->
+  <div class="dashboard-header">
+    <div>
+      <h1 class="page-title">Pipeline Monitor</h1>
+      <p class="page-subtitle">Real-time pipeline execution status</p>
+    </div>
+    <div class="sse-status">
+      <span class="status-dot" [class.online]="pipelineProgress.connected()" [class.offline]="!pipelineProgress.connected()"></span>
+      <span class="status-text">{{ pipelineProgress.connected() ? 'Connected' : 'Disconnected' }}</span>
     </div>
   </div>
 
-  <ng-template #noRunData>
-    <p class="hint">Noch keine Pipeline-Events empfangen. Starte eine neue Wallpaper-Generierung.</p>
-  </ng-template>
+  <!-- Stats Cards -->
+  <div class="stats-grid">
+    <div class="stat-card">
+      <div class="stat-label">Run ID</div>
+      <div class="stat-value">{{ pipelineProgress.state().runId ?? '-' }}</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Pipeline</div>
+      <div class="stat-value">{{ pipelineProgress.state().pipelineName ?? '-' }}</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Status</div>
+      <div class="stat-value">
+        <span class="status-badge" [attr.data-status]="pipelineProgress.state().runStatus">
+          {{ pipelineProgress.state().runStatus }}
+        </span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Pipeline Nodes -->
+  <div class="card nodes-card">
+    <div class="nodes-header">
+      <h2 class="nodes-title">Pipeline Steps</h2>
+      @if (pipelineProgress.nodeViews().length > 0) {
+        <span class="node-count">{{ pipelineProgress.nodeViews().length }} nodes</span>
+      }
+    </div>
+
+    @if (pipelineProgress.nodeViews().length > 0) {
+      <div class="nodes-list">
+        @for (node of pipelineProgress.nodeViews(); track node.id) {
+          <div
+            class="node-row"
+            [style.padding-left]="(16 + node.depth * 24) + 'px'"
+            [attr.data-status]="node.status"
+          >
+            <div class="node-indicator">
+              @switch (node.status) {
+                @case ('RUNNING') {
+                  <div class="node-spinner"></div>
+                }
+                @case ('SUCCESS') {
+                  <svg class="node-icon success" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5"/>
+                  </svg>
+                }
+                @case ('FAILED') {
+                  <svg class="node-icon failed" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
+                  </svg>
+                }
+                @case ('WARNING') {
+                  <svg class="node-icon warning" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126z"/>
+                  </svg>
+                }
+                @default {
+                  <div class="node-dot"></div>
+                }
+              }
+            </div>
+            <div class="node-info">
+              <span class="node-name">{{ node.name }}</span>
+              @if (node.message) {
+                <span class="node-message">{{ node.message }}</span>
+              }
+            </div>
+            <div class="node-meta">
+              <span class="node-type-badge">{{ node.type }}</span>
+            </div>
+          </div>
+        }
+      </div>
+    } @else {
+      <div class="empty-state">
+        <svg class="w-12 h-12 text-surface-300 dark:text-surface-600" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 13.5l10.5-11.25L12 10.5h8.25L9.75 21.75 12 13.5H3.75z"/>
+        </svg>
+        <h3>No pipeline data yet</h3>
+        <p>Start a new wallpaper generation to see real-time progress.</p>
+      </div>
+    }
+  </div>
 </div>

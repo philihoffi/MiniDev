@@ -1,69 +1,165 @@
-<div class="card">
-  <div class="header-actions">
-    <h2 class="page-title danger">User Management</h2>
-    <button class="btn btn-primary" (click)="openCreateForm()">Add User</button>
+<div class="um-page">
+  <!-- Header -->
+  <div class="um-header">
+    <div>
+      <h1 class="page-title">User Management</h1>
+      <p class="page-subtitle">View and manage all registered users</p>
+    </div>
+    <button class="btn-primary" (click)="openCreateForm()">
+      <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15"/>
+      </svg>
+      Add User
+    </button>
   </div>
-  <p class="description">Here you can view and manage all registered users.</p>
 
-  <div *ngIf="loading()" class="loading">Loading users...</div>
-  <div *ngIf="error()" class="error-message">{{ error() }}</div>
+  @if (loading()) {
+    <div class="card">
+      <app-loading-spinner text="Loading users..."></app-loading-spinner>
+    </div>
+  } @else if (error()) {
+    <div class="error-message">{{ error() }}</div>
+  } @else {
+    <!-- Desktop Table -->
+    <div class="card table-card desktop-only">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>Username</th>
+            <th>Display Name</th>
+            <th>Role</th>
+            <th class="text-right">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (user of users(); track user.id) {
+            <tr>
+              <td>
+                <div class="user-cell">
+                  <div class="user-avatar">{{ user.displayName?.charAt(0) || user.username.charAt(0) }}</div>
+                  <span class="font-medium">{{ user.username }}</span>
+                </div>
+              </td>
+              <td>{{ user.displayName }}</td>
+              <td>
+                <span [class]="getBadgeClass(user.role)">{{ user.role }}</span>
+              </td>
+              <td class="text-right">
+                <div class="actions-cell">
+                  @if (deleteConfirmId() === user.id) {
+                    <span class="confirm-text">Delete?</span>
+                    <button class="btn-danger btn-sm" (click)="confirmDelete(user)">Yes</button>
+                    <button class="btn-secondary btn-sm" (click)="cancelDelete()">No</button>
+                  } @else {
+                    <button class="btn-secondary btn-sm" (click)="openEditForm(user)">Edit</button>
+                    <button class="btn-danger btn-sm" (click)="requestDelete(user)">Delete</button>
+                  }
+                </div>
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
 
-  <!-- User Form Popup (Modal) -->
-  <div *ngIf="showForm()" class="modal-backdrop">
-    <div class="modal-container">
-      <div class="form-container">
-        <h3 class="form-title">{{ isEditing() ? 'Edit User' : 'Create New User' }}</h3>
-        <div class="form-group">
-          <label for="username">Username</label>
-          <input type="text" id="username" [(ngModel)]="currentUser().username" class="form-control" placeholder="Username">
+    <!-- Mobile Cards -->
+    <div class="mobile-cards mobile-only">
+      @for (user of users(); track user.id) {
+        <div class="user-card card">
+          <div class="user-card-header">
+            <div class="user-avatar-lg">{{ user.displayName?.charAt(0) || user.username.charAt(0) }}</div>
+            <div class="user-card-info">
+              <span class="user-card-name">{{ user.username }}</span>
+              <span class="user-card-display">{{ user.displayName }}</span>
+            </div>
+            <span [class]="getBadgeClass(user.role)">{{ user.role }}</span>
+          </div>
+          <div class="user-card-actions">
+            @if (deleteConfirmId() === user.id) {
+              <span class="confirm-text">Delete this user?</span>
+              <button class="btn-danger btn-sm" (click)="confirmDelete(user)">Yes</button>
+              <button class="btn-secondary btn-sm" (click)="cancelDelete()">No</button>
+            } @else {
+              <button class="btn-secondary btn-sm" (click)="openEditForm(user)">Edit</button>
+              <button class="btn-danger btn-sm" (click)="requestDelete(user)">Delete</button>
+            }
+          </div>
         </div>
-        <div class="form-group">
-          <label for="displayName">Display Name</label>
-          <input type="text" id="displayName" [(ngModel)]="currentUser().displayName" class="form-control" placeholder="Display Name">
+      }
+    </div>
+  }
+
+  <!-- Modal -->
+  @if (showForm()) {
+    <div class="modal-backdrop" (click)="cancelForm()">
+      <div class="modal" (click)="$event.stopPropagation()">
+        <div class="modal-header">
+          <h2 class="modal-title">{{ isEditing() ? 'Edit User' : 'Create User' }}</h2>
+          <button class="modal-close" (click)="cancelForm()">
+            <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
+            </svg>
+          </button>
         </div>
-        <div class="form-group">
-          <label for="password">Password {{ isEditing() ? '(leave empty to keep current)' : '' }}</label>
-          <input type="password" id="password" [(ngModel)]="currentUser().password" class="form-control" placeholder="Password">
+        <div class="modal-body">
+          <div class="form-group">
+            <label class="form-label">Username</label>
+            <input
+              type="text"
+              class="input"
+              [ngModel]="formUsername()"
+              (ngModelChange)="formUsername.set($event)"
+              placeholder="Enter username"
+            >
+          </div>
+          <div class="form-group">
+            <label class="form-label">Display Name</label>
+            <input
+              type="text"
+              class="input"
+              [ngModel]="formDisplayName()"
+              (ngModelChange)="formDisplayName.set($event)"
+              placeholder="Enter display name"
+            >
+          </div>
+          <div class="form-group">
+            <label class="form-label">Password {{ isEditing() ? '(leave empty to keep)' : '' }}</label>
+            <input
+              type="password"
+              class="input"
+              [ngModel]="formPassword()"
+              (ngModelChange)="formPassword.set($event)"
+              placeholder="Enter password"
+            >
+          </div>
+          <div class="form-group">
+            <label class="form-label">Role</label>
+            <select
+              class="input form-select"
+              [ngModel]="formRole()"
+              (ngModelChange)="formRole.set($event)"
+            >
+              @for (role of roles; track role) {
+                <option [value]="role">{{ role }}</option>
+              }
+            </select>
+          </div>
         </div>
-        <div class="form-group">
-          <label for="role">Role</label>
-          <select id="role" [(ngModel)]="currentUser().role" class="form-control">
-            <option *ngFor="let role of roles" [value]="role">{{ role }}</option>
-          </select>
-        </div>
-        <div class="form-actions">
-          <button class="btn btn-secondary" (click)="cancelForm()">Cancel</button>
-          <button class="btn btn-primary" (click)="saveUser()">Save</button>
+        <div class="modal-footer">
+          <button class="btn-secondary" (click)="cancelForm()">Cancel</button>
+          <button class="btn-primary" (click)="saveUser()" [disabled]="!formUsername() || formSubmitting()">
+            @if (formSubmitting()) {
+              <svg class="animate-spin w-4 h-4" fill="none" viewBox="0 0 24 24">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+              </svg>
+              Saving...
+            } @else {
+              {{ isEditing() ? 'Update' : 'Create' }}
+            }
+          </button>
         </div>
       </div>
     </div>
-  </div>
-
-  <table *ngIf="!loading() && !error()" class="data-table">
-    <thead class="table-head">
-      <tr>
-        <th class="table-header">ID</th>
-        <th class="table-header">Username</th>
-        <th class="table-header">Display Name</th>
-        <th class="table-header">Role</th>
-        <th class="table-header">Actions</th>
-      </tr>
-    </thead>
-    <tbody>
-      <tr *ngFor="let user of users()">
-        <td class="table-cell">{{ user.id }}</td>
-        <td class="table-cell">{{ user.username }}</td>
-        <td class="table-cell">{{ user.displayName }}</td>
-        <td class="table-cell">
-          <span class="badge" [ngClass]="{'badge-admin': user.role === 'ADMIN', 'badge-user': user.role === 'USER'}">
-            {{ user.role }}
-          </span>
-        </td>
-        <td class="table-cell">
-          <button class="btn btn-sm btn-outline" (click)="openEditForm(user)">Edit</button>
-          <button class="btn btn-sm btn-danger" (click)="deleteUser(user.id)">Delete</button>
-        </td>
-      </tr>
-    </tbody>
-  </table>
+  }
 </div>

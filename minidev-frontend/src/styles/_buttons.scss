@@ -1,8 +1,9 @@
-.btn-primary {
-  @apply bg-blue-600 text-white font-bold py-3 px-6 rounded-lg shadow-sm transition-all duration-200;
-  @apply hover:bg-blue-700 hover:shadow-md active:scale-[0.98] disabled:bg-blue-300 disabled:shadow-none disabled:cursor-not-allowed;
-}
+@layer components {
+  .btn-primary {
+    @apply btn bg-brand-600 text-white hover:bg-brand-700 focus:ring-brand-500 shadow-sm hover:shadow-md;
+  }
 
-.btn-logout {
-  @apply bg-red-500 text-white px-4 py-2 rounded-md font-medium hover:bg-red-600 transition-colors shadow-sm;
+  .btn-logout {
+    @apply btn-ghost text-danger-600 hover:bg-danger-50 dark:hover:bg-danger-500/10 hover:text-danger-600;
+  }
 }

@@ -3,31 +3,34 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { AuthService } from '../../core/services/auth.service';
 import { User, UserRole, UserRequest } from '../../core/models/user.model';
+import { ToastService } from '../../components/shared/toast/toast.service';
+import { LoadingSpinnerComponent } from '../../components/shared/loading-spinner/loading-spinner.component';
 
 @Component({
   selector: 'app-user-management',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, LoadingSpinnerComponent],
   templateUrl: './user-management.component.html',
   styleUrl: './user-management.component.scss'
 })
 export class UserManagementComponent implements OnInit {
   private authService = inject(AuthService);
+  private toast = inject(ToastService);
 
   users = signal<User[]>([]);
-  loading = signal(false);
+  loading = signal(true);
   error = signal<string | null>(null);
 
-  // Form state
   showForm = signal(false);
   isEditing = signal(false);
   editingUserId = signal<string | null>(null);
-  currentUser = signal<UserRequest>({
-    username: '',
-    password: '',
-    displayName: '',
-    role: 'USER'
-  });
+  formUsername = signal('');
+  formDisplayName = signal('');
+  formPassword = signal('');
+  formRole = signal<UserRole>('USER');
+  formSubmitting = signal(false);
+
+  deleteConfirmId = signal<string | null>(null);
 
   roles: UserRole[] = ['ADMIN', 'USER', 'GUEST'];
 
@@ -42,8 +45,8 @@ export class UserManagementComponent implements OnInit {
         this.users.set(users);
         this.loading.set(false);
       },
-      error: (err) => {
-        this.error.set('Error loading users');
+      error: () => {
+        this.error.set('Failed to load users');
         this.loading.set(false);
       }
     });
@@ -52,24 +55,20 @@ export class UserManagementComponent implements OnInit {
   openCreateForm() {
     this.isEditing.set(false);
     this.editingUserId.set(null);
-    this.currentUser.set({
-      username: '',
-      password: '',
-      displayName: '',
-      role: 'USER'
-    });
+    this.formUsername.set('');
+    this.formDisplayName.set('');
+    this.formPassword.set('');
+    this.formRole.set('USER');
     this.showForm.set(true);
   }
 
   openEditForm(user: User) {
     this.isEditing.set(true);
     this.editingUserId.set(user.id);
-    this.currentUser.set({
-      username: user.username,
-      password: '', // Don't show password
-      displayName: user.displayName,
-      role: user.role
-    });
+    this.formUsername.set(user.username);
+    this.formDisplayName.set(user.displayName);
+    this.formPassword.set('');
+    this.formRole.set(user.role);
     this.showForm.set(true);
   }
 
@@ -78,33 +77,64 @@ export class UserManagementComponent implements OnInit {
   }
 
   saveUser() {
-    const user = this.currentUser();
-    const userId = this.editingUserId();
-    if (this.isEditing() && userId) {
-      this.authService.updateUser(userId, user).subscribe({
-        next: () => {
-          this.loadUsers();
-          this.showForm.set(false);
-        },
-        error: () => this.error.set('Error updating user')
-      });
-    } else {
-      this.authService.createUser(user).subscribe({
-        next: () => {
-          this.loadUsers();
-          this.showForm.set(false);
-        },
-        error: () => this.error.set('Error creating user')
-      });
+    if (!this.formUsername()) return;
+
+    const userReq: UserRequest = {
+      username: this.formUsername(),
+      displayName: this.formDisplayName(),
+      role: this.formRole(),
+    };
+
+    if (this.formPassword()) {
+      userReq.password = this.formPassword();
     }
+
+    this.formSubmitting.set(true);
+
+    const request = this.isEditing() && this.editingUserId()
+      ? this.authService.updateUser(this.editingUserId()!, userReq)
+      : this.authService.createUser(userReq);
+
+    request.subscribe({
+      next: () => {
+        this.toast.success(this.isEditing() ? 'User updated' : 'User created');
+        this.loadUsers();
+        this.showForm.set(false);
+        this.formSubmitting.set(false);
+      },
+      error: () => {
+        this.toast.error(this.isEditing() ? 'Failed to update user' : 'Failed to create user');
+        this.formSubmitting.set(false);
+      }
+    });
   }
 
-  deleteUser(id: string) {
-    if (confirm('Are you sure you want to delete this user?')) {
-      this.authService.deleteUser(id).subscribe({
-        next: () => this.loadUsers(),
-        error: () => this.error.set('Error deleting user')
-      });
+  requestDelete(user: User) {
+    this.deleteConfirmId.set(user.id);
+  }
+
+  cancelDelete() {
+    this.deleteConfirmId.set(null);
+  }
+
+  confirmDelete(user: User) {
+    this.deleteConfirmId.set(null);
+    this.authService.deleteUser(user.id).subscribe({
+      next: () => {
+        this.toast.success(`User "${user.username}" deleted`);
+        this.loadUsers();
+      },
+      error: () => {
+        this.toast.error('Failed to delete user');
+      }
+    });
+  }
+
+  getBadgeClass(role: UserRole): string {
+    switch (role) {
+      case 'ADMIN': return 'badge-admin';
+      case 'USER': return 'badge-user';
+      default: return 'badge-guest';
     }
   }
 }
