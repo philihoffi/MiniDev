@@ -5,14 +5,13 @@
 .idea
 .vscode
 
-# Build outputs
+# Build outputs (stages have their own fresh copies)
 **/target
 **/build
-**/dist
 **/out
 **/.angular
 
-# Dependencies / local toolchains
+# Dependencies (each stage installs its own)
 **/node_modules
 minidev-frontend/node
 
@@ -23,9 +22,5 @@ temp
 
 # Misc
 **/*.log
-Dockerfile*
-docker-compose*.yml
 !Dockerfile
 !docker-compose.yml
-
-

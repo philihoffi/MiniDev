@@ -1,5 +1,6 @@
 package org.philipp.fun.minidev.pipeline.wallpaper.stages;
 
+import org.philipp.fun.minidev.dto.CreativeBrief;
 import org.philipp.fun.minidev.dto.llm.JsonSchema;
 import org.philipp.fun.minidev.dto.llm.LlmRequest;
 import org.philipp.fun.minidev.dto.llm.LlmResponse;
@@ -7,6 +8,8 @@ import org.philipp.fun.minidev.llm.LlmClient;
 import org.philipp.fun.minidev.pipeline.BaseElement;
 import org.philipp.fun.minidev.pipeline.ContextKeys;
 import org.philipp.fun.minidev.pipeline.PipelineContext;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
@@ -16,6 +19,7 @@ import static org.philipp.fun.minidev.pipeline.ContextKeys.System.LLM_CLIENT;
 
 @Component
 public class CodeGeneratorStage extends BaseElement {
+    private static final Logger log = LoggerFactory.getLogger(CodeGeneratorStage.class);
 
     public CodeGeneratorStage() {
         super("CodeGeneratorStage");
@@ -24,114 +28,88 @@ public class CodeGeneratorStage extends BaseElement {
     @Override
     public boolean execute(PipelineContext context) throws Exception {
         LlmClient llmClient = context.getValue(LLM_CLIENT);
+        CreativeBrief brief = context.getValue(ContextKeys.Wallpaper.CREATIVE_BRIEF);
         String theme = context.getValue(ContextKeys.Wallpaper.THEME);
+
+        String briefText = formatBrief(brief, theme);
 
         JsonSchema schema = JsonSchema.defaultSchema(Map.of(
             "type", "object",
             "properties", Map.of(
-                "html", Map.of("type", "string", "description", "The body content or canvas element"),
-                "css", Map.of("type", "string", "description", "The CSS for styling"),
-                "js", Map.of("type", "string", "description", "The JavaScript code for the animation"),
-                "description", Map.of("type", "string", "description", "Brief description of the animation"),
-                "technical_details", Map.of("type", "object", "properties", Map.of(
-                    "performance_tricks", Map.of("type", "array", "items", Map.of("type", "string")),
-                    "visual_techniques", Map.of("type", "array", "items", Map.of("type", "string"))
-                ))
+                "html", Map.of("type", "string", "description", "The HTML body content (canvas element, minimal markup)"),
+                "css", Map.of("type", "string", "description", "CSS styles (minimal, mostly for body/canvas)"),
+                "js", Map.of("type", "string", "description", "Complete JavaScript animation code")
             ),
             "required", List.of("html", "css", "js")
         ));
 
         List<LlmRequest.Message> messages = List.of(
-                LlmRequest.Message.system("""
-        You are a senior frontend developer and creative coder specialized in minimalistic animated wallpapers.
+            LlmRequest.Message.system("""
+                    You are a senior creative developer specializing in generative art and HTML5 Canvas animations.
 
-        Your task is to implement a web-based live wallpaper from a given theme.
+                    Your task: Implement a stunning animated wallpaper based on the provided creative brief.
 
-        STRICT STYLE REQUIREMENTS:
-        - The wallpaper must work well as a background: visually interesting but not distracting.
-        - Motion must be subtle, smooth, slow, and loop-friendly.
-        - Use a coherent color palette with muted, sophisticated colors.
-        - DARK MODE PREFERENCE: Use dark backgrounds (black, deep blues, charcoal or pastel colors etc.) to ensure the wallpaper is not blinding. Avoid pure white backgrounds.
-        - ORGANIC MOTION: Prefer organic, natural motion (swaying, drifting, gentle breathing) over mechanical or perfectly geometric movement.
-        - STYLIZED ELEMENTS: Feel free to use stylized shapes or artistic representations (like a single drifting feather or swaying grass) instead of just particles.
+                    VISUAL EXCELLENCE RULES:
+                    - Every pixel matters — create visual richness through layered effects
+                    - Use alpha transparency and compositing for depth (globalAlpha, 'screen', 'overlay' blend modes)
+                    - Add subtle noise/grain texture to prevent flat color blocks
+                    - Implement visual depth with parallax layers (foreground, midground, background)
+                    - Use gradients (radial and linear) for atmospheric lighting effects
+                    - Prefer asymmetric, organic compositions over centered/rigid layouts
 
-        TECHNICAL REQUIREMENTS:
-        1. Use HTML5 <canvas> for all animations.
-        2. Code MUST be fully self-contained: HTML, CSS, and JavaScript in one result.
-        3. Do NOT use external libraries, assets, fonts, images, SVG files, or network requests.
-        4. Use requestAnimationFrame for smooth animation.
-        5. Implement high-DPI / Retina support by scaling the canvas context.
-        6. The animation MUST be responsive and handle window resize correctly.
-        7. Canvas must cover the entire viewport with no scrollbars.
-        8. Use modern ES6+ JavaScript.
-        10. Avoid excessive particle counts or expensive per-frame calculations.
-        11. The Walloaoer must be able to scale to any size and resolution.
-        
+                    ANIMATION MASTERY RULES:
+                    - All motion MUST use easing functions — never linear interpolation
+                        * Smoothstep: t => t * t * (3 - 2 * t)
+                        * Ease-in-out: t => t < 0.5 ? 2*t*t : -1+(4-2*t)*t
+                        * Sinusoidal: Math.sin(t * Math.PI) for breathing/pulsing
+                    - Add subtle secondary motion (slight rotation wobble, scale breathing, opacity shifts)
+                    - Use time-based animation (timestamp from requestAnimationFrame), NOT frame-based
+                    - Animation cycle duration: 4-15 seconds for main motion, 1-3 seconds for micro-motion
+                    - Add slight randomness to element properties for organic feel
 
-        ANIMATION REQUIREMENTS:
-        - The animation should feel continuous and naturally loopable.
-        - Use slow interpolation, sinusoidal movement, easing, noise-like motion, or cyclic motion.
-        - Mouse interaction is optional and must stay subtle.
-        - Interaction must never break the calm wallpaper feeling.
+                    TECHNICAL REQUIREMENTS:
+                    1. HTML5 <canvas> element that fills the entire viewport
+                    2. High-DPI/Retina support: scale canvas by window.devicePixelRatio
+                    3. Handle window resize gracefully
+                    4. Use requestAnimationFrame with timestamp-based delta timing
+                    5. Fully self-contained — NO external dependencies, libraries, fonts, or network requests
+                    6. Clean, readable code with descriptive variable names
+                    7. Canvas context MUST be properly sized for device pixel ratio
 
-        CODE QUALITY REQUIREMENTS:
-        - Produce clean, readable, maintainable code.
-        - Use descriptive variable and function names.
-        - Avoid unnecessary abstractions.
-        - Include only concise comments where helpful.
+                    PERFORMANCE RULES:
+                    - Pre-calculate values that don't change per frame
+                    - Reuse objects — avoid allocations inside the animation loop
+                    - Keep element counts reasonable (< 500 particles/elements)
+                    - Minimize canvas state changes (group draws by style)
+                    - Use TypedArrays for large datasets
 
-        OUTPUT REQUIREMENTS:
-        - The output MUST be a valid JSON object matching the provided schema.
-        - Do NOT include markdown.
-        - Do NOT include explanations outside the JSON.
-        """
-                ),
-                LlmRequest.Message.user("""
-        Implement a minimalistic animated live wallpaper based on this theme:
+                    OUTPUT: Valid JSON matching the schema. NO markdown, NO explanations."""),
+            LlmRequest.Message.user("""
+                    Create an animated wallpaper based on this creative brief:
 
-        %s
+                    %s
 
-        Interpret the theme creatively, but keep it abstract, calm, and suitable as a desktop/browser background.
-        The final wallpaper should feel polished, smooth, and aesthetically pleasing.
-        """.formatted(theme))
+                    Bring this vision to life with rich visual detail, smooth organic animation, and polished code.
+                    The result should feel like a premium, living wallpaper — subtle, atmospheric, and beautiful.""".formatted(briefText))
         );
 
-        LlmRequest request = new LlmRequest(messages, null, null, schema, null, null);
+        LlmRequest request = new LlmRequest(messages, 0.9, null, schema, null, null);
+        LlmResponse response = llmClient.chat(request);
 
-        LlmResponse initialResponse = llmClient.chat(request);
-        if (!initialResponse.success()) {
+        if (!response.success()) {
+            log.warn("Code generation failed: {}", response.errorMessage());
             return false;
         }
 
-        String initialRawJson = initialResponse.content();
-
-        // Step 2: Refinement Step
-        List<LlmRequest.Message> refinementMessages = List.of(
-                LlmRequest.Message.system("You are an expert creative coder and code reviewer. " +
-                        "Your task is to refine and improve the provided HTML5 Canvas wallpaper code. " +
-                        "CRITICAL REQUIREMENTS: " +
-                        "1. Performance optimization (use Typed Arrays for particle data, minimize canvas state changes). " +
-                        "2. Visual polish (smooth gradients, easing functions, bloom effects). " +
-                        "3. Code quality (ES6+ features, modular structure, helpful comments). " +
-                        "4. Robustness (graceful resize handling, high-DPI/Retina display support). " +
-                        "The output MUST be a valid JSON object matching the provided schema."),
-                LlmRequest.Message.user("Refine this wallpaper code for the theme '" + theme + "':\n\n" + initialRawJson)
-        );
-
-        LlmRequest refinementRequest = new LlmRequest(refinementMessages, null, null, schema, null, null);
-        LlmResponse refinedResponse = llmClient.chat(refinementRequest);
-
-        if (!refinedResponse.success()) {
-            context.putValue(ContextKeys.Wallpaper.CODE, initialRawJson);
-            return true;
-        }
-
-        try {
-            context.putValue(ContextKeys.Wallpaper.CODE, refinedResponse.content());
-        } catch (Exception e) {
-            context.putValue(ContextKeys.Wallpaper.CODE, initialRawJson);
-        }
-
+        context.putValue(ContextKeys.Wallpaper.CODE, response.content());
+        log.info("Code generated ({} chars)", response.content().length());
         return true;
+    }
+
+    private String formatBrief(CreativeBrief brief, String theme) {
+        if (brief == null) {
+            return "Theme: " + (theme != null ? theme : "unknown");
+        }
+        return brief.format();
     }
 }

@@ -4,6 +4,7 @@ import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -122,5 +123,127 @@ class PipelineTest {
         ContextKey<String> key = new ContextKey<>("missing", String.class);
 
         assertThat(ctx.getValue(key)).isNull();
+    }
+
+    @Test
+    void testConditionalExecutesThenBranch() throws Exception {
+        ContextKey<Boolean> flag = new ContextKey<>("flag", Boolean.class);
+        PipelineContext ctx = new PipelineContext();
+        ctx.putValue(flag, true);
+
+        StringBuilder sb = new StringBuilder();
+        Conditional cond = new Conditional("TestCond",
+                c -> Boolean.TRUE.equals(c.getValue(flag)),
+                new BaseElement("ThenStep") {
+                    @Override public boolean execute(PipelineContext c) { sb.append("then"); return true; }
+                },
+                new BaseElement("ElseStep") {
+                    @Override public boolean execute(PipelineContext c) { sb.append("else"); return true; }
+                });
+
+        boolean success = cond.execute(ctx);
+        assertThat(success).isTrue();
+        assertThat(sb.toString()).isEqualTo("then");
+    }
+
+    @Test
+    void testConditionalExecutesElseBranch() throws Exception {
+        ContextKey<Boolean> flag = new ContextKey<>("flag", Boolean.class);
+        PipelineContext ctx = new PipelineContext();
+        ctx.putValue(flag, false);
+
+        StringBuilder sb = new StringBuilder();
+        Conditional cond = new Conditional("TestCond",
+                c -> Boolean.TRUE.equals(c.getValue(flag)),
+                new BaseElement("ThenStep") {
+                    @Override public boolean execute(PipelineContext c) { sb.append("then"); return true; }
+                },
+                new BaseElement("ElseStep") {
+                    @Override public boolean execute(PipelineContext c) { sb.append("else"); return true; }
+                });
+
+        boolean success = cond.execute(ctx);
+        assertThat(success).isTrue();
+        assertThat(sb.toString()).isEqualTo("else");
+    }
+
+    @Test
+    void testConditionalWithoutElseBranch() throws Exception {
+        ContextKey<Boolean> flag = new ContextKey<>("flag", Boolean.class);
+        PipelineContext ctx = new PipelineContext();
+        ctx.putValue(flag, false);
+
+        Conditional cond = new Conditional("TestCond",
+                c -> Boolean.TRUE.equals(c.getValue(flag)),
+                new BaseElement("ThenStep") {
+                    @Override public boolean execute(PipelineContext c) { return true; }
+                });
+
+        boolean success = cond.execute(ctx);
+        assertThat(success).isFalse();
+    }
+
+    @Test
+    void testConditionalReturnsFalseOnBranchFailure() throws Exception {
+        ContextKey<Boolean> flag = new ContextKey<>("flag", Boolean.class);
+        PipelineContext ctx = new PipelineContext();
+        ctx.putValue(flag, true);
+
+        Conditional cond = new Conditional("TestCond",
+                c -> Boolean.TRUE.equals(c.getValue(flag)),
+                new BaseElement("FailStep") {
+                    @Override public boolean execute(PipelineContext c) { return false; }
+                });
+
+        boolean success = cond.execute(ctx);
+        assertThat(success).isFalse();
+    }
+
+    @Test
+    void testConditionalInSequence() throws Exception {
+        ContextKey<Boolean> flag = new ContextKey<>("flag", Boolean.class);
+        PipelineContext ctx = new PipelineContext();
+        ctx.putValue(flag, true);
+
+        StringBuilder sb = new StringBuilder();
+        Sequence seq = new Sequence("TestSeq");
+        seq.add(new BaseElement("Before") {
+            @Override public boolean execute(PipelineContext c) { sb.append("1"); return true; }
+        }).add(new Conditional("Branch",
+                c -> Boolean.TRUE.equals(c.getValue(flag)),
+                new BaseElement("ThenStep") {
+                    @Override public boolean execute(PipelineContext c) { sb.append("T"); return true; }
+                },
+                new BaseElement("ElseStep") {
+                    @Override public boolean execute(PipelineContext c) { sb.append("E"); return true; }
+                })
+        ).add(new BaseElement("After") {
+            @Override public boolean execute(PipelineContext c) { sb.append("2"); return true; }
+        });
+
+        boolean success = seq.execute(ctx);
+        assertThat(success).isTrue();
+        assertThat(sb.toString()).isEqualTo("1T2");
+    }
+
+    @Test
+    void testConditionalNotifiesListeners() throws Exception {
+        List<String> events = new ArrayList<>();
+        ContextKey<Boolean> flag = new ContextKey<>("flag", Boolean.class);
+        PipelineContext ctx = new PipelineContext();
+        ctx.putValue(flag, true);
+
+        Conditional cond = new Conditional("TestCond",
+                c -> Boolean.TRUE.equals(c.getValue(flag)),
+                new BaseElement("ThenStep") {
+                    @Override public boolean execute(PipelineContext c) { return true; }
+                });
+        cond.setListeners(List.of(new PipelineListener() {
+            @Override public void onStart(PipelineElement e, PipelineContext c) { events.add("start:" + e.getName()); }
+            @Override public void onEnd(PipelineElement e, PipelineContext c, boolean r) { events.add("end:" + e.getName()); }
+        }));
+
+        cond.execute(ctx);
+        assertThat(events).containsExactly("start:ThenStep", "end:ThenStep");
     }
 }

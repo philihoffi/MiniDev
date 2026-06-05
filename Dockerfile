@@ -1,17 +1,37 @@
+# ─── Stage 1: Frontend ───────────────────────────────────────────────
+FROM node:20-alpine AS frontend
+WORKDIR /app/minidev-frontend
+
+COPY minidev-frontend/package.json minidev-frontend/package-lock.json* ./
+RUN --mount=type=cache,target=/root/.npm npm ci --prefer-offline
+
+COPY minidev-frontend/ ./
+RUN npm run build
+# Output lands at /app/minidev-backend/src/main/resources/static/ via angular.json outputPath
+
+
+# ─── Stage 2: Backend ────────────────────────────────────────────────
 FROM maven:3.9.11-eclipse-temurin-25 AS build
 WORKDIR /workspace
 
-# Copy only pom files first for better caching
+# Copy pom.xml only — dependency layer stays cached until pom changes
 COPY minidev-backend/pom.xml minidev-backend/
-COPY minidev-frontend/package*.json minidev-frontend/
 
-# Download dependencies (this will be cached)
-RUN mvn -f minidev-backend/pom.xml dependency:go-offline -DskipFrontendBuild=true
+# Copy pre-built frontend into backend resources (where Spring Boot expects it)
+COPY --from=frontend /app/minidev-backend/src/main/resources/static/ \
+     minidev-backend/src/main/resources/static/
 
-# Copy source and build
-COPY . .
-RUN mvn -f minidev-backend/pom.xml -DskipTests clean package
+# Copy source code
+COPY minidev-backend/src minidev-backend/src
 
+# Build with Maven — .m2 cache survives across builds via BuildKit
+RUN --mount=type=cache,target=/root/.m2/repository \
+    mvn -f minidev-backend/pom.xml \
+    -DskipTests -DskipFrontendBuild=true \
+    package
+
+
+# ─── Stage 3: Runtime ────────────────────────────────────────────────
 FROM eclipse-temurin:25-jre
 WORKDIR /app
 
@@ -22,4 +42,3 @@ COPY --from=build /workspace/minidev-backend/target/*.war /app/app.war
 EXPOSE 8080
 
 ENTRYPOINT ["sh", "-c", "java $JAVA_OPTS -jar /app/app.war"]
-

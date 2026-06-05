@@ -1,5 +1,6 @@
 package org.philipp.fun.minidev.pipeline.wallpaper;
 
+import org.philipp.fun.minidev.pipeline.Conditional;
 import org.philipp.fun.minidev.pipeline.PipelineContext;
 import org.philipp.fun.minidev.pipeline.PipelineElement;
 import org.philipp.fun.minidev.pipeline.PipelineListener;
@@ -15,6 +16,7 @@ public class PipelineProgressListener implements PipelineListener {
 
     private static final String NODE_TYPE_STAGE = "STAGE";
     private static final String NODE_TYPE_STEP = "STEP";
+    private static final String NODE_TYPE_CONDITIONAL = "CONDITIONAL";
 
     private final String runId;
     private final String pipelineName;
@@ -89,6 +91,11 @@ public class PipelineProgressListener implements PipelineListener {
             for (PipelineElement child : stage.getElements()) {
                 discoverTree(child, node.nodeId());
             }
+        } else if (element instanceof Conditional conditional) {
+            discoverTree(conditional.getThenBranch(), node.nodeId());
+            if (conditional.getElseBranch() != null) {
+                discoverTree(conditional.getElseBranch(), node.nodeId());
+            }
         }
     }
 
@@ -99,7 +106,14 @@ public class PipelineProgressListener implements PipelineListener {
         }
 
         String nodeId = "node-" + nodeCounter.incrementAndGet();
-        String nodeType = element instanceof Sequence ? NODE_TYPE_STAGE : NODE_TYPE_STEP;
+        String nodeType;
+        if (element instanceof Sequence) {
+            nodeType = NODE_TYPE_STAGE;
+        } else if (element instanceof Conditional) {
+            nodeType = NODE_TYPE_CONDITIONAL;
+        } else {
+            nodeType = NODE_TYPE_STEP;
+        }
         NodeMeta created = new NodeMeta(nodeId, parentNodeId, element.getName(), nodeType);
         nodes.put(element, created);
 
