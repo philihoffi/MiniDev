@@ -2,7 +2,7 @@ package org.philipp.fun.minidev.controller;
 
 import org.philipp.fun.minidev.dto.AuthResponse;
 import org.philipp.fun.minidev.dto.LoginRequest;
-import org.philipp.fun.minidev.services.AuthService;
+import org.philipp.fun.minidev.service.AuthService;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;

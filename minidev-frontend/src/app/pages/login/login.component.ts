@@ -32,7 +32,7 @@ export class LoginComponent implements OnInit {
   }
 
   loadWallpaper() {
-    this.wallpaperService.getLatestWallpaper().subscribe({
+    this.wallpaperService.getRandomWallpaper().subscribe({
       next: (wp) => {
         this.wallpaperCode.set(this.sanitizer.bypassSecurityTrustHtml(wp.code));
       },

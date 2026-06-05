@@ -1,6 +1,6 @@
 package org.philipp.fun.minidev.config;
 
-import org.philipp.fun.minidev.filter.RequestLoggingFilter;
+import org.philipp.fun.minidev.audit.RequestLoggingFilter;
 import org.philipp.fun.minidev.repository.UserRepository;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;

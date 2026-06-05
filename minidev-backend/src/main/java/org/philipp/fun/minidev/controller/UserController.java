@@ -3,7 +3,7 @@ package org.philipp.fun.minidev.controller;
 import org.philipp.fun.minidev.dto.AuthResponse;
 import org.philipp.fun.minidev.dto.CreateUserRequest;
 import org.philipp.fun.minidev.dto.UpdateUserRequest;
-import org.philipp.fun.minidev.services.UserService;
+import org.philipp.fun.minidev.service.UserService;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;

@@ -1,6 +1,6 @@
 package org.philipp.fun.minidev.controller;
 
-import org.philipp.fun.minidev.services.AbstractSseService;
+import org.philipp.fun.minidev.sse.AbstractSseService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.MediaType;

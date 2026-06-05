@@ -2,6 +2,7 @@ package org.philipp.fun.minidev.services;
 
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.philipp.fun.minidev.service.PipelineExecutionQueueService;
 
 import java.util.ArrayList;
 import java.util.Collections;

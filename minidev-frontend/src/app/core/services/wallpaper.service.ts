@@ -9,8 +9,8 @@ import { Wallpaper } from '../models/wallpaper.model';
 export class WallpaperService {
   private http = inject(HttpClient);
 
-  getLatestWallpaper() {
-    return this.http.get<Wallpaper>('/api/wallpaper/latest');
+  getRandomWallpaper() {
+    return this.http.get<Wallpaper>('/api/wallpaper/random');
   }
 
   getWallpapers() {
