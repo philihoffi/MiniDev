@@ -10,7 +10,7 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
-public class Parallel extends BaseElement {
+public class Parallel extends BaseElement implements AutoCloseable {
     private final List<PipelineElement> elements = new ArrayList<>();
     private final ExecutorService executor;
 
@@ -47,6 +47,11 @@ public class Parallel extends BaseElement {
             }
         }
         return allSuccess;
+    }
+
+    @Override
+    public void close() {
+        executor.shutdownNow();
     }
 
     public List<PipelineElement> getElements() { return List.copyOf(elements); }

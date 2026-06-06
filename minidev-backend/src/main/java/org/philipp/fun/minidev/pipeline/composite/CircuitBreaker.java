@@ -32,7 +32,9 @@ public class CircuitBreaker extends BaseElement {
 
         if (currentState == CircuitState.OPEN) {
             if (Duration.between(lastFailureTime.get(), Instant.now()).compareTo(resetTimeout) >= 0) {
-                state.compareAndSet(CircuitState.OPEN, CircuitState.HALF_OPEN);
+                if (!state.compareAndSet(CircuitState.OPEN, CircuitState.HALF_OPEN)) {
+                    return execute(ctx);
+                }
             } else {
                 notifyWarning(this, ctx, "Circuit breaker OPEN for " + getName() + ", skipping execution");
                 return false;
@@ -42,8 +44,9 @@ public class CircuitBreaker extends BaseElement {
         boolean success = runElement(element, ctx);
 
         if (success) {
-            if (state.get() == CircuitState.HALF_OPEN) {
-                state.set(CircuitState.CLOSED);
+            if (state.compareAndSet(CircuitState.HALF_OPEN, CircuitState.CLOSED)) {
+                failureCount.set(0);
+            } else if (state.get() == CircuitState.CLOSED) {
                 failureCount.set(0);
             }
         } else {

@@ -264,60 +264,60 @@ class PipelineTest {
 
     @Test
     void testParallelExecutesAllChildren() throws Exception {
-        Parallel parallel = new Parallel("TestParallel");
-        StringBuilder sb = new StringBuilder();
+        try (Parallel parallel = new Parallel("TestParallel")) {
+            StringBuffer sb = new StringBuffer();
 
-        parallel.add(new BaseElement("A") {
-            @Override public boolean execute(PipelineContext ctx) throws Exception {
-                Thread.sleep(10); sb.append("A"); return true;
-            }
-        }).add(new BaseElement("B") {
-            @Override public boolean execute(PipelineContext ctx) throws Exception {
-                Thread.sleep(5); sb.append("B"); return true;
-            }
-        }).add(new BaseElement("C") {
-            @Override public boolean execute(PipelineContext ctx) throws Exception {
-                sb.append("C"); return true;
-            }
-        });
+            parallel.add(new BaseElement("A") {
+                @Override public boolean execute(PipelineContext ctx) throws Exception {
+                    Thread.sleep(10); sb.append("A"); return true;
+                }
+            }).add(new BaseElement("B") {
+                @Override public boolean execute(PipelineContext ctx) throws Exception {
+                    Thread.sleep(5); sb.append("B"); return true;
+                }
+            }).add(new BaseElement("C") {
+                @Override public boolean execute(PipelineContext ctx) throws Exception {
+                    sb.append("C"); return true;
+                }
+            });
 
-        boolean ok = parallel.execute(new PipelineContext());
-        assertThat(ok).isTrue();
-        assertThat(sb.toString()).contains("A", "B", "C");
-        assertThat(sb).hasToString("CBA");
+            boolean ok = parallel.execute(new PipelineContext());
+            assertThat(ok).isTrue();
+            assertThat(sb.toString()).contains("A", "B", "C");
+        }
     }
 
     @Test
     void testParallelReturnsFalseOnChildFailure() throws Exception {
-        Parallel parallel = new Parallel("TestParallel");
+        try (Parallel parallel = new Parallel("TestParallel")) {
+            parallel.add(new BaseElement("Good") {
+                @Override public boolean execute(PipelineContext ctx) { return true; }
+            }).add(new BaseElement("Bad") {
+                @Override public boolean execute(PipelineContext ctx) { return false; }
+            });
 
-        parallel.add(new BaseElement("Good") {
-            @Override public boolean execute(PipelineContext ctx) { return true; }
-        }).add(new BaseElement("Bad") {
-            @Override public boolean execute(PipelineContext ctx) { return false; }
-        });
-
-        boolean ok = parallel.execute(new PipelineContext());
-        assertThat(ok).isFalse();
+            boolean ok = parallel.execute(new PipelineContext());
+            assertThat(ok).isFalse();
+        }
     }
 
     @Test
     void testForkJoinExecutesForksAndJoin() throws Exception {
-        StringBuilder sb = new StringBuilder();
+        StringBuffer sb = new StringBuffer();
         PipelineElement join = new BaseElement("Join") {
             @Override public boolean execute(PipelineContext ctx) { sb.append("J"); return true; }
         };
-        ForkJoin fj = new ForkJoin("TestFJ", join);
+        try (ForkJoin fj = new ForkJoin("TestFJ", join)) {
+            fj.fork(new BaseElement("F1") {
+                @Override public boolean execute(PipelineContext ctx) { sb.append("1"); return true; }
+            }).fork(new BaseElement("F2") {
+                @Override public boolean execute(PipelineContext ctx) { sb.append("2"); return true; }
+            });
 
-        fj.fork(new BaseElement("F1") {
-            @Override public boolean execute(PipelineContext ctx) { sb.append("1"); return true; }
-        }).fork(new BaseElement("F2") {
-            @Override public boolean execute(PipelineContext ctx) { sb.append("2"); return true; }
-        });
-
-        boolean ok = fj.execute(new PipelineContext());
-        assertThat(ok).isTrue();
-        assertThat(sb.toString()).contains("1", "2", "J");
+            boolean ok = fj.execute(new PipelineContext());
+            assertThat(ok).isTrue();
+            assertThat(sb.toString()).contains("1", "2", "J");
+        }
     }
 
     @Test
@@ -430,8 +430,9 @@ class PipelineTest {
 
     @Test
     void testParallelEmptyReturnsTrue() throws Exception {
-        Parallel p = new Parallel("Empty");
-        assertThat(p.execute(new PipelineContext())).isTrue();
+        try (Parallel p = new Parallel("Empty")) {
+            assertThat(p.execute(new PipelineContext())).isTrue();
+        }
     }
 
     @Test
@@ -446,12 +447,13 @@ class PipelineTest {
         PipelineElement join = new BaseElement("Join") {
             @Override public boolean execute(PipelineContext ctx) { return true; }
         };
-        ForkJoin fj = new ForkJoin("TestFJ", join);
-        fj.fork(new BaseElement("Fails") {
-            @Override public boolean execute(PipelineContext ctx) { return false; }
-        });
+        try (ForkJoin fj = new ForkJoin("TestFJ", join)) {
+            fj.fork(new BaseElement("Fails") {
+                @Override public boolean execute(PipelineContext ctx) { return false; }
+            });
 
-        boolean ok = fj.execute(new PipelineContext());
-        assertThat(ok).isFalse();
+            boolean ok = fj.execute(new PipelineContext());
+            assertThat(ok).isFalse();
+        }
     }
 }

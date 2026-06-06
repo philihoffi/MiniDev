@@ -11,7 +11,7 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
-public class ForkJoin extends BaseElement {
+public class ForkJoin extends BaseElement implements AutoCloseable {
     private final List<PipelineElement> forks = new ArrayList<>();
     private final PipelineElement join;
     private final ExecutorService executor;
@@ -51,6 +51,11 @@ public class ForkJoin extends BaseElement {
         if (!allForksOk) return false;
 
         return runElement(join, ctx);
+    }
+
+    @Override
+    public void close() {
+        executor.shutdownNow();
     }
 
     public List<PipelineElement> getForks() { return List.copyOf(forks); }
