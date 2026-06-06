@@ -8,11 +8,14 @@ import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 
 import jakarta.annotation.PostConstruct;
+import org.springframework.context.annotation.DependsOn;
+
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
 @Component
+@DependsOn("pipelineConfigLoader")
 public class PipelineRegistry {
     private static final Logger log = LoggerFactory.getLogger(PipelineRegistry.class);
     private final Map<String, PipelineElement> pipelines = new LinkedHashMap<>();
