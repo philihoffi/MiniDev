@@ -102,11 +102,27 @@ MiniDev/
 
 ## CI/CD
 
-Das GitHub Actions Workflow (`.github/workflows/build.yml`) fuehrt automatisch aus:
+Das GitHub Actions Setup umfasst mehrere Workflows:
 
-1. Frontend-Build und Tests
-2. Backend-Build und Unit-Tests
-3. Packaging und Artifact-Speicherung
+| Workflow | Trigger | Aufgabe |
+|---|---|---|
+| **build.yml** | Push/PR auf `dev`, `master` | Frontend + Backend bauen, Tests ausführen |
+| **lint.yml** | Push/PR auf `dev`, `master` | ESLint (Frontend) + Checkstyle (Backend) |
+| **docker.yml** | Push auf `master` | Docker-Image bauen + nach GHCR pushen |
+| **release.yml** | Git-Tag `v*` | Release erstellen (Docker-Image + GitHub Release + WAR) |
+| **codeql.yml** | Push/PR + wöchentlich | Security-Analyse (Java + TypeScript) |
+| **stale.yml** | Wöchentlich | Inaktive Issues schließen |
+| **issue-label.yml** | Issue-Eröffnung | Automatisch `status:discussion` setzen |
+
+### Branch-Strategie
+
+```
+feature/xyz → dev (PR) → master (PR + Review)
+```
+
+- `master` – nur über PR mit mind. 1 Approval
+- `dev` – Integration Branch
+- `feature/*` – Entwicklung
 
 ## Umgebungsvariablen
 

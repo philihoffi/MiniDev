@@ -2,9 +2,13 @@ name: Build and Test Full Project
 
 on:
   push:
-    branches: [ "main", "master" ]
+    branches: [ "dev", "master" ]
   pull_request:
-    branches: [ "main", "master" ]
+    branches: [ "dev", "master" ]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   frontend:
