@@ -113,6 +113,27 @@ public class PipelineConfigLoader {
             def.setLlm((Map<String, Object>) map.get("llm"));
         }
 
+        if (map.containsKey("system-prompt")) {
+            def.setSystemPrompt((String) map.get("system-prompt"));
+        }
+
+        if (map.containsKey("user-prompt")) {
+            def.setUserPrompt((String) map.get("user-prompt"));
+        }
+
+        if (map.containsKey("response-schema")) {
+            def.setResponseSchema((Map<String, Object>) map.get("response-schema"));
+        }
+
+        if (map.containsKey("output-mapping")) {
+            Map<String, Object> rawMapping = (Map<String, Object>) map.get("output-mapping");
+            Map<String, String> mapping = new java.util.LinkedHashMap<>();
+            for (var entry : rawMapping.entrySet()) {
+                mapping.put(entry.getKey(), entry.getValue() != null ? entry.getValue().toString() : null);
+            }
+            def.setOutputMapping(mapping);
+        }
+
         return def;
     }
 
