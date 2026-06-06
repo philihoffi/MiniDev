@@ -1,5 +1,5 @@
 # ─── Stage 1: Frontend ───────────────────────────────────────────────
-FROM node:20-alpine AS frontend
+FROM node:26-alpine AS frontend
 WORKDIR /app/minidev-frontend
 
 COPY minidev-frontend/package.json minidev-frontend/package-lock.json* ./
