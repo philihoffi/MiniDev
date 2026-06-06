@@ -1,5 +1,12 @@
 # MiniDev
 
+[![Build](https://github.com/philihoffi/MiniDev/actions/workflows/build.yml/badge.svg)](https://github.com/philihoffi/MiniDev/actions/workflows/build.yml)
+[![Lint](https://github.com/philihoffi/MiniDev/actions/workflows/lint.yml/badge.svg)](https://github.com/philihoffi/MiniDev/actions/workflows/lint.yml)
+[![CodeQL](https://github.com/philihoffi/MiniDev/actions/workflows/codeql.yml/badge.svg)](https://github.com/philihoffi/MiniDev/actions/workflows/codeql.yml)
+![Java 25](https://img.shields.io/badge/Java-25-blue)
+![Angular 19](https://img.shields.io/badge/Angular-19-red)
+![License](https://img.shields.io/badge/License-MIT-green)
+
 MiniDev kombiniert ein Spring-Boot-Backend mit einem Angular-Frontend.
 Beim Backend-Build wird das Frontend automatisch gebaut und in die statischen Ressourcen eingebettet, sodass die App als ein gemeinsames Deployable auf `:8080` laufen kann.
 
