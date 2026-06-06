@@ -316,4 +316,208 @@ pipelines:
                   code: $response
 
       - stage: assemble-html
+
+      - type: llm-stage
+        name: animation-polish
+        llm:
+          temperature: 0.5
+        system-prompt: |
+          You are a motion design expert specializing in HTML5 Canvas animations.
+
+          Your task: Polish ONLY the animation aspects of the provided wallpaper code.
+          Do NOT change colors, composition, or visual elements — only improve motion quality.
+
+          FOCUS ON THESE SPECIFIC AREAS:
+
+          1. EASING CURVES:
+          - Every single animation must use easing, never linear
+          - Replace any t/step-based linear motion with smoothstep, ease-in-out, or sinusoidal
+          - Add overshoot/bounce for natural feel where appropriate (ease-out-back)
+          - Use cubic-bezier approximations for organic feel
+
+          2. SECONDARY MOTION:
+          - Every main element needs subtle secondary motion (slight rotation, scale breathing, opacity pulse)
+          - Micro-motion should be 20-30% the amplitude of primary motion
+          - Add phase offsets between similar elements to avoid uniformity
+
+          3. TIMING & RHYTHM:
+          - Main animation cycle: 6-12 seconds for ambient feel
+          - Secondary motion cycle: 2-4 seconds
+          - Use overlapping waveforms (sine/cosine with different frequencies)
+          - Elements should never move in perfect sync — stagger their phases
+
+          4. ORGANIC FEEL:
+          - Add slight randomness to per-element timing and amplitude
+          - Use Perlin-like smooth variation for natural drift
+          - Elements should feel like they have weight, inertia, and momentum
+          - Avoid perfect symmetry — organic imperfection is beautiful
+
+          OUTPUT: Valid JSON matching {html, css, js}. Return ALL code, not just changes.
+        user-prompt: |
+          Polish the animation quality of this wallpaper code. Focus only on motion — do NOT change colors, layout, or visual elements.
+
+          Theme: '{{theme}}'
+          Mood: {{creativeBriefMood}}
+          Motion Style: {{creativeBriefMotionStyle}}
+
+          Current code to polish:
+          {{code}}
+        response-schema:
+          type: object
+          properties:
+            html:
+              type: string
+              description: "The HTML body content (unchanged)"
+            css:
+              type: string
+              description: "CSS styles (unchanged)"
+            js:
+              type: string
+              description: "JavaScript with polished animation code"
+          required: [html, css, js]
+        output-mapping:
+          code: $response
+
+      - type: llm-stage
+        name: visual-polish
+        llm:
+          temperature: 0.5
+        system-prompt: |
+          You are a visual design expert specializing in generative art and atmospheric digital painting on Canvas.
+
+          Your task: Polish ONLY the visual/color aspects of the provided wallpaper code.
+          Do NOT change animation logic or element structure — only improve visual quality.
+
+          FOCUS ON THESE SPECIFIC AREAS:
+
+          1. COLOR HARMONY:
+          - Ensure all colors align with the creative brief's palette
+          - Add subtle color gradients (radialGradient, linearGradient) to flat areas
+          - Use alpha transparency (0.1-0.4) for layered depth
+          - Add complementary accent glows for visual interest
+
+          2. ATMOSPHERIC EFFECTS:
+          - Add subtle noise/grain texture via pixel manipulation or layered semi-transparent noise
+          - Create depth with atmospheric haze (distant elements more transparent, desaturated)
+          - Add gentle light bloom or glow around bright elements
+          - Use 'screen' or 'overlay' composite operations for light effects
+
+          3. DEPTH & COMPOSITION:
+          - Ensure clear foreground/midground/background separation
+          - Background should be darkest and simplest
+          - Foreground elements should have highest contrast and detail
+          - Add subtle shadow/depth cues through alpha layering
+
+          4. TEXTURE & RICHNESS:
+          - No flat color fills — always use gradients or layered transparency
+          - Add particle dust or ambient floating specks for atmosphere
+          - Edge softening: elements should fade at edges, not be hard-clipped
+          - Ensure the overall feel is "living painting" not "flat graphic"
+
+          OUTPUT: Valid JSON matching {html, css, js}. Return ALL code, not just changes.
+        user-prompt: |
+          Polish the visual quality of this wallpaper code. Focus only on colors, atmosphere, and depth — do NOT change animation or element structure.
+
+          Theme: '{{theme}}'
+          Description: {{creativeBriefDescription}}
+          Colors: {{creativeBriefColorPalette}}
+          Mood: {{creativeBriefMood}}
+          Key Elements: {{creativeBriefKeyElements}}
+
+          Current code to polish:
+          {{code}}
+        response-schema:
+          type: object
+          properties:
+            html:
+              type: string
+              description: "The HTML body content (unchanged)"
+            css:
+              type: string
+              description: "CSS styles (updated if needed)"
+            js:
+              type: string
+              description: "JavaScript with polished visual code"
+          required: [html, css, js]
+        output-mapping:
+          code: $response
+
+      - type: llm-stage
+        name: final-quality-check
+        llm:
+          temperature: 0.2
+        system-prompt: |
+          You are a quality assurance reviewer for HTML5 Canvas wallpapers.
+
+          Do a quick final check on this wallpaper code. Be concise.
+          Score from 1-10 and provide exactly one sentence of feedback.
+        user-prompt: |
+          Final quality check for wallpaper:
+
+          Theme: '{{theme}}'
+          Brief: {{creativeBriefDescription}} — {{creativeBriefMood}}
+
+          Code:
+          {{code}}
+
+          Output JSON: quality_score (int), passed (bool), feedback (string, max 100 chars)
+        response-schema:
+          type: object
+          properties:
+            quality_score:
+              type: integer
+              description: "Overall quality score 1-10"
+            passed:
+              type: boolean
+              description: "True if score >= 6"
+            feedback:
+              type: string
+              description: "One-sentence feedback (max 100 chars)"
+          required: [quality_score, passed, feedback]
+        output-mapping:
+          finalScore: $.quality_score
+          finalPassed: $.passed
+          finalFeedback: $.feedback
+
+      - type: llm-stage
+        name: generate-metadata
+        llm:
+          temperature: 0.7
+        system-prompt: |
+          You are a creative copywriter specializing in digital art descriptions.
+
+          Generate engaging metadata for an animated HTML5 Canvas wallpaper.
+          Keep descriptions evocative but concise — this is for display in a gallery UI.
+        user-prompt: |
+          Generate metadata for this wallpaper:
+
+          Theme: '{{theme}}'
+          Description: {{creativeBriefDescription}}
+          Mood: {{creativeBriefMood}}
+          Colors: {{creativeBriefColorPalette}}
+
+          Output JSON with:
+          - title: short evocative title (max 50 chars, should NOT be the theme name)
+          - description: two compelling sentences about the visual experience
+          - tags: 3-5 relevant keywords for categorization
+        response-schema:
+          type: object
+          properties:
+            title:
+              type: string
+              description: "Short evocative display title (max 50 chars)"
+            description:
+              type: string
+              description: "Two compelling sentences about the visual experience"
+            tags:
+              type: array
+              items:
+                type: string
+              description: "3-5 relevant keywords"
+          required: [title, description, tags]
+        output-mapping:
+          wallpaperTitle: $.title
+          wallpaperDescription: $.description
+          wallpaperTags: $.tags
+
       - stage: wallpaper-cache
