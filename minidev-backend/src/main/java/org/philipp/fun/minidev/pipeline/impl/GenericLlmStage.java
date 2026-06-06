@@ -155,7 +155,11 @@ public class GenericLlmStage extends BaseElement {
     private static Double toDouble(Object value) {
         if (value instanceof Number n) return n.doubleValue();
         if (value instanceof String s) {
-            try { return Double.parseDouble(s); } catch (NumberFormatException e) { return null; }
+            try {
+                return Double.parseDouble(s);
+            } catch (NumberFormatException e) {
+                return null;
+            }
         }
         return null;
     }
