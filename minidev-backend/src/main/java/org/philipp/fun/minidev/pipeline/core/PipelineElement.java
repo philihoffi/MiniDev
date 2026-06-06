@@ -1,4 +1,4 @@
-package org.philipp.fun.minidev.pipeline;
+package org.philipp.fun.minidev.pipeline.core;
 
 import java.util.List;
 

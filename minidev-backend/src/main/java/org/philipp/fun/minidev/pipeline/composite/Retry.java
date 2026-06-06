@@ -1,4 +1,6 @@
-package org.philipp.fun.minidev.pipeline;
+package org.philipp.fun.minidev.pipeline.composite;
+
+import org.philipp.fun.minidev.pipeline.core.PipelineContext;
 
 public class Retry extends Sequence {
     private final int maxRetries;

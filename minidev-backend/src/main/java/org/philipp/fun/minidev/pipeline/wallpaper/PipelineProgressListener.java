@@ -1,10 +1,15 @@
 package org.philipp.fun.minidev.pipeline.wallpaper;
 
-import org.philipp.fun.minidev.pipeline.Conditional;
-import org.philipp.fun.minidev.pipeline.PipelineContext;
-import org.philipp.fun.minidev.pipeline.PipelineElement;
-import org.philipp.fun.minidev.pipeline.PipelineListener;
-import org.philipp.fun.minidev.pipeline.Sequence;
+import org.philipp.fun.minidev.pipeline.composite.Conditional;
+import org.philipp.fun.minidev.pipeline.composite.Sequence;
+import org.philipp.fun.minidev.pipeline.core.PipelineContext;
+import org.philipp.fun.minidev.pipeline.core.PipelineElement;
+import org.philipp.fun.minidev.pipeline.core.PipelineListener;
+import org.philipp.fun.minidev.pipeline.composite.CircuitBreaker;
+import org.philipp.fun.minidev.pipeline.composite.ForkJoin;
+import org.philipp.fun.minidev.pipeline.composite.Parallel;
+import org.philipp.fun.minidev.pipeline.composite.Switch;
+import org.philipp.fun.minidev.pipeline.composite.Timeout;
 
 import java.util.ArrayDeque;
 import java.util.Deque;
@@ -17,6 +22,9 @@ public class PipelineProgressListener implements PipelineListener {
     private static final String NODE_TYPE_STAGE = "STAGE";
     private static final String NODE_TYPE_STEP = "STEP";
     private static final String NODE_TYPE_CONDITIONAL = "CONDITIONAL";
+    private static final String NODE_TYPE_PARALLEL = "PARALLEL";
+    private static final String NODE_TYPE_TIMEOUT = "TIMEOUT";
+    private static final String NODE_TYPE_CIRCUIT_BREAKER = "CIRCUIT_BREAKER";
 
     private final String runId;
     private final String pipelineName;
@@ -91,6 +99,26 @@ public class PipelineProgressListener implements PipelineListener {
             for (PipelineElement child : stage.getElements()) {
                 discoverTree(child, node.nodeId());
             }
+        } else if (element instanceof ForkJoin fj) {
+            for (PipelineElement child : fj.getForks()) {
+                discoverTree(child, node.nodeId());
+            }
+            discoverTree(fj.getJoin(), node.nodeId());
+        } else if (element instanceof Parallel parallel) {
+            for (PipelineElement child : parallel.getElements()) {
+                discoverTree(child, node.nodeId());
+            }
+        } else if (element instanceof Switch sw) {
+            for (var c : sw.getCases()) {
+                discoverTree(c.branch(), node.nodeId());
+            }
+            if (sw.getDefaultBranch() != null) {
+                discoverTree(sw.getDefaultBranch(), node.nodeId());
+            }
+        } else if (element instanceof Timeout timeout) {
+            discoverTree(timeout.getElement(), node.nodeId());
+        } else if (element instanceof CircuitBreaker cb) {
+            discoverTree(cb.getElement(), node.nodeId());
         } else if (element instanceof Conditional conditional) {
             discoverTree(conditional.getThenBranch(), node.nodeId());
             if (conditional.getElseBranch() != null) {
@@ -109,8 +137,14 @@ public class PipelineProgressListener implements PipelineListener {
         String nodeType;
         if (element instanceof Sequence) {
             nodeType = NODE_TYPE_STAGE;
-        } else if (element instanceof Conditional) {
+        } else if (element instanceof Conditional || element instanceof Switch) {
             nodeType = NODE_TYPE_CONDITIONAL;
+        } else if (element instanceof Parallel || element instanceof ForkJoin) {
+            nodeType = NODE_TYPE_PARALLEL;
+        } else if (element instanceof Timeout) {
+            nodeType = NODE_TYPE_TIMEOUT;
+        } else if (element instanceof CircuitBreaker) {
+            nodeType = NODE_TYPE_CIRCUIT_BREAKER;
         } else {
             nodeType = NODE_TYPE_STEP;
         }

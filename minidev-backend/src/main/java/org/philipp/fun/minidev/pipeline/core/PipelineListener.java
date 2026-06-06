@@ -1,4 +1,4 @@
-package org.philipp.fun.minidev.pipeline;
+package org.philipp.fun.minidev.pipeline.core;
 
 public interface PipelineListener {
     default void onStart(PipelineElement element, PipelineContext context) {}
