@@ -1,5 +1,8 @@
-package org.philipp.fun.minidev.pipeline;
+package org.philipp.fun.minidev.pipeline.composite;
 
+import org.philipp.fun.minidev.pipeline.core.BaseElement;
+import org.philipp.fun.minidev.pipeline.core.PipelineContext;
+import org.philipp.fun.minidev.pipeline.core.PipelineElement;
 import java.util.ArrayList;
 import java.util.List;
 

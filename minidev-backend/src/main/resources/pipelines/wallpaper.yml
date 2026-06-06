@@ -1,0 +1,41 @@
+# Pipeline definitions for MiniDev
+# Each pipeline defines a named execution topology with pluggable stages.
+# Stage types:
+#   stage:      A leaf stage registered via @PipelineStage
+#   sequence:   Run stages in order (default)
+#   parallel:   Run stages concurrently
+#   retry:      Retry child stages on failure
+#   conditional: Branch based on a boolean context key
+#   switch:     Multi-branch based on predicates
+#   fork-join:  Fork into parallel branches, then join
+#   timeout:    Wrap a stage with a timeout
+#   circuit-breaker: Wrap a stage with failure threshold + reset
+pipelines:
+  - name: wallpaper
+    description: "Generate an animated HTML5 Canvas wallpaper using LLM stages"
+    stages:
+      - type: retry
+        name: GenerationRetry
+        retries: 3
+        stages:
+          - stage: theme-generator
+            llm:
+              temperature: 1.2
+          - stage: code-generator
+            llm:
+              temperature: 0.9
+          - stage: code-review
+            llm:
+              temperature: 0.3
+          - type: conditional
+            name: QualityGate
+            condition: reviewPassed
+            stages:
+              - type: sequence
+                name: Approved
+            else:
+              - stage: code-refinement
+                llm:
+                  temperature: 0.7
+      - stage: assemble-html
+      - stage: wallpaper-cache

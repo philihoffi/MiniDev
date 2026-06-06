@@ -1,11 +1,14 @@
-package org.philipp.fun.minidev.pipeline;
+package org.philipp.fun.minidev.pipeline.core;
 
 import org.philipp.fun.minidev.dto.CreativeBrief;
 import org.philipp.fun.minidev.llm.LlmClient;
 
+import java.util.Map;
+
 public class ContextKeys {
     public static final class System {
         public static final ContextKey<LlmClient> LLM_CLIENT = new ContextKey<>("llmClient", LlmClient.class);
+        public static final ContextKey<Map<String, Object>> LLM_CONFIG = new ContextKey<>("llmConfig", (Class<Map<String, Object>>) (Class<?>) Map.class);
     }
 
     public static final class Wallpaper {

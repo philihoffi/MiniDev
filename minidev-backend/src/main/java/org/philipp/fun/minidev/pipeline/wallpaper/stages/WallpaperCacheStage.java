@@ -1,13 +1,13 @@
 package org.philipp.fun.minidev.pipeline.wallpaper.stages;
 
 import org.philipp.fun.minidev.model.Wallpaper;
-import org.philipp.fun.minidev.pipeline.BaseElement;
-import org.philipp.fun.minidev.pipeline.ContextKeys;
-import org.philipp.fun.minidev.pipeline.PipelineContext;
+import org.philipp.fun.minidev.pipeline.core.BaseElement;
+import org.philipp.fun.minidev.pipeline.core.ContextKeys;
+import org.philipp.fun.minidev.pipeline.core.PipelineContext;
+import org.philipp.fun.minidev.pipeline.annotation.PipelineStage;
 import org.philipp.fun.minidev.repository.WallpaperRepository;
-import org.springframework.stereotype.Component;
 
-@Component
+@PipelineStage("wallpaper-cache")
 public class WallpaperCacheStage extends BaseElement {
     private final WallpaperRepository repository;
 

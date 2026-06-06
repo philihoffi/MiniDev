@@ -1,6 +1,8 @@
 package org.philipp.fun.minidev.service;
 
-import org.philipp.fun.minidev.pipeline.PipelineContext;
+import org.philipp.fun.minidev.pipeline.core.PipelineContext;
+import org.philipp.fun.minidev.pipeline.core.PipelineElement;
+import org.philipp.fun.minidev.pipeline.registry.PipelineRegistry;
 import org.philipp.fun.minidev.pipeline.wallpaper.PipelineProgressListener;
 import org.philipp.fun.minidev.pipeline.wallpaper.PipelineProgressSseService;
 import org.philipp.fun.minidev.pipeline.wallpaper.WallpaperPipeline;
@@ -21,18 +23,30 @@ public class WallpaperGenerationService {
 
     private static final Logger log = LoggerFactory.getLogger(WallpaperGenerationService.class);
 
-    private final WallpaperPipeline wallpaperPipeline;
+    private final PipelineElement wallpaperPipeline;
+    private final PipelineRegistry pipelineRegistry;
     private final PipelineProgressSseService pipelineProgressSseService;
     private final PipelineExecutionQueueService pipelineExecutionQueueService;
 
     public WallpaperGenerationService(
             WallpaperPipeline wallpaperPipeline,
+            PipelineRegistry pipelineRegistry,
             PipelineProgressSseService pipelineProgressSseService,
             PipelineExecutionQueueService pipelineExecutionQueueService
     ) {
-        this.wallpaperPipeline = wallpaperPipeline;
+        this.pipelineRegistry = pipelineRegistry;
         this.pipelineProgressSseService = pipelineProgressSseService;
         this.pipelineExecutionQueueService = pipelineExecutionQueueService;
+        this.wallpaperPipeline = resolvePipeline(wallpaperPipeline);
+    }
+
+    private PipelineElement resolvePipeline(WallpaperPipeline legacyPipeline) {
+        if (pipelineRegistry.containsPipeline("wallpaper")) {
+            log.info("Using YAML-defined 'wallpaper' pipeline from PipelineRegistry");
+            return pipelineRegistry.getPipeline("wallpaper");
+        }
+        log.info("No YAML pipeline found, using legacy WallpaperPipeline");
+        return legacyPipeline;
     }
 
     @Scheduled(cron = "${minidev.wallpaper.cron:0 0 0 * * *}")

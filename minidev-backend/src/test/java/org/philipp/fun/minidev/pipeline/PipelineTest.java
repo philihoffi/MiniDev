@@ -1,10 +1,25 @@
 package org.philipp.fun.minidev.pipeline;
 
 import org.junit.jupiter.api.Test;
+import org.philipp.fun.minidev.pipeline.composite.CircuitBreaker;
+import org.philipp.fun.minidev.pipeline.composite.Conditional;
+import org.philipp.fun.minidev.pipeline.composite.ForkJoin;
+import org.philipp.fun.minidev.pipeline.composite.Parallel;
+import org.philipp.fun.minidev.pipeline.composite.Retry;
+import org.philipp.fun.minidev.pipeline.composite.Sequence;
+import org.philipp.fun.minidev.pipeline.composite.Switch;
+import org.philipp.fun.minidev.pipeline.composite.Timeout;
+import org.philipp.fun.minidev.pipeline.core.BaseElement;
+import org.philipp.fun.minidev.pipeline.core.ContextKey;
+import org.philipp.fun.minidev.pipeline.core.PipelineContext;
+import org.philipp.fun.minidev.pipeline.core.PipelineElement;
+import org.philipp.fun.minidev.pipeline.core.PipelineListener;
 
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -245,5 +260,200 @@ class PipelineTest {
 
         cond.execute(ctx);
         assertThat(events).containsExactly("start:ThenStep", "end:ThenStep");
+    }
+
+    @Test
+    void testParallelExecutesAllChildren() throws Exception {
+        try (Parallel parallel = new Parallel("TestParallel")) {
+            StringBuffer sb = new StringBuffer();
+
+            parallel.add(new BaseElement("A") {
+                @Override public boolean execute(PipelineContext ctx) throws Exception {
+                    Thread.sleep(10); sb.append("A"); return true;
+                }
+            }).add(new BaseElement("B") {
+                @Override public boolean execute(PipelineContext ctx) throws Exception {
+                    Thread.sleep(5); sb.append("B"); return true;
+                }
+            }).add(new BaseElement("C") {
+                @Override public boolean execute(PipelineContext ctx) throws Exception {
+                    sb.append("C"); return true;
+                }
+            });
+
+            boolean ok = parallel.execute(new PipelineContext());
+            assertThat(ok).isTrue();
+            assertThat(sb.toString()).contains("A", "B", "C");
+        }
+    }
+
+    @Test
+    void testParallelReturnsFalseOnChildFailure() throws Exception {
+        try (Parallel parallel = new Parallel("TestParallel")) {
+            parallel.add(new BaseElement("Good") {
+                @Override public boolean execute(PipelineContext ctx) { return true; }
+            }).add(new BaseElement("Bad") {
+                @Override public boolean execute(PipelineContext ctx) { return false; }
+            });
+
+            boolean ok = parallel.execute(new PipelineContext());
+            assertThat(ok).isFalse();
+        }
+    }
+
+    @Test
+    void testForkJoinExecutesForksAndJoin() throws Exception {
+        StringBuffer sb = new StringBuffer();
+        PipelineElement join = new BaseElement("Join") {
+            @Override public boolean execute(PipelineContext ctx) { sb.append("J"); return true; }
+        };
+        try (ForkJoin fj = new ForkJoin("TestFJ", join)) {
+            fj.fork(new BaseElement("F1") {
+                @Override public boolean execute(PipelineContext ctx) { sb.append("1"); return true; }
+            }).fork(new BaseElement("F2") {
+                @Override public boolean execute(PipelineContext ctx) { sb.append("2"); return true; }
+            });
+
+            boolean ok = fj.execute(new PipelineContext());
+            assertThat(ok).isTrue();
+            assertThat(sb.toString()).contains("1", "2", "J");
+        }
+    }
+
+    @Test
+    void testSwitchExecutesMatchingCase() throws Exception {
+        ContextKey<String> key = new ContextKey<>("mode", String.class);
+        PipelineContext ctx = new PipelineContext();
+        ctx.putValue(key, "fast");
+
+        StringBuilder sb = new StringBuilder();
+        Switch sw = new Switch("TestSwitch");
+        sw.addCase(c -> "fast".equals(c.getValue(key)),
+                new BaseElement("Fast") {
+                    @Override public boolean execute(PipelineContext c) { sb.append("fast"); return true; }
+                });
+        sw.addCase(c -> "slow".equals(c.getValue(key)),
+                new BaseElement("Slow") {
+                    @Override public boolean execute(PipelineContext c) { sb.append("slow"); return true; }
+                });
+
+        boolean ok = sw.execute(ctx);
+        assertThat(ok).isTrue();
+        assertThat(sb.toString()).isEqualTo("fast");
+    }
+
+    @Test
+    void testSwitchFallsThroughToDefault() throws Exception {
+        ContextKey<String> key = new ContextKey<>("mode", String.class);
+        PipelineContext ctx = new PipelineContext();
+        ctx.putValue(key, "unknown");
+
+        StringBuilder sb = new StringBuilder();
+        Switch sw = new Switch("TestSwitch");
+        sw.addCase(c -> "fast".equals(c.getValue(key)),
+                new BaseElement("Fast") {
+                    @Override public boolean execute(PipelineContext c) { sb.append("fast"); return true; }
+                });
+        sw.defaultBranch(new BaseElement("Default") {
+            @Override public boolean execute(PipelineContext c) { sb.append("default"); return true; }
+        });
+
+        boolean ok = sw.execute(ctx);
+        assertThat(ok).isTrue();
+        assertThat(sb.toString()).isEqualTo("default");
+    }
+
+    @Test
+    void testTimeoutCompletesWithinLimit() throws Exception {
+        Timeout timeout = new Timeout("TestTimeout",
+                new BaseElement("Fast") {
+                    @Override public boolean execute(PipelineContext ctx) { return true; }
+                },
+                Duration.ofSeconds(5));
+
+        boolean ok = timeout.execute(new PipelineContext());
+        assertThat(ok).isTrue();
+    }
+
+    @Test
+    void testTimeoutTriggersOnSlowElement() throws Exception {
+        Timeout timeout = new Timeout("TestTimeout",
+                new BaseElement("Slow") {
+                    @Override public boolean execute(PipelineContext ctx) throws Exception {
+                        Thread.sleep(500);
+                        return true;
+                    }
+                },
+                Duration.ofMillis(50));
+
+        boolean ok = timeout.execute(new PipelineContext());
+        assertThat(ok).isFalse();
+    }
+
+    @Test
+    void testCircuitBreakerClosesAfterReset() throws Exception {
+        AtomicInteger count = new AtomicInteger(0);
+        CircuitBreaker cb = new CircuitBreaker("TestCB",
+                new BaseElement("FailTwice") {
+                    @Override public boolean execute(PipelineContext ctx) {
+                        return count.incrementAndGet() > 2;
+                    }
+                },
+                2, Duration.ofMillis(50));
+
+        PipelineContext ctx = new PipelineContext();
+        assertThat(cb.execute(ctx)).isFalse();
+        assertThat(cb.execute(ctx)).isFalse();
+        assertThat(cb.getState()).isEqualTo(CircuitBreaker.CircuitState.OPEN);
+        Thread.sleep(60);
+        assertThat(cb.execute(ctx)).isTrue();
+        assertThat(cb.getState()).isEqualTo(CircuitBreaker.CircuitState.CLOSED);
+    }
+
+    @Test
+    void testCircuitBreakerSkipsWhenOpen() throws Exception {
+        AtomicInteger calls = new AtomicInteger(0);
+        CircuitBreaker cb = new CircuitBreaker("TestCB",
+                new BaseElement("AlwaysFail") {
+                    @Override public boolean execute(PipelineContext ctx) {
+                        calls.incrementAndGet();
+                        return false;
+                    }
+                },
+                1, Duration.ofSeconds(60));
+
+        PipelineContext ctx = new PipelineContext();
+        assertThat(cb.execute(ctx)).isFalse();
+        assertThat(cb.execute(ctx)).isFalse();
+        assertThat(calls.get()).isEqualTo(1);
+    }
+
+    @Test
+    void testParallelEmptyReturnsTrue() throws Exception {
+        try (Parallel p = new Parallel("Empty")) {
+            assertThat(p.execute(new PipelineContext())).isTrue();
+        }
+    }
+
+    @Test
+    void testSwitchNoMatchAndNoDefaultReturnsTrue() throws Exception {
+        Switch sw = new Switch("Empty");
+        boolean ok = sw.execute(new PipelineContext());
+        assertThat(ok).isTrue();
+    }
+
+    @Test
+    void testForkJoinFailsOnForkFailure() throws Exception {
+        PipelineElement join = new BaseElement("Join") {
+            @Override public boolean execute(PipelineContext ctx) { return true; }
+        };
+        try (ForkJoin fj = new ForkJoin("TestFJ", join)) {
+            fj.fork(new BaseElement("Fails") {
+                @Override public boolean execute(PipelineContext ctx) { return false; }
+            });
+
+            boolean ok = fj.execute(new PipelineContext());
+            assertThat(ok).isFalse();
+        }
     }
 }

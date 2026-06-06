@@ -1,10 +1,10 @@
 package org.philipp.fun.minidev.pipeline.wallpaper;
 
 import org.philipp.fun.minidev.llm.LlmClient;
-import org.philipp.fun.minidev.pipeline.Conditional;
-import org.philipp.fun.minidev.pipeline.PipelineContext;
-import org.philipp.fun.minidev.pipeline.Retry;
-import org.philipp.fun.minidev.pipeline.Sequence;
+import org.philipp.fun.minidev.pipeline.composite.Conditional;
+import org.philipp.fun.minidev.pipeline.composite.Retry;
+import org.philipp.fun.minidev.pipeline.composite.Sequence;
+import org.philipp.fun.minidev.pipeline.core.PipelineContext;
 import org.philipp.fun.minidev.pipeline.wallpaper.stages.AssembleHtmlStage;
 import org.philipp.fun.minidev.pipeline.wallpaper.stages.CodeGeneratorStage;
 import org.philipp.fun.minidev.pipeline.wallpaper.stages.CodeRefinementStage;
@@ -13,8 +13,8 @@ import org.philipp.fun.minidev.pipeline.wallpaper.stages.ThemeGeneratorStage;
 import org.philipp.fun.minidev.pipeline.wallpaper.stages.WallpaperCacheStage;
 import org.springframework.stereotype.Component;
 
-import static org.philipp.fun.minidev.pipeline.ContextKeys.System.LLM_CLIENT;
-import static org.philipp.fun.minidev.pipeline.ContextKeys.Wallpaper.REVIEW_PASSED;
+import static org.philipp.fun.minidev.pipeline.core.ContextKeys.System.LLM_CLIENT;
+import static org.philipp.fun.minidev.pipeline.core.ContextKeys.Wallpaper.REVIEW_PASSED;
 
 @Component
 public class WallpaperPipeline extends Sequence {
