@@ -13,6 +13,34 @@ import org.springframework.stereotype.Component;
 public class AssembleHtmlStage extends BaseElement {
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
     private static final Logger log = LoggerFactory.getLogger(AssembleHtmlStage.class);
+    private static final String ASSEMBLY_TEMPLATE = """
+            <!DOCTYPE html>
+            <html lang="en">
+            <head>
+                <meta charset="UTF-8">
+                <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                <style>
+                    * { margin: 0; padding: 0; box-sizing: border-box; }
+                    html, body { width: 100%; height: 100%; overflow: hidden; background: #000; }
+                    canvas { display: block; }
+                    %%CSS%%
+                </style>
+            </head>
+            <body>
+                %%HTML%%
+                <script>
+                    (function() {
+                        'use strict';
+                        try {
+                            %%JS%%
+                        } catch (e) {
+                            console.error('Wallpaper Error:', e);
+                        }
+                    })();
+                </script>
+            </body>
+            </html>
+            """;
 
     public AssembleHtmlStage() {
         super("AssembleHtmlStage");
@@ -52,33 +80,4 @@ public class AssembleHtmlStage extends BaseElement {
         log.info("Assembled wallpaper HTML ({} chars)", fullHtml.length());
         return true;
     }
-
-    private static final String ASSEMBLY_TEMPLATE = """
-            <!DOCTYPE html>
-            <html lang="en">
-            <head>
-                <meta charset="UTF-8">
-                <meta name="viewport" content="width=device-width, initial-scale=1.0">
-                <style>
-                    * { margin: 0; padding: 0; box-sizing: border-box; }
-                    html, body { width: 100%; height: 100%; overflow: hidden; background: #000; }
-                    canvas { display: block; }
-                    %%CSS%%
-                </style>
-            </head>
-            <body>
-                %%HTML%%
-                <script>
-                    (function() {
-                        'use strict';
-                        try {
-                            %%JS%%
-                        } catch (e) {
-                            console.error('Wallpaper Error:', e);
-                        }
-                    })();
-                </script>
-            </body>
-            </html>
-            """;
 }

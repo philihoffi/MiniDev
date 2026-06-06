@@ -13,8 +13,8 @@ import java.util.concurrent.CopyOnWriteArrayList;
 
 public abstract class AbstractSseService {
 
-    protected final Logger log = LoggerFactory.getLogger(getClass());
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
+    protected final Logger log = LoggerFactory.getLogger(getClass());
 
     private final List<SseEmitter> emitters = new CopyOnWriteArrayList<>();
     private final List<HistoryEvent> history = new CopyOnWriteArrayList<>();
