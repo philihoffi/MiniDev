@@ -11,7 +11,7 @@ RUN npm run build
 
 
 # ─── Stage 2: Backend ────────────────────────────────────────────────
-FROM maven:3.9.11-eclipse-temurin-25 AS build
+FROM maven:3.9.15-eclipse-temurin-26 AS build
 WORKDIR /workspace
 
 # Copy pom.xml only — dependency layer stays cached until pom changes
