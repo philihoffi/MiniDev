@@ -61,10 +61,12 @@ public class GenericLlmStage extends BaseElement {
             temperature = toDouble(llmConfig.get("temperature"));
         }
 
-        List<LlmRequest.Message> messages = List.of(
-                LlmRequest.Message.system(systemPrompt),
-                LlmRequest.Message.user(renderedUserPrompt)
-        );
+        List<LlmRequest.Message> messages = (renderedUserPrompt == null || renderedUserPrompt.isBlank())
+                ? List.of(LlmRequest.Message.system(systemPrompt))
+                : List.of(
+                        LlmRequest.Message.system(systemPrompt),
+                        LlmRequest.Message.user(renderedUserPrompt)
+                );
 
         LlmRequest request = new LlmRequest(messages, temperature, null, schema, null, null);
         LlmResponse response = llmClient.chat(request);
