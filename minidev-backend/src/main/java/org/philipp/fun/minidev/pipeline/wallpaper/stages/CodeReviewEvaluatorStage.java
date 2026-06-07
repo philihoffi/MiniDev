@@ -26,9 +26,8 @@ public class CodeReviewEvaluatorStage extends BaseElement {
     public boolean execute(PipelineContext context) throws Exception {
         String rawResult = context.getValue(new ContextKey<>("reviewRawResult", String.class));
         if (rawResult == null || rawResult.isBlank()) {
-            log.warn("No review raw result found in context, defaulting to pass");
-            context.putValue(ContextKeys.Wallpaper.REVIEW_PASSED, true);
-            return true;
+            log.warn("No review raw result found in context");
+            return false;
         }
 
         try {
