@@ -4,6 +4,8 @@
     "https://checkstyle.org/dtds/configuration_1_3.dtd">
 <module name="Checker">
   <module name="TreeWalker">
+
+    <!-- Bestehende Regeln -->
     <module name="UnusedImports"/>
     <module name="RedundantImport"/>
     <module name="EmptyBlock"/>
@@ -21,5 +23,90 @@
     <module name="DeclarationOrder"/>
     <module name="ParameterAssignment"/>
     <module name="DefaultComesLast"/>
+
+    <!-- Javadoc strict (alle Sichtbarkeiten) -->
+    <module name="JavadocType">
+      <property name="scope" value="private"/>
+      <property name="severity" value="warning"/>
+    </module>
+    <module name="JavadocMethod">
+      <property name="accessModifiers" value="public, protected, package, private"/>
+      <property name="allowMissingParamTags" value="false"/>
+      <property name="allowMissingReturnTag" value="false"/>
+      <property name="tokens" value="METHOD_DEF, CTOR_DEF, ANNOTATION_FIELD_DEF, COMPACT_CTOR_DEF"/>
+      <property name="severity" value="warning"/>
+    </module>
+    <module name="JavadocVariable">
+      <property name="scope" value="private"/>
+      <property name="severity" value="warning"/>
+    </module>
+    <module name="JavadocStyle">
+      <property name="scope" value="private"/>
+      <property name="checkFirstSentence" value="true"/>
+      <property name="checkEmptyJavadoc" value="true"/>
+      <property name="checkHtml" value="true"/>
+      <property name="severity" value="warning"/>
+    </module>
+    <module name="MissingJavadocMethod">
+      <property name="scope" value="private"/>
+      <property name="severity" value="warning"/>
+    </module>
+    <module name="MissingJavadocType">
+      <property name="scope" value="private"/>
+      <property name="severity" value="warning"/>
+    </module>
+
+    <!-- Naming Conventions -->
+    <module name="ConstantName">
+      <property name="severity" value="warning"/>
+    </module>
+    <module name="MemberName">
+      <property name="severity" value="warning"/>
+    </module>
+    <module name="MethodName">
+      <property name="severity" value="warning"/>
+    </module>
+    <module name="ParameterName">
+      <property name="severity" value="warning"/>
+    </module>
+    <module name="LocalVariableName">
+      <property name="severity" value="warning"/>
+    </module>
+    <module name="ClassTypeParameterName">
+      <property name="severity" value="warning"/>
+    </module>
+    <module name="MethodTypeParameterName">
+      <property name="severity" value="warning"/>
+    </module>
+    <module name="AbbreviationAsWordInName">
+      <property name="allowedAbbreviationLength" value="2"/>
+      <property name="severity" value="warning"/>
+    </module>
+
+    <!-- Import Ordering -->
+    <module name="AvoidStarImport">
+      <property name="severity" value="warning"/>
+    </module>
+    <module name="ImportOrder">
+      <property name="groups" value="java,javax,com,org,net"/>
+      <property name="ordered" value="true"/>
+      <property name="separated" value="true"/>
+      <property name="option" value="top"/>
+      <property name="sortStaticImportsAlphabetically" value="true"/>
+      <property name="severity" value="warning"/>
+    </module>
+
+    <!-- Indentation -->
+    <module name="Indentation">
+      <property name="basicOffset" value="4"/>
+      <property name="braceAdjustment" value="0"/>
+      <property name="caseIndent" value="4"/>
+      <property name="throwsIndent" value="4"/>
+      <property name="arrayInitIndent" value="4"/>
+      <property name="lineWrappingIndentation" value="8"/>
+      <property name="forceStrictCondition" value="false"/>
+      <property name="severity" value="warning"/>
+    </module>
+
   </module>
 </module>
