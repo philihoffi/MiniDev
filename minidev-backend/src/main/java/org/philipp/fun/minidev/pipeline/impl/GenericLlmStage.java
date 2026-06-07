@@ -141,16 +141,7 @@ public class GenericLlmStage extends BaseElement {
         if (node.isTextual()) return node.asText();
         if (node.isBoolean()) return Boolean.toString(node.asBoolean());
         if (node.isNumber()) return node.asText();
-        if (node.isArray()) {
-            StringBuilder sb = new StringBuilder("[");
-            for (int i = 0; i < node.size(); i++) {
-                if (i > 0) sb.append(", ");
-                JsonNode item = node.get(i);
-                sb.append(item.isTextual() ? item.asText() : item.toString());
-            }
-            sb.append("]");
-            return sb.toString();
-        }
+        if (node.isArray()) return node.toString();
         return node.toString();
     }
 
