@@ -1,14 +1,15 @@
 # Pipeline definitions for MiniDev
 # Each pipeline defines a named execution topology with pluggable stages.
 # Stage types:
-#   stage:      A leaf stage registered via @PipelineStage
-#   sequence:   Run stages in order (default)
-#   parallel:   Run stages concurrently
-#   retry:      Retry child stages on failure
-#   conditional: Branch based on a boolean context key
-#   switch:     Multi-branch based on predicates
-#   fork-join:  Fork into parallel branches, then join
-#   timeout:    Wrap a stage with a timeout
+#   stage:        A leaf stage registered via @PipelineStage
+#   llm-stage:    An inline LLM stage with system/user prompt, schema, and output-mapping
+#   sequence:     Run stages in order (default)
+#   parallel:     Run stages concurrently
+#   retry:        Retry child stages on failure
+#   conditional:  Branch based on a boolean context key
+#   switch:       Multi-branch based on predicates
+#   fork-join:    Fork into parallel branches, then join
+#   timeout:      Wrap a stage with a timeout
 #   circuit-breaker: Wrap a stage with failure threshold + reset
 pipelines:
   - name: wallpaper
@@ -18,15 +19,234 @@ pipelines:
         name: GenerationRetry
         retries: 3
         stages:
-          - stage: theme-generator
+          - type: llm-stage
+            name: theme-generator
             llm:
               temperature: 1.2
-          - stage: code-generator
+            system-prompt: |
+              You are a visual creative director specializing in animated wallpapers and ambient digital art.
+
+              Your task: Generate a detailed creative brief for an animated HTML5 Canvas wallpaper.
+
+              DESIGN PHILOSOPHY:
+              - Subtlety is paramount — the wallpaper should feel alive but never demanding of attention
+              - Every element must justify its presence — no decorative noise
+              - Think "living painting" not "screensaver"
+              - Favor asymmetry and organic imperfection over rigid geometry
+
+              COLOR RULES:
+              - Always use dark backgrounds (deep navy, charcoal, dark forest, midnight blue)
+              - Palette must have strong contrast between background and accent colors
+              - Use desaturated, muted tones — avoid pure/saturated colors
+              - Include one subtle warm accent against a cool base (or vice versa)
+
+              MOTION RULES:
+              - Motion must be almost imperceptible at first glance
+              - Use easing curves (cubic-bezier, sinusoidal) — never linear motion
+              - Prefer drift, sway, breathing, and gentle parallax over translation
+              - Elements should feel like they have weight and inertia
+
+              OUTPUT: A structured creative brief that a developer can directly implement.
+            user-prompt: |
+              Generate a unique, visually striking creative brief for an animated wallpaper. Surprise me with an unexpected concept.
+            response-schema:
+              type: object
+              properties:
+                theme:
+                  type: string
+                  description: "A short, evocative theme name (max 60 chars)"
+                description:
+                  type: string
+                  description: "A detailed 2-3 sentence description of the visual concept"
+                color_palette:
+                  type: array
+                  items:
+                    type: string
+                  description: "3-5 hex color codes that define the palette (e.g. '#1a1a2e', '#16213e', '#0f3460', '#e94560')"
+                mood:
+                  type: string
+                  description: "One-word mood descriptor (e.g. 'serene', 'mysterious', 'ethereal', 'warm', 'melancholic')"
+                motion_style:
+                  type: string
+                  description: "How elements should move (e.g. 'slow drifting with gentle parallax', 'rhythmic breathing pulse', 'organic flowing streams')"
+                key_elements:
+                  type: array
+                  items:
+                    type: string
+                  description: "2-4 specific visual elements to animate (e.g. 'translucent overlapping circles', 'floating dust particles', 'aurora-like waves')"
+              required: [theme, description, color_palette, mood, motion_style, key_elements]
+              additionalProperties: false
+            output-mapping:
+              theme: $.theme
+              creativeBriefDescription: $.description
+              creativeBriefColorPalette: $.color_palette
+              creativeBriefMood: $.mood
+              creativeBriefMotionStyle: $.motion_style
+              creativeBriefKeyElements: $.key_elements
+
+          - type: llm-stage
+            name: code-generator
             llm:
               temperature: 0.9
-          - stage: code-review
+            system-prompt: |
+              You are a senior creative developer specializing in generative art and HTML5 Canvas animations.
+
+              Your task: Implement a stunning animated wallpaper based on the provided creative brief.
+
+              VISUAL EXCELLENCE RULES:
+              - Every pixel matters — create visual richness through layered effects
+              - Use alpha transparency and compositing for depth (globalAlpha, 'screen', 'overlay' blend modes)
+              - Add subtle noise/grain texture to prevent flat color blocks
+              - Implement visual depth with parallax layers (foreground, midground, background)
+              - Use gradients (radial and linear) for atmospheric lighting effects
+              - Prefer asymmetric, organic compositions over centered/rigid layouts
+
+              ANIMATION MASTERY RULES:
+              - All motion MUST use easing functions — never linear interpolation
+                  * Smoothstep: t => t * t * (3 - 2 * t)
+                  * Ease-in-out: t => t < 0.5 ? 2*t*t : -1+(4-2*t)*t
+                  * Sinusoidal: Math.sin(t * Math.PI) for breathing/pulsing
+              - Add subtle secondary motion (slight rotation wobble, scale breathing, opacity shifts)
+              - Use time-based animation (timestamp from requestAnimationFrame), NOT frame-based
+              - Animation cycle duration: 4-15 seconds for main motion, 1-3 seconds for micro-motion
+              - Add slight randomness to element properties for organic feel
+
+              TECHNICAL REQUIREMENTS:
+              1. HTML5 <canvas> element that fills the entire viewport
+              2. High-DPI/Retina support: scale canvas by window.devicePixelRatio
+              3. Handle window resize gracefully
+              4. Use requestAnimationFrame with timestamp-based delta timing
+              5. Fully self-contained — NO external dependencies, libraries, fonts, or network requests
+              6. Clean, readable code with descriptive variable names
+              7. Canvas context MUST be properly sized for device pixel ratio
+
+              PERFORMANCE RULES:
+              - Pre-calculate values that don't change per frame
+              - Reuse objects — avoid allocations inside the animation loop
+              - Keep element counts reasonable (< 500 particles/elements)
+              - Minimize canvas state changes (group draws by style)
+              - Use TypedArrays for large datasets
+
+              OUTPUT: Valid JSON matching the schema. NO markdown, NO explanations.
+            user-prompt: |
+              Create an animated wallpaper based on this creative brief:
+
+              Theme: '{{theme}}'
+              Description: {{creativeBriefDescription}}
+              Color Palette: {{creativeBriefColorPalette}}
+              Mood: {{creativeBriefMood}}
+              Motion Style: {{creativeBriefMotionStyle}}
+              Key Elements: {{creativeBriefKeyElements}}
+
+              Bring this vision to life with rich visual detail, smooth organic animation, and polished code.
+              The result should feel like a premium, living wallpaper — subtle, atmospheric, and beautiful.
+            response-schema:
+              type: object
+              properties:
+                html:
+                  type: string
+                  description: "The HTML body content (canvas element, minimal markup)"
+                css:
+                  type: string
+                  description: "CSS styles (minimal, mostly for body/canvas)"
+                js:
+                  type: string
+                  description: "Complete JavaScript animation code"
+              required: [html, css, js]
+            output-mapping:
+              code: $response
+
+          - type: llm-stage
+            name: code-review
             llm:
               temperature: 0.3
+            system-prompt: |
+              You are a senior creative developer and visual quality reviewer for animated HTML5 Canvas wallpapers.
+
+              Your job: Critically review the wallpaper code against the creative brief and provide an honest assessment.
+
+              REVIEW CRITERIA:
+
+              VISUAL QUALITY (1-10):
+              - Color usage: Are colors harmonious? Is contrast appropriate?
+              - Composition: Is the visual layout balanced and interesting?
+              - Detail level: Enough visual richness without clutter?
+              - Aesthetic: Does it feel like a polished, premium wallpaper?
+
+              ANIMATION QUALITY (1-10):
+              - Smoothness: Are animations fluid with proper easing?
+              - Naturalness: Does motion feel organic, not robotic?
+              - Timing: Are animation speeds appropriate (not too fast/slow)?
+              - Loop: Does the animation feel continuous and seamless?
+
+              CODE QUALITY (1-10):
+              - Performance: Efficient use of canvas API, minimal allocations per frame?
+              - Structure: Clean, readable code with meaningful variable names?
+              - Robustness: Handles resize, high-DPI, edge cases?
+              - Best practices: requestAnimationFrame usage, no memory leaks?
+
+              THEME ADHERENCE (1-10):
+              - Does the code accurately implement the creative brief?
+              - Are the specified colors, mood, and elements present?
+              - Does the motion match the described style?
+
+              Be HARSH but CONSTRUCTIVE. A 7+ should mean genuinely good.
+              Identify the WEAKEST aspect and give specific fix instructions.
+            user-prompt: |
+              REVIEW THIS WALLPAPER CODE:
+
+              === CREATIVE BRIEF ===
+              Theme: '{{theme}}'
+              Description: {{creativeBriefDescription}}
+              Mood: {{creativeBriefMood}}
+              Motion: {{creativeBriefMotionStyle}}
+              Colors: {{creativeBriefColorPalette}}
+              Elements: {{creativeBriefKeyElements}}
+
+              === WALLPAPER CODE ===
+              {{code}}
+            response-schema:
+              type: object
+              properties:
+                visual_quality:
+                  type: integer
+                  description: "Score 1-10: How visually appealing is the output"
+                animation_quality:
+                  type: integer
+                  description: "Score 1-10: How smooth, natural, and well-crafted is the animation"
+                code_quality:
+                  type: integer
+                  description: "Score 1-10: How clean, efficient, and well-structured is the JavaScript"
+                theme_adherence:
+                  type: integer
+                  description: "Score 1-10: How well does the code match the creative brief"
+                overall_score:
+                  type: integer
+                  description: "Score 1-10: Overall quality rating"
+                passes:
+                  type: boolean
+                  description: "True if overall_score >= 6 and no dimension is below 4"
+                strengths:
+                  type: array
+                  items:
+                    type: string
+                  description: "2-3 specific things done well"
+                issues:
+                  type: array
+                  items:
+                    type: string
+                  description: "Specific problems found (be precise and actionable)"
+                improvement_suggestions:
+                  type: array
+                  items:
+                    type: string
+                  description: "Concrete, actionable suggestions to elevate the wallpaper"
+              required: [visual_quality, animation_quality, code_quality, theme_adherence, overall_score, passes, strengths, issues, improvement_suggestions]
+            output-mapping:
+              reviewRawResult: $response
+
+          - stage: code-review-evaluator
+
           - type: conditional
             name: QualityGate
             condition: reviewPassed
@@ -34,8 +254,270 @@ pipelines:
               - type: sequence
                 name: Approved
             else:
-              - stage: code-refinement
+              - type: llm-stage
+                name: code-refinement
                 llm:
                   temperature: 0.7
+                system-prompt: |
+                  You are an expert creative developer refining an animated wallpaper.
+
+                  Your task: Improve the existing code based on the review feedback. Do NOT rewrite from scratch — surgically improve what exists.
+
+                  REFINEMENT APPROACH:
+                  1. Read the review feedback carefully
+                  2. Preserve all identified strengths
+                  3. Fix every issue mentioned
+                  4. Apply the improvement suggestions
+
+                  COMMON IMPROVEMENTS:
+                  - LOW VISUAL QUALITY: Add layered gradients (radialGradient), alpha transparency, parallax depth, subtle noise texture
+                  - LOW ANIMATION QUALITY: Replace linear motion with easing functions, add secondary micro-motion, adjust timing curves
+                  - LOW CODE QUALITY: Extract reusable functions, use meaningful names, pre-calculate constants, minimize per-frame allocations
+                  - LOW THEME ADHERENCE: Re-align colors to the palette, ensure mood is reflected in speed/timing, add missing visual elements
+
+                  EASING FUNCTIONS (use these, not linear):
+                  - Smoothstep: t => t * t * (3 - 2 * t)
+                  - Ease-in-out: t => t < 0.5 ? 2*t*t : -1+(4-2*t)*t
+                  - Ease-out-back: t => { const c = 1.70158; return 1 + (c + 1) * Math.pow(t - 1, 3) + c * Math.pow(t - 1, 2); }
+
+                  OUTPUT: Valid JSON matching the schema. NO markdown.
+                user-prompt: |
+                  REFINEMENT REQUEST
+
+                  === CREATIVE BRIEF ===
+                  Theme: '{{theme}}'
+                  Description: {{creativeBriefDescription}}
+                  Color Palette: {{creativeBriefColorPalette}}
+                  Mood: {{creativeBriefMood}}
+                  Motion Style: {{creativeBriefMotionStyle}}
+                  Key Elements: {{creativeBriefKeyElements}}
+
+                  === REVIEW FEEDBACK ===
+                  {{reviewFeedback}}
+
+                  === CURRENT CODE TO REFINE ===
+                  {{code}}
+
+                  Improve this code. Keep its strengths, fix its weaknesses, elevate the overall quality.
+                response-schema:
+                  type: object
+                  properties:
+                    html:
+                      type: string
+                      description: "The HTML body content"
+                    css:
+                      type: string
+                      description: "CSS styles"
+                    js:
+                      type: string
+                      description: "Refined JavaScript animation code"
+                  required: [html, css, js]
+                output-mapping:
+                  code: $response
+
+      - type: llm-stage
+        name: animation-polish
+        llm:
+          temperature: 0.5
+        system-prompt: |
+          You are a motion design expert specializing in HTML5 Canvas animations.
+
+          Your task: Polish ONLY the animation aspects of the provided wallpaper code.
+          Do NOT change colors, composition, or visual elements — only improve motion quality.
+
+          FOCUS ON THESE SPECIFIC AREAS:
+
+          1. EASING CURVES:
+          - Every single animation must use easing, never linear
+          - Replace any t/step-based linear motion with smoothstep, ease-in-out, or sinusoidal
+          - Add overshoot/bounce for natural feel where appropriate (ease-out-back)
+          - Use cubic-bezier approximations for organic feel
+
+          2. SECONDARY MOTION:
+          - Every main element needs subtle secondary motion (slight rotation, scale breathing, opacity pulse)
+          - Micro-motion should be 20-30% the amplitude of primary motion
+          - Add phase offsets between similar elements to avoid uniformity
+
+          3. TIMING & RHYTHM:
+          - Main animation cycle: 6-12 seconds for ambient feel
+          - Secondary motion cycle: 2-4 seconds
+          - Use overlapping waveforms (sine/cosine with different frequencies)
+          - Elements should never move in perfect sync — stagger their phases
+
+          4. ORGANIC FEEL:
+          - Add slight randomness to per-element timing and amplitude
+          - Use Perlin-like smooth variation for natural drift
+          - Elements should feel like they have weight, inertia, and momentum
+          - Avoid perfect symmetry — organic imperfection is beautiful
+
+          OUTPUT: Valid JSON matching {html, css, js}. Return ALL code, not just changes.
+        user-prompt: |
+          Polish the animation quality of this wallpaper code. Focus only on motion — do NOT change colors, layout, or visual elements.
+
+          Theme: '{{theme}}'
+          Mood: {{creativeBriefMood}}
+          Motion Style: {{creativeBriefMotionStyle}}
+
+          Current code to polish:
+          {{code}}
+        response-schema:
+          type: object
+          properties:
+            html:
+              type: string
+              description: "The HTML body content (unchanged)"
+            css:
+              type: string
+              description: "CSS styles (unchanged)"
+            js:
+              type: string
+              description: "JavaScript with polished animation code"
+          required: [html, css, js]
+        output-mapping:
+          code: $response
+
+      - type: llm-stage
+        name: visual-polish
+        llm:
+          temperature: 0.5
+        system-prompt: |
+          You are a visual design expert specializing in generative art and atmospheric digital painting on Canvas.
+
+          Your task: Polish ONLY the visual/color aspects of the provided wallpaper code.
+          Do NOT change animation logic or element structure — only improve visual quality.
+
+          FOCUS ON THESE SPECIFIC AREAS:
+
+          1. COLOR HARMONY:
+          - Ensure all colors align with the creative brief's palette
+          - Add subtle color gradients (radialGradient, linearGradient) to flat areas
+          - Use alpha transparency (0.1-0.4) for layered depth
+          - Add complementary accent glows for visual interest
+
+          2. ATMOSPHERIC EFFECTS:
+          - Add subtle noise/grain texture via pixel manipulation or layered semi-transparent noise
+          - Create depth with atmospheric haze (distant elements more transparent, desaturated)
+          - Add gentle light bloom or glow around bright elements
+          - Use 'screen' or 'overlay' composite operations for light effects
+
+          3. DEPTH & COMPOSITION:
+          - Ensure clear foreground/midground/background separation
+          - Background should be darkest and simplest
+          - Foreground elements should have highest contrast and detail
+          - Add subtle shadow/depth cues through alpha layering
+
+          4. TEXTURE & RICHNESS:
+          - No flat color fills — always use gradients or layered transparency
+          - Add particle dust or ambient floating specks for atmosphere
+          - Edge softening: elements should fade at edges, not be hard-clipped
+          - Ensure the overall feel is "living painting" not "flat graphic"
+
+          OUTPUT: Valid JSON matching {html, css, js}. Return ALL code, not just changes.
+        user-prompt: |
+          Polish the visual quality of this wallpaper code. Focus only on colors, atmosphere, and depth — do NOT change animation or element structure.
+
+          Theme: '{{theme}}'
+          Description: {{creativeBriefDescription}}
+          Colors: {{creativeBriefColorPalette}}
+          Mood: {{creativeBriefMood}}
+          Key Elements: {{creativeBriefKeyElements}}
+
+          Current code to polish:
+          {{code}}
+        response-schema:
+          type: object
+          properties:
+            html:
+              type: string
+              description: "The HTML body content (unchanged)"
+            css:
+              type: string
+              description: "CSS styles (updated if needed)"
+            js:
+              type: string
+              description: "JavaScript with polished visual code"
+          required: [html, css, js]
+        output-mapping:
+          code: $response
+
+      - type: llm-stage
+        name: final-quality-check
+        llm:
+          temperature: 0.2
+        system-prompt: |
+          You are a quality assurance reviewer for HTML5 Canvas wallpapers.
+
+          Do a quick final check on this wallpaper code. Be concise.
+          Score from 1-10 and provide exactly one sentence of feedback.
+        user-prompt: |
+          Final quality check for wallpaper:
+
+          Theme: '{{theme}}'
+          Brief: {{creativeBriefDescription}} — {{creativeBriefMood}}
+
+          Code:
+          {{code}}
+
+          Output JSON: quality_score (int), passed (bool), feedback (string, max 100 chars)
+        response-schema:
+          type: object
+          properties:
+            quality_score:
+              type: integer
+              description: "Overall quality score 1-10"
+            passed:
+              type: boolean
+              description: "True if score >= 6"
+            feedback:
+              type: string
+              description: "One-sentence feedback (max 100 chars)"
+          required: [quality_score, passed, feedback]
+        output-mapping:
+          finalScore: $.quality_score
+          finalPassed: $.passed
+          finalFeedback: $.feedback
+
+      - type: llm-stage
+        name: generate-metadata
+        llm:
+          temperature: 0.7
+        system-prompt: |
+          You are a creative copywriter specializing in digital art descriptions.
+
+          Generate engaging metadata for an animated HTML5 Canvas wallpaper.
+          Keep descriptions evocative but concise — this is for display in a gallery UI.
+        user-prompt: |
+          Generate metadata for this wallpaper:
+
+          Theme: '{{theme}}'
+          Description: {{creativeBriefDescription}}
+          Mood: {{creativeBriefMood}}
+          Colors: {{creativeBriefColorPalette}}
+
+          Output JSON with:
+          - title: short evocative title (max 50 chars, should NOT be the theme name)
+          - description: two compelling sentences about the visual experience
+          - tags: 3-5 relevant keywords for categorization
+        response-schema:
+          type: object
+          properties:
+            title:
+              type: string
+              description: "Short evocative display title (max 50 chars)"
+            description:
+              type: string
+              description: "Two compelling sentences about the visual experience"
+            tags:
+              type: array
+              items:
+                type: string
+              description: "3-5 relevant keywords"
+          required: [title, description, tags]
+        output-mapping:
+          wallpaperTitle: $.title
+          wallpaperDescription: $.description
+          wallpaperTags: $.tags
+
       - stage: assemble-html
+
       - stage: wallpaper-cache

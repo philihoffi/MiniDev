@@ -32,6 +32,10 @@ public class PipelineDefinition {
         private int resetTimeoutMs;
         private Map<String, Object> llm = new LinkedHashMap<>();
         private Map<String, Object> config = new LinkedHashMap<>();
+        private String systemPrompt;
+        private String userPrompt;
+        private Map<String, Object> responseSchema;
+        private Map<String, String> outputMapping;
 
         public String getType() { return type; }
         public void setType(String type) { this.type = type; }
@@ -61,5 +65,13 @@ public class PipelineDefinition {
         public void setLlm(Map<String, Object> llm) { this.llm = llm; }
         public Map<String, Object> getConfig() { return config; }
         public void setConfig(Map<String, Object> config) { this.config = config; }
+        public String getSystemPrompt() { return systemPrompt; }
+        public void setSystemPrompt(String systemPrompt) { this.systemPrompt = systemPrompt; }
+        public String getUserPrompt() { return userPrompt; }
+        public void setUserPrompt(String userPrompt) { this.userPrompt = userPrompt; }
+        public Map<String, Object> getResponseSchema() { return responseSchema; }
+        public void setResponseSchema(Map<String, Object> responseSchema) { this.responseSchema = responseSchema; }
+        public Map<String, String> getOutputMapping() { return outputMapping; }
+        public void setOutputMapping(Map<String, String> outputMapping) { this.outputMapping = outputMapping; }
     }
 }

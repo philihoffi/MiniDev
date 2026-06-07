@@ -14,6 +14,7 @@ import org.philipp.fun.minidev.pipeline.composite.Timeout;
 import org.philipp.fun.minidev.pipeline.config.PipelineDefinition;
 import org.philipp.fun.minidev.pipeline.config.PipelineDefinition.StageDef;
 import org.philipp.fun.minidev.pipeline.hook.HookManager;
+import org.philipp.fun.minidev.pipeline.impl.GenericLlmStage;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
@@ -53,7 +54,9 @@ public class PipelineFactory {
         String name = def.getName() != null ? def.getName() : (def.getStage() != null ? def.getStage() : type);
 
         PipelineElement element;
-        if (def.getStage() != null) {
+        if ("llm-stage".equals(type)) {
+            element = buildLlmStage(def, pipelineName);
+        } else if (def.getStage() != null) {
             element = resolveLeafStage(def, pipelineName);
         } else if ("stage".equals(type)) {
             element = resolveLeafStage(def, pipelineName);
@@ -80,6 +83,21 @@ public class PipelineFactory {
         }
 
         return stage;
+    }
+
+    private PipelineElement buildLlmStage(StageDef def, String pipelineName) {
+        String name = def.getName() != null ? def.getName() : "llm-stage";
+        if (def.getSystemPrompt() == null || def.getSystemPrompt().isBlank()) {
+            throw new IllegalArgumentException("llm-stage '" + name + "' requires 'system-prompt' in pipeline " + pipelineName);
+        }
+        return new GenericLlmStage(
+                name,
+                def.getSystemPrompt(),
+                def.getUserPrompt(),
+                def.getResponseSchema(),
+                def.getOutputMapping(),
+                def.getLlm()
+        );
     }
 
     private PipelineElement buildComposite(String type, StageDef def, String pipelineName) {

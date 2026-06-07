@@ -1,11 +1,12 @@
 package org.philipp.fun.minidev.service;
 
+import org.philipp.fun.minidev.llm.LlmClient;
+import org.philipp.fun.minidev.pipeline.core.ContextKeys;
 import org.philipp.fun.minidev.pipeline.core.PipelineContext;
 import org.philipp.fun.minidev.pipeline.core.PipelineElement;
 import org.philipp.fun.minidev.pipeline.registry.PipelineRegistry;
 import org.philipp.fun.minidev.pipeline.wallpaper.PipelineProgressListener;
 import org.philipp.fun.minidev.pipeline.wallpaper.PipelineProgressSseService;
-import org.philipp.fun.minidev.pipeline.wallpaper.WallpaperPipeline;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -24,29 +25,28 @@ public class WallpaperGenerationService {
     private static final Logger log = LoggerFactory.getLogger(WallpaperGenerationService.class);
 
     private final PipelineElement wallpaperPipeline;
-    private final PipelineRegistry pipelineRegistry;
     private final PipelineProgressSseService pipelineProgressSseService;
     private final PipelineExecutionQueueService pipelineExecutionQueueService;
+    private final LlmClient llmClient;
 
     public WallpaperGenerationService(
-            WallpaperPipeline wallpaperPipeline,
             PipelineRegistry pipelineRegistry,
             PipelineProgressSseService pipelineProgressSseService,
-            PipelineExecutionQueueService pipelineExecutionQueueService
+            PipelineExecutionQueueService pipelineExecutionQueueService,
+            LlmClient llmClient
     ) {
-        this.pipelineRegistry = pipelineRegistry;
         this.pipelineProgressSseService = pipelineProgressSseService;
         this.pipelineExecutionQueueService = pipelineExecutionQueueService;
-        this.wallpaperPipeline = resolvePipeline(wallpaperPipeline);
+        this.llmClient = llmClient;
+        this.wallpaperPipeline = resolvePipeline(pipelineRegistry);
     }
 
-    private PipelineElement resolvePipeline(WallpaperPipeline legacyPipeline) {
+    private PipelineElement resolvePipeline(PipelineRegistry pipelineRegistry) {
         if (pipelineRegistry.containsPipeline("wallpaper")) {
             log.info("Using YAML-defined 'wallpaper' pipeline from PipelineRegistry");
             return pipelineRegistry.getPipeline("wallpaper");
         }
-        log.info("No YAML pipeline found, using legacy WallpaperPipeline");
-        return legacyPipeline;
+        throw new IllegalStateException("No YAML pipeline 'wallpaper' found in PipelineRegistry");
     }
 
     @Scheduled(cron = "${minidev.wallpaper.cron:0 0 0 * * *}")
@@ -79,6 +79,7 @@ public class WallpaperGenerationService {
     public boolean generateNewWallpaperInNewTransaction() {
         PipelineContext context = new PipelineContext();
         context.setPipeline(wallpaperPipeline);
+        context.putValue(ContextKeys.System.LLM_CLIENT, llmClient);
 
         String runId = UUID.randomUUID().toString();
         PipelineProgressListener listener = new PipelineProgressListener(
