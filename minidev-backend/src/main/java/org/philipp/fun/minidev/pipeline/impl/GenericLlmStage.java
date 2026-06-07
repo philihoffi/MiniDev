@@ -104,22 +104,30 @@ public class GenericLlmStage extends BaseElement {
     private void applyOutputMapping(String responseContent, PipelineContext context) {
         if (outputMapping == null || outputMapping.isEmpty()) return;
 
+        // Apply raw response mappings without requiring JSON parsing.
+        for (var entry : outputMapping.entrySet()) {
+            if ("$response".equals(entry.getValue())) {
+                context.putValue(new ContextKey<>(entry.getKey(), String.class), responseContent);
+            }
+        }
+
+        boolean needsJson = outputMapping.values().stream().anyMatch(v -> v != null && v.startsWith("$."));
+        if (!needsJson) {
+            return;
+        }
+
         try {
             JsonNode root = OBJECT_MAPPER.readTree(responseContent);
-
             for (var entry : outputMapping.entrySet()) {
                 String contextKeyName = entry.getKey();
                 String jsonPath = entry.getValue();
-                String value;
-
-                if ("$response".equals(jsonPath)) {
-                    value = responseContent;
-                } else if (jsonPath != null && jsonPath.startsWith("$.")) {
-                    String field = jsonPath.substring(2);
-                    value = resolveJsonPath(root, field);
-                } else {
-                    value = jsonPath;
+                if (jsonPath == null || "$response".equals(jsonPath)) {
+                    continue;
                 }
+
+                String value = jsonPath.startsWith("$.")
+                        ? resolveJsonPath(root, jsonPath.substring(2))
+                        : jsonPath;
 
                 if (value != null) {
                     context.putValue(new ContextKey<>(contextKeyName, String.class), value);
@@ -127,8 +135,8 @@ public class GenericLlmStage extends BaseElement {
             }
         } catch (Exception e) {
             log.warn("Failed to apply output mapping for '{}': {}", getName(), e.getMessage());
+            throw new IllegalArgumentException("Invalid JSON response for LLM stage '" + getName() + "'", e);
         }
-    }
 
     private static String resolveJsonPath(JsonNode root, String path) {
         String[] parts = path.split("\\.");
