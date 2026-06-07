@@ -62,8 +62,7 @@ public class CodeReviewEvaluatorStage extends BaseElement {
             return true;
         } catch (Exception e) {
             log.error("Failed to parse review result", e);
-            context.putValue(ContextKeys.Wallpaper.REVIEW_PASSED, true);
-            return true;
+            return false;
         }
     }
 
