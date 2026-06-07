@@ -137,6 +137,7 @@ public class GenericLlmStage extends BaseElement {
             log.warn("Failed to apply output mapping for '{}': {}", getName(), e.getMessage());
             throw new IllegalArgumentException("Invalid JSON response for LLM stage '" + getName() + "'", e);
         }
+    }
 
     private static String resolveJsonPath(JsonNode root, String path) {
         String[] parts = path.split("\\.");
