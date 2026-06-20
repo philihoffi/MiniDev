@@ -1,8 +1,10 @@
 package org.philipp.fun.minidev.config;
 
-import org.philipp.fun.minidev.model.Role;
-import org.philipp.fun.minidev.model.User;
-import org.philipp.fun.minidev.repository.UserRepository;
+import org.philipp.fun.minidev.page.model.Page;
+import org.philipp.fun.minidev.page.repository.PageRepository;
+import org.philipp.fun.minidev.user.model.Role;
+import org.philipp.fun.minidev.user.model.User;
+import org.philipp.fun.minidev.user.repository.UserRepository;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -21,12 +23,14 @@ public class DataInitializer {
      * user accounts if none exist.
      *
      * @param userRepository   the user repository
+     * @param pageRepository   the page repository
      * @param passwordEncoder  the password encoder
      * @return a command-line runner that initialises data
      */
     @Bean
     public CommandLineRunner initData(
             UserRepository userRepository,
+            PageRepository pageRepository,
             PasswordEncoder passwordEncoder) {
         return ignoredArgs -> {
             if (userRepository.count() == 0) {
@@ -34,6 +38,11 @@ public class DataInitializer {
                         passwordEncoder.encode("password"), "Admin", Role.ADMIN));
                 userRepository.save(new User("user",
                         passwordEncoder.encode("password"), "User", Role.USER));
+            }
+            if (pageRepository.count() == 0) {
+                pageRepository.save(new Page("/dashboard", "Dashboard", "dashboard", "DashboardComponent", null, 10));
+                pageRepository.save(new Page("/wallpaper-gallery", "Wallpaper Gallery", "wallpaper", "WallpaperGalleryComponent", null, 20));
+                pageRepository.save(new Page("/user-management", "User Management", "people", "UserManagementComponent", "ADMIN", 30));
             }
         };
     }

@@ -3,7 +3,7 @@ package org.philipp.fun.minidev.config;
 import java.util.Collections;
 
 import org.philipp.fun.minidev.audit.RequestLoggingFilter;
-import org.philipp.fun.minidev.repository.UserRepository;
+import org.philipp.fun.minidev.user.repository.UserRepository;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -98,7 +98,7 @@ public class SecurityConfig {
                         .frameOptions(frame -> frame.sameOrigin())
                 )
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/api/auth/login", "/api/auth/logout",
+                        .requestMatchers("/api/auth/login", "/api/auth/logout", "/api/pages",
                                 "/api/wallpaper/latest").permitAll()
                         .requestMatchers("/api/admin/**").hasRole("ADMIN")
                         .requestMatchers("/api/**").authenticated()

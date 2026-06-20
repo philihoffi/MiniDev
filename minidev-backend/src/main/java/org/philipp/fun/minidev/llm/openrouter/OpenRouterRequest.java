@@ -5,7 +5,7 @@ import java.util.List;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
-import org.philipp.fun.minidev.dto.llm.JsonSchema;
+import org.philipp.fun.minidev.llm.dto.JsonSchema;
 
 /**
  * Request payload for the OpenRouter chat completions API.

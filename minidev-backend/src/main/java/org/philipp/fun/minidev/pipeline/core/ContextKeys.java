@@ -2,8 +2,8 @@ package org.philipp.fun.minidev.pipeline.core;
 
 import java.util.Map;
 
-import org.philipp.fun.minidev.dto.CreativeBrief;
-import org.philipp.fun.minidev.llm.LlmClient;
+import org.philipp.fun.minidev.llm.client.LlmClient;
+import org.philipp.fun.minidev.wallpaper.dto.CreativeBrief;
 
 /**
  * Central registry of pipeline context keys.

@@ -5,11 +5,11 @@ import java.util.Objects;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-import org.philipp.fun.minidev.dto.llm.LlmModel;
-import org.philipp.fun.minidev.dto.llm.LlmRequest;
-import org.philipp.fun.minidev.dto.llm.LlmResponse;
-import org.philipp.fun.minidev.llm.LlmClient;
-import org.philipp.fun.minidev.llm.LlmProperties;
+import org.philipp.fun.minidev.llm.client.LlmClient;
+import org.philipp.fun.minidev.llm.client.LlmProperties;
+import org.philipp.fun.minidev.llm.dto.LlmModel;
+import org.philipp.fun.minidev.llm.dto.LlmRequest;
+import org.philipp.fun.minidev.llm.dto.LlmResponse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpHeaders;

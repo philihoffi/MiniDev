@@ -1,6 +1,7 @@
 package org.philipp.fun.minidev.llm;
 
 import org.junit.jupiter.api.Test;
+import org.philipp.fun.minidev.llm.client.LlmProperties;
 import org.philipp.fun.minidev.llm.openrouter.OpenRouterClient;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;

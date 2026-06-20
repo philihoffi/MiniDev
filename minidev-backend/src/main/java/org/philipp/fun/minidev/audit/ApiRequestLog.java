@@ -1,6 +1,6 @@
 package org.philipp.fun.minidev.audit;
 
-import org.philipp.fun.minidev.model.BaseEntity;
+import org.philipp.fun.minidev.common.model.BaseEntity;
 
 import jakarta.persistence.Entity;
 import jakarta.persistence.Table;

@@ -1,7 +1,9 @@
-import { Component, inject, computed, signal, HostListener } from '@angular/core';
+import { Component, inject, computed, signal, HostListener, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router, RouterLink, RouterOutlet } from '@angular/router';
 import { AuthService } from '../../../core/services/auth.service';
+import { PageService } from '../../../core/services/page.service';
+import { Page } from '../../../core/models/page.model';
 
 /**
  * Main application layout with navigation header.
@@ -13,8 +15,9 @@ import { AuthService } from '../../../core/services/auth.service';
   templateUrl: './main-layout.component.html',
   styleUrl: './main-layout.component.scss'
 })
-export class MainLayoutComponent {
+export class MainLayoutComponent implements OnInit {
   private authService = inject(AuthService);
+  private pageService = inject(PageService);
   private router = inject(Router);
 
   public user = this.authService.currentUser;
@@ -22,6 +25,7 @@ export class MainLayoutComponent {
   public mobileMenuOpen = signal(false);
   public userMenuOpen = signal(false);
   public isDark = signal(false);
+  public navItems = signal<Page[]>([]);
 
   /**
    * Gets the display name of the current user.
@@ -50,11 +54,18 @@ export class MainLayoutComponent {
     this.applyTheme();
   }
 
-  /**
-   * Handles document click events to close user menu when clicking outside.
-   * @param {Event} event - The click event.
-   */
-  @HostListener('document:click', ['$event'])
+  ngOnInit(): void {
+    this.loadNavItems();
+  }
+
+  private loadNavItems(): void {
+    this.pageService.getPages().subscribe({
+      next: (pages) => this.navItems.set(pages),
+      error: () => this.navItems.set([])
+    });
+  }
+
+  @HostListener('document:click', [''])
   public onDocumentClick(event: Event): void {
     const target = event.target as HTMLElement;
     if (!target.closest('.user-menu-wrapper')) {

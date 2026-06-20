@@ -4,7 +4,7 @@ import java.sql.Timestamp;
 import java.time.Instant;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import org.philipp.fun.minidev.config.SpringContextHolder;
+import org.philipp.fun.minidev.common.util.SpringContextHolder;
 import org.springframework.jdbc.core.JdbcTemplate;
 
 import ch.qos.logback.classic.spi.ILoggingEvent;

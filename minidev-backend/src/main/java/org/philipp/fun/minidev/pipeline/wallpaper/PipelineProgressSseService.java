@@ -2,8 +2,8 @@ package org.philipp.fun.minidev.pipeline.wallpaper;
 
 import java.time.Instant;
 
-import org.philipp.fun.minidev.dto.PipelineProgressEvent;
-import org.philipp.fun.minidev.dto.PipelineProgressEventType;
+import org.philipp.fun.minidev.pipeline.core.PipelineProgressEvent;
+import org.philipp.fun.minidev.pipeline.core.PipelineProgressEventType;
 import org.philipp.fun.minidev.sse.AbstractSseService;
 import org.philipp.fun.minidev.sse.SseEventName;
 import org.springframework.stereotype.Service;

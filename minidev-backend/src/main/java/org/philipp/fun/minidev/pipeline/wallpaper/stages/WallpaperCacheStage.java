@@ -1,11 +1,11 @@
 package org.philipp.fun.minidev.pipeline.wallpaper.stages;
 
-import org.philipp.fun.minidev.model.Wallpaper;
 import org.philipp.fun.minidev.pipeline.annotation.PipelineStage;
 import org.philipp.fun.minidev.pipeline.core.BaseElement;
 import org.philipp.fun.minidev.pipeline.core.ContextKeys;
 import org.philipp.fun.minidev.pipeline.core.PipelineContext;
-import org.philipp.fun.minidev.repository.WallpaperRepository;
+import org.philipp.fun.minidev.wallpaper.model.Wallpaper;
+import org.philipp.fun.minidev.wallpaper.repository.WallpaperRepository;
 
 /**
  * Pipeline stage that persists generated wallpaper data to the database.

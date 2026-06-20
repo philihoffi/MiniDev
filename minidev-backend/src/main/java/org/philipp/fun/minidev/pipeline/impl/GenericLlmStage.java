@@ -10,10 +10,10 @@ import java.util.regex.Pattern;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-import org.philipp.fun.minidev.dto.llm.JsonSchema;
-import org.philipp.fun.minidev.dto.llm.LlmRequest;
-import org.philipp.fun.minidev.dto.llm.LlmResponse;
-import org.philipp.fun.minidev.llm.LlmClient;
+import org.philipp.fun.minidev.llm.client.LlmClient;
+import org.philipp.fun.minidev.llm.dto.JsonSchema;
+import org.philipp.fun.minidev.llm.dto.LlmRequest;
+import org.philipp.fun.minidev.llm.dto.LlmResponse;
 import org.philipp.fun.minidev.pipeline.core.BaseElement;
 import org.philipp.fun.minidev.pipeline.core.ContextKey;
 import org.philipp.fun.minidev.pipeline.core.PipelineContext;

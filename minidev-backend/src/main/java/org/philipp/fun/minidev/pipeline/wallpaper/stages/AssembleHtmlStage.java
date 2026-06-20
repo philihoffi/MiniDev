@@ -2,11 +2,11 @@ package org.philipp.fun.minidev.pipeline.wallpaper.stages;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-import org.philipp.fun.minidev.dto.WallpaperCode;
 import org.philipp.fun.minidev.pipeline.annotation.PipelineStage;
 import org.philipp.fun.minidev.pipeline.core.BaseElement;
 import org.philipp.fun.minidev.pipeline.core.ContextKeys;
 import org.philipp.fun.minidev.pipeline.core.PipelineContext;
+import org.philipp.fun.minidev.wallpaper.dto.WallpaperCode;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
