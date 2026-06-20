@@ -1,5 +1,8 @@
 import { Component, Input } from '@angular/core';
 
+/**
+ * Loading spinner component with configurable size and text.
+ */
 @Component({
   selector: 'app-loading-spinner',
   standalone: true,
@@ -22,10 +25,14 @@ import { Component, Input } from '@angular/core';
   `
 })
 export class LoadingSpinnerComponent {
-  @Input() size: 'sm' | 'md' | 'lg' = 'md';
-  @Input() text = '';
+  @Input() public size: 'sm' | 'md' | 'lg' = 'md';
+  @Input() public text = '';
 
-  get sizeClass(): string {
+  /**
+   * Gets the CSS size class based on the size input.
+   * @returns {string} The Tailwind CSS size class.
+   */
+  public get sizeClass(): string {
     switch (this.size) {
       case 'sm': return 'w-4 h-4';
       case 'lg': return 'w-8 h-8';
@@ -33,7 +40,11 @@ export class LoadingSpinnerComponent {
     }
   }
 
-  get containerClass(): string {
+  /**
+   * Gets the container CSS class based on the size input.
+   * @returns {string} The Tailwind CSS container class.
+   */
+  public get containerClass(): string {
     return this.size === 'lg' ? 'py-12' : '';
   }
 }

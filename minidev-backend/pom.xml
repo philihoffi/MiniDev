@@ -22,6 +22,8 @@
         <maven.minimum.version>3.9.0</maven.minimum.version>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <skipFrontendBuild>false</skipFrontendBuild>
+        <pmd.version>3.28.0</pmd.version>
+        <pmd.skip>false</pmd.skip>
     </properties>
 
     <dependencies>

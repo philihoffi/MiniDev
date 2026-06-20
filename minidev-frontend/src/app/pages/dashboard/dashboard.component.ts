@@ -2,6 +2,9 @@ import { CommonModule } from '@angular/common';
 import { Component, inject } from '@angular/core';
 import { PipelineProgressService } from '../../core/services/pipeline-progress.service';
 
+/**
+ * Dashboard page component.
+ */
 @Component({
   selector: 'app-dashboard',
   standalone: true,
@@ -10,5 +13,5 @@ import { PipelineProgressService } from '../../core/services/pipeline-progress.s
   styleUrl: './dashboard.component.scss'
 })
 export class DashboardComponent {
-  readonly pipelineProgress = inject(PipelineProgressService);
+  public readonly pipelineProgress = inject(PipelineProgressService);
 }

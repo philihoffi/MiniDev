@@ -1,9 +1,9 @@
 package org.philipp.fun.minidev.audit;
 
-import jakarta.servlet.FilterChain;
-import jakarta.servlet.ServletException;
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
+import java.io.IOException;
+import java.util.UUID;
+import java.util.regex.Pattern;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slf4j.MDC;
@@ -12,26 +12,49 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
-import java.io.IOException;
-import java.util.regex.Pattern;
-import java.util.UUID;
+import jakarta.servlet.FilterChain;
+import jakarta.servlet.ServletException;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 
+/**
+ * Filter that logs API requests and persists audit records to the database.
+ */
 @Component
 public class RequestLoggingFilter extends OncePerRequestFilter {
 
+    /** The HTTP header name for request IDs. */
     private static final String REQUEST_ID_HEADER = "X-Request-Id";
-    private static final int MAX_REQUEST_ID_LENGTH = 128;
-    private static final Pattern SAFE_REQUEST_ID_PATTERN = Pattern.compile("^[A-Za-z0-9._-]+$");
-    private static final Logger log = LoggerFactory.getLogger(RequestLoggingFilter.class);
 
+    /** Maximum allowed length for a request ID. */
+    private static final int MAX_REQUEST_ID_LENGTH = 128;
+
+    /** Pattern for safe request ID characters. */
+    private static final Pattern SAFE_REQUEST_ID_PATTERN =
+            Pattern.compile("^[A-Za-z0-9._-]+$");
+
+    /** Logger. */
+    private static final Logger LOG =
+            LoggerFactory.getLogger(RequestLoggingFilter.class);
+
+    /** Repository for persisting API request logs. */
     private final ApiRequestLogRepository requestLogRepository;
 
-    public RequestLoggingFilter(ApiRequestLogRepository requestLogRepository) {
+    /**
+     * Constructs a new RequestLoggingFilter.
+     *
+     * @param requestLogRepository the API request log repository
+     */
+    public RequestLoggingFilter(
+            ApiRequestLogRepository requestLogRepository) {
         this.requestLogRepository = requestLogRepository;
     }
 
     @Override
-    protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
+    protected void doFilterInternal(
+            HttpServletRequest request,
+            HttpServletResponse response,
+            FilterChain filterChain)
             throws ServletException, IOException {
 
         String uri = request.getRequestURI();
@@ -48,7 +71,9 @@ public class RequestLoggingFilter extends OncePerRequestFilter {
         MDC.put("requestId", requestId);
         MDC.put("path", uri);
 
-        log.info("api_request_started method={} uri={} clientIp={}", request.getMethod(), uri, request.getRemoteAddr());
+        LOG.info(
+                "api_request_started method={} uri={} clientIp={}",
+                request.getMethod(), uri, request.getRemoteAddr());
 
         try {
             filterChain.doFilter(request, response);
@@ -61,20 +86,29 @@ public class RequestLoggingFilter extends OncePerRequestFilter {
                 int status = response.getStatus();
 
                 String username = "anonymous";
-                Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-                if (auth != null && auth.isAuthenticated() && !"anonymousUser".equals(auth.getName())) {
+                Authentication auth =
+                        SecurityContextHolder.getContext()
+                                .getAuthentication();
+                if (auth != null
+                        && auth.isAuthenticated()
+                        && !"anonymousUser".equals(auth.getName())) {
                     username = auth.getName();
                 }
 
                 MDC.put("username", username);
 
-                log.info("api_request method={} uri={} status={} durationMs={} username={} clientIp={}",
+                LOG.info(
+                        "api_request method={} uri={} status={}"
+                        + " durationMs={} username={} clientIp={}",
                         method, uri, status, duration, username, clientIp);
 
-                ApiRequestLog apiRequestLog = new ApiRequestLog(method, uri, clientIp, username, status, duration);
+                ApiRequestLog apiRequestLog = new ApiRequestLog(
+                        method, uri, clientIp, username, status, duration);
                 requestLogRepository.save(apiRequestLog);
             } catch (Exception e) {
-                log.warn("api_request_persist_failed uri={} reason={}", uri, e.getMessage(), e);
+                LOG.warn(
+                        "api_request_persist_failed uri={} reason={}",
+                        uri, e.getMessage(), e);
             } finally {
                 MDC.remove("username");
                 MDC.remove("path");
@@ -83,6 +117,12 @@ public class RequestLoggingFilter extends OncePerRequestFilter {
         }
     }
 
+    /**
+     * Resolves the request ID from the incoming header or generates a new one.
+     *
+     * @param request the HTTP request
+     * @return the request ID
+     */
     private String resolveRequestId(HttpServletRequest request) {
         String incomingRequestId = request.getHeader(REQUEST_ID_HEADER);
         if (!isSafeRequestId(incomingRequestId)) {
@@ -91,6 +131,12 @@ public class RequestLoggingFilter extends OncePerRequestFilter {
         return incomingRequestId.trim();
     }
 
+    /**
+     * Validates whether a request ID is safe to use.
+     *
+     * @param requestId the request ID to validate
+     * @return true if the request ID is safe
+     */
     private boolean isSafeRequestId(String requestId) {
         if (requestId == null) {
             return false;

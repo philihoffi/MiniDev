@@ -1,29 +1,48 @@
 package org.philipp.fun.minidev.llm.openrouter;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import org.philipp.fun.minidev.dto.llm.*;
-import org.philipp.fun.minidev.llm.LlmClient;
-import org.philipp.fun.minidev.llm.LlmProperties;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.stereotype.Component;
-import org.springframework.web.client.RestClient;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.MediaType;
-
 import java.util.List;
 import java.util.Objects;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+
+import org.philipp.fun.minidev.llm.client.LlmClient;
+import org.philipp.fun.minidev.llm.client.LlmProperties;
+import org.philipp.fun.minidev.llm.dto.LlmModel;
+import org.philipp.fun.minidev.llm.dto.LlmRequest;
+import org.philipp.fun.minidev.llm.dto.LlmResponse;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
+import org.springframework.stereotype.Component;
+import org.springframework.web.client.RestClient;
+
+/**
+ * OpenRouter API client for LLM interactions.
+ */
 @Component
 public class OpenRouterClient implements LlmClient {
 
-    private static final Logger log = LoggerFactory.getLogger(OpenRouterClient.class);
+    /** Logger. */
+    private static final Logger LOG = LoggerFactory.getLogger(OpenRouterClient.class);
+
+    /** Object mapper for JSON serialization/deserialization. */
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
+
+    /** Maximum length for error response body logging. */
     private static final int MAX_ERROR_BODY_LENGTH = 600;
 
+    /** REST client for API calls. */
     private final RestClient restClient;
+
+    /** LLM configuration properties. */
     private final LlmProperties properties;
 
+    /**
+     * Constructs an OpenRouterClient.
+     *
+     * @param properties the LLM properties
+     */
     public OpenRouterClient(LlmProperties properties) {
         this.properties = properties;
         String apiKey = properties.getOpenrouterApiKey();
@@ -32,12 +51,18 @@ public class OpenRouterClient implements LlmClient {
             throw new IllegalArgumentException("apiKey must not be blank");
         }
         this.restClient = RestClient.builder()
-            .baseUrl(properties.getBaseUrl())
-            .defaultHeader(HttpHeaders.AUTHORIZATION, "Bearer " + apiKey)
-            .defaultHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
-            .build();
+                .baseUrl(properties.getBaseUrl())
+                .defaultHeader(HttpHeaders.AUTHORIZATION, "Bearer " + apiKey)
+                .defaultHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
+                .build();
     }
 
+    /**
+     * Sends a chat completion request to OpenRouter.
+     *
+     * @param request the LLM request
+     * @return the LLM response
+     */
     @Override
     public LlmResponse chat(LlmRequest request) {
         try {
@@ -65,7 +90,7 @@ public class OpenRouterClient implements LlmClient {
             );
 
             String requestJson = OBJECT_MAPPER.writeValueAsString(requestBody);
-            log.info("openrouter_chat_request model={} messages={} maxTokens={} temperature={} schema={}",
+            LOG.info("openrouter_chat_request model={} messages={} maxTokens={} temperature={} schema={}",
                     requestBody.model(),
                     messages.size(),
                     request.maxTokens(),
@@ -76,18 +101,18 @@ public class OpenRouterClient implements LlmClient {
                     .body(requestJson)
                     .retrieve()
                     .onStatus(status -> status.is4xxClientError() || status.is5xxServerError(), (req, res) ->
-                            log.error("openrouter_chat_error status={} reason={} body={}",
+                            LOG.error("openrouter_chat_error status={} reason={} body={}",
                                     res.getStatusCode(),
                                     res.getStatusText(),
                                     abbreviate(new String(res.getBody().readAllBytes()))))
                     .body(String.class);
 
             if (responseBody == null) {
-                log.warn("Received empty response from OpenRouter API");
+                LOG.warn("Received empty response from OpenRouter API");
                 return LlmResponse.failure("Empty response from OpenRouter");
             }
             responseBody = responseBody.trim();
-            log.debug("openrouter_chat_response_received size={} chars", responseBody.length());
+            LOG.debug("openrouter_chat_response_received size={} chars", responseBody.length());
 
             OpenRouterResponse response = OBJECT_MAPPER.readValue(responseBody, OpenRouterResponse.class);
 
@@ -100,45 +125,64 @@ public class OpenRouterClient implements LlmClient {
             Integer totalTokens = response.usage() != null ? response.usage().totalTokens() : null;
             String responseModel = response.model();
 
-            log.info("openrouter_chat_success model={} tokens={}", responseModel, totalTokens);
+            LOG.info("openrouter_chat_success model={} tokens={}", responseModel, totalTokens);
 
             return LlmResponse.success(content, responseModel, totalTokens);
 
         } catch (Exception e) {
-            log.error("Error calling OpenRouter API", e);
+            LOG.error("Error calling OpenRouter API", e);
             return LlmResponse.failure("API call failed: " + e.getMessage());
         }
     }
 
+    /**
+     * Fetches available models from OpenRouter.
+     *
+     * @return list of available models
+     */
     @Override
     public List<LlmModel> getModels() {
         return getModels(null, null, null);
     }
 
+    /**
+     * Fetches models with optional filters.
+     *
+     * @param category            optional category filter
+     * @param supportedParameters optional supported parameters filter
+     * @param outputModalities    optional output modalities filter
+     * @return list of filtered models
+     */
     @Override
     public List<LlmModel> getModels(String category, String supportedParameters, String outputModalities) {
         try {
-            log.info("openrouter_models_request baseUrl={} category={} supportedParameters={} outputModalities={}",
+            LOG.info("openrouter_models_request baseUrl={} category={} supportedParameters={} outputModalities={}",
                     properties.getBaseUrl(), category, supportedParameters, outputModalities);
 
             String responseBody = restClient.get()
                     .uri(uriBuilder -> {
                         uriBuilder.path("models");
-                        if (category != null) uriBuilder.queryParam("category", category);
-                        if (supportedParameters != null) uriBuilder.queryParam("supported_parameters", supportedParameters);
-                        if (outputModalities != null) uriBuilder.queryParam("output_modalities", outputModalities);
+                        if (category != null) {
+                            uriBuilder.queryParam("category", category);
+                        }
+                        if (supportedParameters != null) {
+                            uriBuilder.queryParam("supported_parameters", supportedParameters);
+                        }
+                        if (outputModalities != null) {
+                            uriBuilder.queryParam("output_modalities", outputModalities);
+                        }
                         return uriBuilder.build();
                     })
                     .retrieve()
                     .onStatus(status -> status.is4xxClientError() || status.is5xxServerError(), (req, res) ->
-                            log.error("openrouter_models_error status={} reason={} body={}",
+                            LOG.error("openrouter_models_error status={} reason={} body={}",
                                     res.getStatusCode(),
                                     res.getStatusText(),
                                     abbreviate(new String(res.getBody().readAllBytes()))))
                     .body(String.class);
 
             if (responseBody == null) {
-                log.warn("Received empty response when fetching models");
+                LOG.warn("Received empty response when fetching models");
                 return List.of();
             }
 
@@ -172,14 +216,20 @@ public class OpenRouterClient implements LlmClient {
                     ))
                     .toList();
 
-            log.info("openrouter_models_success count={}", models.size());
+            LOG.info("openrouter_models_success count={}", models.size());
             return models;
         } catch (Exception e) {
-            log.error("Error fetching models from OpenRouter", e);
+            LOG.error("Error fetching models from OpenRouter", e);
             return List.of();
         }
     }
 
+    /**
+     * Abbreviates a string to a maximum length.
+     *
+     * @param value the input string
+     * @return the abbreviated string
+     */
     private static String abbreviate(String value) {
         if (value == null) {
             return null;

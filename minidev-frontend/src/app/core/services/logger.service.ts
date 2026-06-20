@@ -1,18 +1,36 @@
 import { Injectable } from '@angular/core';
 
+/**
+ * Application logging service.
+ */
 @Injectable({
   providedIn: 'root'
 })
 export class LoggerService {
-  info(message: string, context?: unknown): void {
+  /**
+   * Logs an info-level message.
+   * @param {string} message - The log message.
+   * @param {unknown} context - Optional context data.
+   */
+  public info(message: string, context?: unknown): void {
     this.write('info', message, context);
   }
 
-  warn(message: string, context?: unknown): void {
+  /**
+   * Logs a warning-level message.
+   * @param {string} message - The log message.
+   * @param {unknown} context - Optional context data.
+   */
+  public warn(message: string, context?: unknown): void {
     this.write('warn', message, context);
   }
 
-  error(message: string, context?: unknown): void {
+  /**
+   * Logs an error-level message.
+   * @param {string} message - The log message.
+   * @param {unknown} context - Optional context data.
+   */
+  public error(message: string, context?: unknown): void {
     this.write('error', message, context);
   }
 

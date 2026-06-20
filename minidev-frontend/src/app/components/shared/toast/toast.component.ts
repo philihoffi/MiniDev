@@ -2,6 +2,9 @@ import { Component, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ToastService } from './toast.service';
 
+/**
+ * Toast notification display component.
+ */
 @Component({
   selector: 'app-toast',
   standalone: true,
@@ -48,9 +51,14 @@ import { ToastService } from './toast.service';
   `
 })
 export class ToastComponent {
-  toastService = inject(ToastService);
+  public toastService = inject(ToastService);
 
-  getClass(type: string): string {
+  /**
+   * Gets the CSS class for the given toast type.
+   * @param {string} type - The toast type string.
+   * @returns {string} The Tailwind CSS class string for the toast.
+   */
+  public getClass(type: string): string {
     switch (type) {
       case 'success':
         return 'bg-success-50 dark:bg-success-500/10 border-success-500/20 text-success-600 dark:text-success-500';
