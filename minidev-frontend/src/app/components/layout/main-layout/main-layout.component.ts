@@ -54,7 +54,7 @@ export class MainLayoutComponent implements OnInit {
     this.applyTheme();
   }
 
-  ngOnInit(): void {
+  public ngOnInit(): void {
     this.loadNavItems();
   }
 
