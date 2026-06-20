@@ -1,8 +1,7 @@
 package org.philipp.fun.minidev.service;
 
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
-import jakarta.servlet.http.HttpSession;
+import java.util.Collections;
+
 import org.philipp.fun.minidev.dto.AuthResponse;
 import org.philipp.fun.minidev.dto.LoginRequest;
 import org.philipp.fun.minidev.model.User;
@@ -19,17 +18,36 @@ import org.springframework.security.web.context.SecurityContextRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 
-import java.util.Collections;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpSession;
 
+/**
+ * Service for authentication operations.
+ */
 @Service
 public class AuthService {
 
+    /** User repository. */
     private final UserRepository userRepository;
+
+    /** Password encoder. */
     private final PasswordEncoder passwordEncoder;
+
+    /** Security context repository. */
     private final SecurityContextRepository securityContextRepository;
+
+    /** Security context holder strategy. */
     private final SecurityContextHolderStrategy securityContextHolderStrategy =
             SecurityContextHolder.getContextHolderStrategy();
 
+    /**
+     * Constructs an AuthService.
+     *
+     * @param userRepository            the user repository
+     * @param passwordEncoder           the password encoder
+     * @param securityContextRepository the security context repository
+     */
     public AuthService(
             UserRepository userRepository,
             PasswordEncoder passwordEncoder,
@@ -40,15 +58,27 @@ public class AuthService {
         this.securityContextRepository = securityContextRepository;
     }
 
-    public AuthResponse login(LoginRequest request, HttpServletRequest servletRequest, HttpServletResponse servletResponse) {
+    /**
+     * Authenticates a user and creates a security session.
+     *
+     * @param request        the login request
+     * @param servletRequest the HTTP servlet request
+     * @param servletResponse the HTTP servlet response
+     * @return the auth response
+     */
+    public AuthResponse login(LoginRequest request, HttpServletRequest servletRequest,
+            HttpServletResponse servletResponse) {
         User user = userRepository.findByUsername(request.username())
-                .filter(foundUser -> passwordEncoder.matches(request.password(), foundUser.getPassword()))
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Invalid username or password"));
+                .filter(foundUser -> passwordEncoder.matches(
+                        request.password(), foundUser.getPassword()))
+                .orElseThrow(() -> new ResponseStatusException(
+                        HttpStatus.UNAUTHORIZED, "Invalid username or password"));
 
         Authentication auth = new UsernamePasswordAuthenticationToken(
                 user.getUsername(),
                 null,
-                Collections.singletonList(new SimpleGrantedAuthority("ROLE_" + user.getRole().name()))
+                Collections.singletonList(
+                        new SimpleGrantedAuthority("ROLE_" + user.getRole().name()))
         );
 
         SecurityContext context = securityContextHolderStrategy.createEmptyContext();
@@ -64,6 +94,11 @@ public class AuthService {
         );
     }
 
+    /**
+     * Logs out the current user by clearing the security context and invalidating the session.
+     *
+     * @param request the HTTP servlet request
+     */
     public void logout(HttpServletRequest request) {
         SecurityContextHolder.clearContext();
         HttpSession session = request.getSession(false);
@@ -72,4 +107,3 @@ public class AuthService {
         }
     }
 }
-

@@ -6,6 +6,9 @@ import { User, UserRole, UserRequest } from '../../core/models/user.model';
 import { ToastService } from '../../components/shared/toast/toast.service';
 import { LoadingSpinnerComponent } from '../../components/shared/loading-spinner/loading-spinner.component';
 
+/**
+ * User management page component.
+ */
 @Component({
   selector: 'app-user-management',
   standalone: true,
@@ -17,28 +20,34 @@ export class UserManagementComponent implements OnInit {
   private authService = inject(AuthService);
   private toast = inject(ToastService);
 
-  users = signal<User[]>([]);
-  loading = signal(true);
-  error = signal<string | null>(null);
+  public users = signal<User[]>([]);
+  public loading = signal(true);
+  public error = signal<string | null>(null);
 
-  showForm = signal(false);
-  isEditing = signal(false);
-  editingUserId = signal<string | null>(null);
-  formUsername = signal('');
-  formDisplayName = signal('');
-  formPassword = signal('');
-  formRole = signal<UserRole>('USER');
-  formSubmitting = signal(false);
+  public showForm = signal(false);
+  public isEditing = signal(false);
+  public editingUserId = signal<string | null>(null);
+  public formUsername = signal('');
+  public formDisplayName = signal('');
+  public formPassword = signal('');
+  public formRole = signal<UserRole>('USER');
+  public formSubmitting = signal(false);
 
-  deleteConfirmId = signal<string | null>(null);
+  public deleteConfirmId = signal<string | null>(null);
 
-  roles: UserRole[] = ['ADMIN', 'USER', 'GUEST'];
+  public roles: UserRole[] = ['ADMIN', 'USER', 'GUEST'];
 
-  ngOnInit() {
+  /**
+   * Angular lifecycle hook. Loads all users on init.
+   */
+  public ngOnInit(): void {
     this.loadUsers();
   }
 
-  loadUsers() {
+  /**
+   * Loads all users from the server.
+   */
+  public loadUsers(): void {
     this.loading.set(true);
     this.authService.getUsers().subscribe({
       next: (users) => {
@@ -52,7 +61,10 @@ export class UserManagementComponent implements OnInit {
     });
   }
 
-  openCreateForm() {
+  /**
+   * Opens the create user form.
+   */
+  public openCreateForm(): void {
     this.isEditing.set(false);
     this.editingUserId.set(null);
     this.formUsername.set('');
@@ -62,7 +74,11 @@ export class UserManagementComponent implements OnInit {
     this.showForm.set(true);
   }
 
-  openEditForm(user: User) {
+  /**
+   * Opens the edit user form pre-filled with user data.
+   * @param {User} user - The user to edit.
+   */
+  public openEditForm(user: User): void {
     this.isEditing.set(true);
     this.editingUserId.set(user.id);
     this.formUsername.set(user.username);
@@ -72,11 +88,17 @@ export class UserManagementComponent implements OnInit {
     this.showForm.set(true);
   }
 
-  cancelForm() {
+  /**
+   * Cancels the user form.
+   */
+  public cancelForm(): void {
     this.showForm.set(false);
   }
 
-  saveUser() {
+  /**
+   * Saves the user (create or update).
+   */
+  public saveUser(): void {
     if (!this.formUsername()) return;
 
     const userReq: UserRequest = {
@@ -109,15 +131,26 @@ export class UserManagementComponent implements OnInit {
     });
   }
 
-  requestDelete(user: User) {
+  /**
+   * Requests deletion confirmation for a user.
+   * @param {User} user - The user to delete.
+   */
+  public requestDelete(user: User): void {
     this.deleteConfirmId.set(user.id);
   }
 
-  cancelDelete() {
+  /**
+   * Cancels the deletion confirmation.
+   */
+  public cancelDelete(): void {
     this.deleteConfirmId.set(null);
   }
 
-  confirmDelete(user: User) {
+  /**
+   * Confirms and executes user deletion.
+   * @param {User} user - The user to delete.
+   */
+  public confirmDelete(user: User): void {
     this.deleteConfirmId.set(null);
     this.authService.deleteUser(user.id).subscribe({
       next: () => {
@@ -130,7 +163,12 @@ export class UserManagementComponent implements OnInit {
     });
   }
 
-  getBadgeClass(role: UserRole): string {
+  /**
+   * Gets the badge CSS class for a user role.
+   * @param {UserRole} role - The user role.
+   * @returns {string} The badge CSS class.
+   */
+  public getBadgeClass(role: UserRole): string {
     switch (role) {
       case 'ADMIN': return 'badge-admin';
       case 'USER': return 'badge-user';

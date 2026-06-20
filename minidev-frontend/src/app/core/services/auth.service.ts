@@ -1,8 +1,12 @@
 import { Injectable, signal, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
+import { Observable } from 'rxjs';
 import { tap } from 'rxjs/operators';
 import { User, UserRequest, UserRole } from '../models/user.model';
 
+/**
+ * Authentication and user management service.
+ */
 @Injectable({
   providedIn: 'root'
 })
@@ -10,9 +14,12 @@ export class AuthService {
   private http = inject(HttpClient);
   private currentUserSignal = signal<User | null>(null);
 
-  readonly currentUser = this.currentUserSignal.asReadonly();
-  readonly isAuthenticated = signal(false).asReadonly();
+  public readonly currentUser = this.currentUserSignal.asReadonly();
+  public readonly isAuthenticated = signal(false).asReadonly();
 
+  /**
+   * Initializes the service with saved user data from localStorage.
+   */
   constructor() {
     const savedUser = localStorage.getItem('user');
     if (savedUser) {
@@ -20,7 +27,13 @@ export class AuthService {
     }
   }
 
-  login(username: string, password: string) {
+  /**
+   * Authenticates a user with username and password.
+   * @param {string} username - The username.
+   * @param {string} password - The password.
+   * @returns {Observable<User>} An Observable of the authenticated user.
+   */
+  public login(username: string, password: string): Observable<User> {
     const request: UserRequest = { username, password };
     return this.http.post<User>('/api/auth/login', request)
       .pipe(
@@ -31,7 +44,11 @@ export class AuthService {
       );
   }
 
-  logout() {
+  /**
+   * Logs out the current user.
+   * @returns {Observable<object>} An Observable that completes on logout.
+   */
+  public logout(): Observable<object> {
     return this.http.post('/api/auth/logout', {}).pipe(
       tap(() => {
         this.currentUserSignal.set(null);
@@ -40,23 +57,48 @@ export class AuthService {
     );
   }
 
-  getUsers() {
+  /**
+   * Gets all users (admin only).
+   * @returns {Observable<User[]>} An Observable of the user list.
+   */
+  public getUsers(): Observable<User[]> {
     return this.http.get<User[]>('/api/admin/users');
   }
 
-  createUser(user: UserRequest) {
+  /**
+   * Creates a new user.
+   * @param {UserRequest} user - The user data.
+   * @returns {Observable<User>} An Observable of the created user.
+   */
+  public createUser(user: UserRequest): Observable<User> {
     return this.http.post<User>('/api/admin/users', user);
   }
 
-  updateUser(id: string, user: UserRequest) {
+  /**
+   * Updates an existing user.
+   * @param {string} id - The user ID.
+   * @param {UserRequest} user - The updated user data.
+   * @returns {Observable<User>} An Observable of the updated user.
+   */
+  public updateUser(id: string, user: UserRequest): Observable<User> {
     return this.http.put<User>(`/api/admin/users/${id}`, user);
   }
 
-  deleteUser(id: string) {
+  /**
+   * Deletes a user.
+   * @param {string} id - The user ID to delete.
+   * @returns {Observable<object>} An Observable that completes on deletion.
+   */
+  public deleteUser(id: string): Observable<object> {
     return this.http.delete(`/api/admin/users/${id}`);
   }
 
-  hasRole(role: UserRole): boolean {
+  /**
+   * Checks if the current user has the specified role.
+   * @param {UserRole} role - The role to check.
+   * @returns {boolean} True if the user has the role.
+   */
+  public hasRole(role: UserRole): boolean {
     const user = this.currentUserSignal();
     if (!user) return false;
     if (user.role === 'ADMIN') return true;

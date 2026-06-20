@@ -6,6 +6,9 @@ import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
 import { ToastService } from '../../components/shared/toast/toast.service';
 import { LoadingSpinnerComponent } from '../../components/shared/loading-spinner/loading-spinner.component';
 
+/**
+ * Wallpaper gallery page component.
+ */
 @Component({
   selector: 'app-wallpaper-gallery',
   standalone: true,
@@ -18,18 +21,24 @@ export class WallpaperGalleryComponent implements OnInit {
   private sanitizer = inject(DomSanitizer);
   private toast = inject(ToastService);
 
-  wallpapers = signal<Wallpaper[]>([]);
-  selectedWallpaper = signal<Wallpaper | null>(null);
-  safeCode = signal<SafeHtml>('');
-  isGenerating = signal(false);
-  loading = signal(true);
-  deleteConfirmId = signal<number | null>(null);
+  public wallpapers = signal<Wallpaper[]>([]);
+  public selectedWallpaper = signal<Wallpaper | null>(null);
+  public safeCode = signal<SafeHtml>('');
+  public isGenerating = signal(false);
+  public loading = signal(true);
+  public deleteConfirmId = signal<number | null>(null);
 
-  ngOnInit() {
+  /**
+   * Angular lifecycle hook. Loads all wallpapers on init.
+   */
+  public ngOnInit(): void {
     this.loadWallpapers();
   }
 
-  loadWallpapers() {
+  /**
+   * Loads all wallpapers from the server.
+   */
+  public loadWallpapers(): void {
     this.loading.set(true);
     this.wallpaperService.getWallpapers().subscribe({
       next: (wps) => {
@@ -43,7 +52,10 @@ export class WallpaperGalleryComponent implements OnInit {
     });
   }
 
-  generateNew() {
+  /**
+   * Generates a new wallpaper.
+   */
+  public generateNew(): void {
     this.isGenerating.set(true);
     this.wallpaperService.generateWallpaper().subscribe({
       next: () => {
@@ -58,21 +70,37 @@ export class WallpaperGalleryComponent implements OnInit {
     });
   }
 
-  selectWallpaper(wp: Wallpaper) {
+  /**
+   * Selects a wallpaper for preview.
+   * @param {Wallpaper} wp - The wallpaper to select.
+   */
+  public selectWallpaper(wp: Wallpaper): void {
     this.selectedWallpaper.set(wp);
     this.safeCode.set(this.sanitizer.bypassSecurityTrustHtml(wp.code));
   }
 
-  requestDelete(wp: Wallpaper, event: Event) {
+  /**
+   * Requests deletion confirmation for a wallpaper.
+   * @param {Wallpaper} wp - The wallpaper to delete.
+   * @param {Event} event - The mouse event.
+   */
+  public requestDelete(wp: Wallpaper, event: Event): void {
     event.stopPropagation();
     this.deleteConfirmId.set(wp.id);
   }
 
-  cancelDelete() {
+  /**
+   * Cancels the deletion confirmation.
+   */
+  public cancelDelete(): void {
     this.deleteConfirmId.set(null);
   }
 
-  confirmDelete(wp: Wallpaper) {
+  /**
+   * Confirms and executes wallpaper deletion.
+   * @param {Wallpaper} wp - The wallpaper to delete.
+   */
+  public confirmDelete(wp: Wallpaper): void {
     this.deleteConfirmId.set(null);
     this.wallpaperService.deleteWallpaper(wp.id).subscribe({
       next: () => {

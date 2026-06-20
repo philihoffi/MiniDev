@@ -7,6 +7,9 @@ import { WallpaperService } from '../../core/services/wallpaper.service';
 import { LoggerService } from '../../core/services/logger.service';
 import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
 
+/**
+ * Login page component.
+ */
 @Component({
   selector: 'app-login',
   standalone: true,
@@ -21,17 +24,23 @@ export class LoginComponent implements OnInit {
   private logger = inject(LoggerService);
   private sanitizer = inject(DomSanitizer);
 
-  username = '';
-  password = '';
-  errorMessage = signal<string | null>(null);
-  isLoading = signal(false);
-  wallpaperCode = signal<SafeHtml | null>(null);
+  public username = '';
+  public password = '';
+  public errorMessage = signal<string | null>(null);
+  public isLoading = signal(false);
+  public wallpaperCode = signal<SafeHtml | null>(null);
 
-  ngOnInit() {
+  /**
+   * Angular lifecycle hook. Loads a random wallpaper for the background.
+   */
+  public ngOnInit(): void {
     this.loadWallpaper();
   }
 
-  loadWallpaper() {
+  /**
+   * Loads a random wallpaper for the login background.
+   */
+  public loadWallpaper(): void {
     this.wallpaperService.getRandomWallpaper().subscribe({
       next: (wp) => {
         this.wallpaperCode.set(this.sanitizer.bypassSecurityTrustHtml(wp.code));
@@ -42,7 +51,10 @@ export class LoginComponent implements OnInit {
     });
   }
 
-  onSubmit() {
+  /**
+   * Handles form submission to log in.
+   */
+  public onSubmit(): void {
     if (!this.username || !this.password) return;
 
     this.isLoading.set(true);

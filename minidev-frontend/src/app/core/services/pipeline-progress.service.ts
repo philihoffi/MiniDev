@@ -17,6 +17,9 @@ const EMPTY_STATE: PipelineRunViewState = {
   nodeOrder: []
 };
 
+/**
+ * Service for tracking pipeline execution progress via SSE.
+ */
 @Injectable({
   providedIn: 'root'
 })
@@ -24,9 +27,9 @@ export class PipelineProgressService implements OnDestroy {
   private zone = inject(NgZone);
   private eventSource: EventSource | null = null;
 
-  readonly connected = signal(false);
-  readonly state = signal<PipelineRunViewState>(EMPTY_STATE);
-  readonly nodeViews = computed<PipelineNodeView[]>(() => {
+  public readonly connected = signal(false);
+  public readonly state = signal<PipelineRunViewState>(EMPTY_STATE);
+  public readonly nodeViews = computed<PipelineNodeView[]>(() => {
     const state = this.state();
     return state.nodeOrder
       .map(nodeId => state.nodes[nodeId])
@@ -37,15 +40,24 @@ export class PipelineProgressService implements OnDestroy {
       }));
   });
 
+  /**
+   * Initializes the service and connects to the SSE event stream.
+   */
   constructor() {
     this.connect();
   }
 
-  ngOnDestroy() {
+  /**
+   * Clean up SSE connection on destroy.
+   */
+  public ngOnDestroy(): void {
     this.disconnect();
   }
 
-  connect() {
+  /**
+   * Connects to the SSE event stream for pipeline progress.
+   */
+  public connect(): void {
     if (this.eventSource) {
       return;
     }
@@ -72,7 +84,10 @@ export class PipelineProgressService implements OnDestroy {
     };
   }
 
-  disconnect() {
+  /**
+   * Disconnects from the SSE event stream.
+   */
+  public disconnect(): void {
     if (!this.eventSource) {
       return;
     }
@@ -89,7 +104,7 @@ export class PipelineProgressService implements OnDestroy {
     }
   }
 
-  private applyProgressEvent(event: PipelineProgressEvent) {
+  private applyProgressEvent(event: PipelineProgressEvent): void {
     switch (event.type) {
       case 'RUN_STARTED':
         this.state.set({
@@ -128,7 +143,7 @@ export class PipelineProgressService implements OnDestroy {
     }
   }
 
-  private upsertNode(event: PipelineProgressEvent, defaultStatus: PipelineNodeStatus) {
+  private upsertNode(event: PipelineProgressEvent, defaultStatus: PipelineNodeStatus): void {
     const nodeId = event.nodeId;
     if (!nodeId) {
       return;

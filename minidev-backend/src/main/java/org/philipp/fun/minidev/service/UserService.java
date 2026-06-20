@@ -1,5 +1,7 @@
 package org.philipp.fun.minidev.service;
 
+import java.util.List;
+
 import org.philipp.fun.minidev.dto.AuthResponse;
 import org.philipp.fun.minidev.dto.CreateUserRequest;
 import org.philipp.fun.minidev.dto.UpdateUserRequest;
@@ -11,20 +13,35 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.List;
-
+/**
+ * Service for user management operations.
+ */
 @Service
 @Transactional
 public class UserService {
 
+    /** User repository. */
     private final UserRepository userRepository;
+
+    /** Password encoder. */
     private final PasswordEncoder passwordEncoder;
 
+    /**
+     * Constructs a UserService.
+     *
+     * @param userRepository   the user repository
+     * @param passwordEncoder  the password encoder
+     */
     public UserService(UserRepository userRepository, PasswordEncoder passwordEncoder) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
     }
 
+    /**
+     * Returns all users.
+     *
+     * @return list of auth responses
+     */
     @Transactional(readOnly = true)
     public List<AuthResponse> getAllUsers() {
         return userRepository.findAll().stream()
@@ -32,6 +49,12 @@ public class UserService {
                 .toList();
     }
 
+    /**
+     * Creates a new user.
+     *
+     * @param request the create user request
+     * @return the created user auth response
+     */
     public AuthResponse createUser(CreateUserRequest request) {
         if (userRepository.existsByUsername(request.username())) {
             throw new DuplicateResourceException("User", "username", request.username());
@@ -48,6 +71,13 @@ public class UserService {
         return toAuthResponse(savedUser);
     }
 
+    /**
+     * Updates an existing user.
+     *
+     * @param id      the user ID
+     * @param request the update user request
+     * @return the updated user auth response
+     */
     public AuthResponse updateUser(Long id, UpdateUserRequest request) {
         User user = userRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("User", id));
@@ -70,6 +100,11 @@ public class UserService {
         return toAuthResponse(savedUser);
     }
 
+    /**
+     * Deletes a user by ID.
+     *
+     * @param id the user ID
+     */
     public void deleteUser(Long id) {
         if (!userRepository.existsById(id)) {
             throw new ResourceNotFoundException("User", id);
@@ -77,6 +112,12 @@ public class UserService {
         userRepository.deleteById(id);
     }
 
+    /**
+     * Converts a User entity to an AuthResponse DTO.
+     *
+     * @param user the user entity
+     * @return the auth response
+     */
     private AuthResponse toAuthResponse(User user) {
         return new AuthResponse(
                 String.valueOf(user.getId()),
@@ -86,4 +127,3 @@ public class UserService {
         );
     }
 }
-

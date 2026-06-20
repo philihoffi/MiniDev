@@ -3,7 +3,14 @@ package org.philipp.fun.minidev.dto;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 
+/**
+ * Login request DTO.
+ *
+ * @param username the username (must not be blank)
+ * @param password the password (must not be blank)
+ */
 public record LoginRequest(
+
         @NotBlank(message = "Username must not be blank")
         @Size(max = 100, message = "Username must be at most 100 characters")
         String username,
@@ -13,4 +20,3 @@ public record LoginRequest(
         String password
 ) {
 }
-

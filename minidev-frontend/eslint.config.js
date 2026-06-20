@@ -111,6 +111,7 @@ module.exports = defineConfig([
       ],
       "jsdoc/require-param": "warn",
       "jsdoc/require-returns": "warn",
+      "jsdoc/no-undefined-types": "off",
     },
   },
   {

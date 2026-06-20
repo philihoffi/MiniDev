@@ -1,6 +1,9 @@
 package org.philipp.fun.minidev.pipeline.config;
 
-import jakarta.annotation.PostConstruct;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.core.io.Resource;
@@ -9,26 +12,39 @@ import org.springframework.stereotype.Component;
 import org.yaml.snakeyaml.LoaderOptions;
 import org.yaml.snakeyaml.Yaml;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
+import jakarta.annotation.PostConstruct;
 
+/**
+ * Loads pipeline configuration from YAML files.
+ */
 @Component
 public class PipelineConfigLoader {
-    private static final Logger log = LoggerFactory.getLogger(PipelineConfigLoader.class);
+
+    /** Logger. */
+    private static final Logger LOG = LoggerFactory.getLogger(PipelineConfigLoader.class);
+
+    /** Pipeline configuration properties. */
     private final PipelineConfigProperties configProperties;
 
+    /**
+     * Constructs a PipelineConfigLoader.
+     *
+     * @param configProperties the pipeline config properties
+     */
     public PipelineConfigLoader(PipelineConfigProperties configProperties) {
         this.configProperties = configProperties;
     }
 
+    /**
+     * Loads pipeline configs from classpath YAML files.
+     */
     @PostConstruct
     public void loadPipelineConfigs() {
         try {
             PathMatchingResourcePatternResolver resolver = new PathMatchingResourcePatternResolver();
             Resource[] resources = resolver.getResources("classpath:pipelines/*.yml");
             if (resources.length == 0) {
-                log.debug("No pipeline config files found in classpath:pipelines/");
+                LOG.debug("No pipeline config files found in classpath:pipelines/");
                 return;
             }
 
@@ -40,29 +56,45 @@ public class PipelineConfigLoader {
             for (Resource resource : resources) {
                 try {
                     Map<String, Object> raw = yaml.load(resource.getInputStream());
-                    if (raw == null) continue;
-                    List<Map<String, Object>> pipelineMaps = (List<Map<String, Object>>) raw.get("pipelines");
-                    if (pipelineMaps == null) continue;
+                    if (raw == null) {
+                        continue;
+                    }
+                    List<Map<String, Object>> pipelineMaps =
+                            (List<Map<String, Object>>) raw.get("pipelines");
+                    if (pipelineMaps == null) {
+                        continue;
+                    }
 
                     for (Map<String, Object> pm : pipelineMaps) {
                         PipelineDefinition def = mapPipeline(pm);
-                        if (def != null) loaded.add(def);
+                        if (def != null) {
+                            loaded.add(def);
+                        }
                     }
-                    log.info("Loaded {} pipeline(s) from {}", pipelineMaps.size(), resource.getFilename());
+                    LOG.info("Loaded {} pipeline(s) from {}", pipelineMaps.size(),
+                            resource.getFilename());
                 } catch (Exception e) {
-                    log.warn("Failed to load pipeline config from {}: {}", resource.getFilename(), e.getMessage());
+                    LOG.warn("Failed to load pipeline config from {}: {}",
+                            resource.getFilename(), e.getMessage());
                 }
             }
 
             if (!loaded.isEmpty()) {
                 configProperties.getPipelines().addAll(loaded);
-                log.info("Total pipeline definitions loaded: {}", configProperties.getPipelines().size());
+                LOG.info("Total pipeline definitions loaded: {}",
+                        configProperties.getPipelines().size());
             }
         } catch (Exception e) {
-            log.warn("Could not scan for pipeline configs: {}", e.getMessage());
+            LOG.warn("Could not scan for pipeline configs: {}", e.getMessage());
         }
     }
 
+    /**
+     * Maps a raw YAML map to a PipelineDefinition.
+     *
+     * @param map the raw map
+     * @return the pipeline definition
+     */
     @SuppressWarnings("unchecked")
     private PipelineDefinition mapPipeline(Map<String, Object> map) {
         PipelineDefinition def = new PipelineDefinition();
@@ -77,6 +109,12 @@ public class PipelineConfigLoader {
         return def;
     }
 
+    /**
+     * Maps a raw YAML map to a StageDef.
+     *
+     * @param map the raw map
+     * @return the stage definition
+     */
     @SuppressWarnings("unchecked")
     private PipelineDefinition.StageDef mapStageDef(Map<String, Object> map) {
         PipelineDefinition.StageDef def = new PipelineDefinition.StageDef();
@@ -84,11 +122,21 @@ public class PipelineConfigLoader {
         def.setName((String) map.get("name"));
         def.setStage((String) map.get("stage"));
 
-        if (map.containsKey("condition")) def.setCondition((String) map.get("condition"));
-        if (map.containsKey("retries")) def.setRetries(toInt(map.get("retries")));
-        if (map.containsKey("timeoutMs")) def.setTimeoutMs(toInt(map.get("timeoutMs")));
-        if (map.containsKey("failureThreshold")) def.setFailureThreshold(toInt(map.get("failureThreshold")));
-        if (map.containsKey("resetTimeoutMs")) def.setResetTimeoutMs(toInt(map.get("resetTimeoutMs")));
+        if (map.containsKey("condition")) {
+            def.setCondition((String) map.get("condition"));
+        }
+        if (map.containsKey("retries")) {
+            def.setRetries(toInt(map.get("retries")));
+        }
+        if (map.containsKey("timeoutMs")) {
+            def.setTimeoutMs(toInt(map.get("timeoutMs")));
+        }
+        if (map.containsKey("failureThreshold")) {
+            def.setFailureThreshold(toInt(map.get("failureThreshold")));
+        }
+        if (map.containsKey("resetTimeoutMs")) {
+            def.setResetTimeoutMs(toInt(map.get("resetTimeoutMs")));
+        }
 
         if (map.containsKey("then") && map.get("then") instanceof String thenStr) {
             def.setThen(thenStr);
@@ -97,15 +145,17 @@ public class PipelineConfigLoader {
         if (map.containsKey("else")) {
             Object elseObj = map.get("else");
             if (elseObj instanceof String elseStr) {
-                def.setElse_(elseStr);
+                def.setElseBranch(elseStr);
             } else if (elseObj instanceof List) {
-                List<Map<String, Object>> elseStageMaps = (List<Map<String, Object>>) elseObj;
+                List<Map<String, Object>> elseStageMaps =
+                        (List<Map<String, Object>>) elseObj;
                 def.setElseStages(elseStageMaps.stream().map(this::mapStageDef).toList());
             }
         }
 
         if (map.containsKey("stages")) {
-            List<Map<String, Object>> stageMaps = (List<Map<String, Object>>) map.get("stages");
+            List<Map<String, Object>> stageMaps =
+                    (List<Map<String, Object>>) map.get("stages");
             def.setStages(stageMaps.stream().map(this::mapStageDef).toList());
         }
 
@@ -129,7 +179,8 @@ public class PipelineConfigLoader {
             Map<String, Object> rawMapping = (Map<String, Object>) map.get("output-mapping");
             Map<String, String> mapping = new java.util.LinkedHashMap<>();
             for (var entry : rawMapping.entrySet()) {
-                mapping.put(entry.getKey(), entry.getValue() != null ? entry.getValue().toString() : null);
+                mapping.put(entry.getKey(),
+                        entry.getValue() != null ? entry.getValue().toString() : null);
             }
             def.setOutputMapping(mapping);
         }
@@ -137,8 +188,16 @@ public class PipelineConfigLoader {
         return def;
     }
 
+    /**
+     * Converts an object to an integer.
+     *
+     * @param val the value to convert
+     * @return the integer value, or 0 if not a number
+     */
     private int toInt(Object val) {
-        if (val instanceof Number n) return n.intValue();
+        if (val instanceof Number n) {
+            return n.intValue();
+        }
         return 0;
     }
 }

@@ -1,18 +1,29 @@
 package org.philipp.fun.minidev.pipeline.wallpaper.stages;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+
 import org.philipp.fun.minidev.dto.WallpaperCode;
+import org.philipp.fun.minidev.pipeline.annotation.PipelineStage;
 import org.philipp.fun.minidev.pipeline.core.BaseElement;
 import org.philipp.fun.minidev.pipeline.core.ContextKeys;
 import org.philipp.fun.minidev.pipeline.core.PipelineContext;
-import org.philipp.fun.minidev.pipeline.annotation.PipelineStage;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+/**
+ * Pipeline stage that assembles wallpaper HTML, CSS, and JS into a single
+ * HTML document.
+ */
 @PipelineStage("assemble-html")
 public class AssembleHtmlStage extends BaseElement {
+
+    /** Shared ObjectMapper for JSON deserialization. */
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
-    private static final Logger log = LoggerFactory.getLogger(AssembleHtmlStage.class);
+
+    /** Logger for this class. */
+    private static final Logger LOG = LoggerFactory.getLogger(AssembleHtmlStage.class);
+
+    /** HTML template used for assembly. */
     private static final String ASSEMBLY_TEMPLATE = """
             <!DOCTYPE html>
             <html lang="en">
@@ -42,15 +53,26 @@ public class AssembleHtmlStage extends BaseElement {
             </html>
             """;
 
+    /**
+     * Constructs an AssembleHtmlStage.
+     */
     public AssembleHtmlStage() {
         super("AssembleHtmlStage");
     }
 
+    /**
+     * Reads the wallpaper code from the context, parses it, and assembles the
+     * final HTML.
+     *
+     * @param context the pipeline context
+     * @return {@code true} if assembly succeeded
+     * @throws Exception if an unexpected error occurs
+     */
     @Override
     public boolean execute(PipelineContext context) throws Exception {
         String rawJson = context.getValue(ContextKeys.Wallpaper.CODE);
         if (rawJson == null || rawJson.isBlank()) {
-            log.warn("No code to assemble");
+            LOG.warn("No code to assemble");
             return false;
         }
 
@@ -58,16 +80,16 @@ public class AssembleHtmlStage extends BaseElement {
         try {
             response = OBJECT_MAPPER.readValue(rawJson, WallpaperCode.class);
         } catch (Exception e) {
-            log.warn("Failed to parse code JSON for assembly: {}", e.getMessage());
+            LOG.warn("Failed to parse code JSON for assembly: {}", e.getMessage());
             return false;
         }
 
         if (response.html() == null || response.html().isBlank()) {
-            log.warn("HTML content is empty");
+            LOG.warn("HTML content is empty");
             return false;
         }
         if (response.js() == null || response.js().isBlank()) {
-            log.warn("JavaScript content is empty");
+            LOG.warn("JavaScript content is empty");
             return false;
         }
 
@@ -77,7 +99,7 @@ public class AssembleHtmlStage extends BaseElement {
                 .replace("%%JS%%", response.js());
 
         context.putValue(ContextKeys.Wallpaper.CODE, fullHtml);
-        log.info("Assembled wallpaper HTML ({} chars)", fullHtml.length());
+        LOG.info("Assembled wallpaper HTML ({} chars)", fullHtml.length());
         return true;
     }
 }

@@ -1,23 +1,36 @@
 package org.philipp.fun.minidev.logging;
 
-import ch.qos.logback.classic.spi.ILoggingEvent;
-import ch.qos.logback.classic.spi.IThrowableProxy;
-import ch.qos.logback.classic.spi.ThrowableProxyUtil;
-import ch.qos.logback.core.AppenderBase;
-import org.philipp.fun.minidev.config.SpringContextHolder;
-import org.springframework.jdbc.core.JdbcTemplate;
-
 import java.sql.Timestamp;
 import java.time.Instant;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import org.philipp.fun.minidev.config.SpringContextHolder;
+import org.springframework.jdbc.core.JdbcTemplate;
+
+import ch.qos.logback.classic.spi.ILoggingEvent;
+import ch.qos.logback.classic.spi.IThrowableProxy;
+import ch.qos.logback.classic.spi.ThrowableProxyUtil;
+import ch.qos.logback.core.AppenderBase;
+
+/**
+ * Logback appender that persists log events to a database table.
+ */
 public class DatabaseLogAppender extends AppenderBase<ILoggingEvent> {
 
+    /** Maximum length for VARCHAR columns. */
     private static final int MAX_VARCHAR = 255;
-    private static final int MAX_TEXT = 8000;
-    private static final AtomicBoolean SCHEMA_READY = new AtomicBoolean(false);
-    private static final ThreadLocal<Boolean> IN_APPENDER = ThreadLocal.withInitial(() -> false);
 
+    /** Maximum length for TEXT columns. */
+    private static final int MAX_TEXT = 8000;
+
+    /** Flag indicating the database schema has been initialized. */
+    private static final AtomicBoolean SCHEMA_READY = new AtomicBoolean(false);
+
+    /** Guard against recursive logging from within the appender. */
+    private static final ThreadLocal<Boolean> IN_APPENDER =
+            ThreadLocal.withInitial(() -> false);
+
+    /** The cached JdbcTemplate instance. */
     private volatile JdbcTemplate jdbcTemplate;
 
     @Override
@@ -35,10 +48,16 @@ public class DatabaseLogAppender extends AppenderBase<ILoggingEvent> {
 
             ensureSchema(template);
 
-            String exceptionText = extractException(eventObject.getThrowableProxy());
+            String exceptionText =
+                    extractException(eventObject.getThrowableProxy());
             template.update(
-                    "INSERT INTO application_logs (created_at, level, logger, thread, message, exception, request_id, username, path) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
-                    Timestamp.from(Instant.ofEpochMilli(eventObject.getTimeStamp())),
+                    "INSERT INTO application_logs"
+                    + " (created_at, level, logger, thread, message,"
+                    + " exception, request_id, username, path)"
+                    + " VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                    Timestamp.from(
+                            Instant.ofEpochMilli(
+                                    eventObject.getTimeStamp())),
                     trim(eventObject.getLevel().toString()),
                     trim(eventObject.getLoggerName()),
                     trim(eventObject.getThreadName()),
@@ -49,13 +68,17 @@ public class DatabaseLogAppender extends AppenderBase<ILoggingEvent> {
                     trim(mdcValue(eventObject, "path"))
             );
         } catch (Exception e) {
-            // Report via Logback status system (not SLF4J) to avoid recursive appender logging.
             addError("database_log_append_failed", e);
         } finally {
             IN_APPENDER.remove();
         }
     }
 
+    /**
+     * Resolves the JdbcTemplate, caching it once obtained.
+     *
+     * @return the JdbcTemplate, or null if not available
+     */
     private JdbcTemplate resolveJdbcTemplate() {
         JdbcTemplate template = jdbcTemplate;
         if (template != null) {
@@ -69,6 +92,11 @@ public class DatabaseLogAppender extends AppenderBase<ILoggingEvent> {
         return template;
     }
 
+    /**
+     * Ensures the application_logs table exists.
+     *
+     * @param template the JdbcTemplate
+     */
     private void ensureSchema(JdbcTemplate template) {
         if (SCHEMA_READY.get()) {
             return;
@@ -90,10 +118,18 @@ public class DatabaseLogAppender extends AppenderBase<ILoggingEvent> {
                 )
                 """
         );
-        template.execute("CREATE INDEX IF NOT EXISTS idx_application_logs_created_at ON application_logs (created_at DESC)");
+        template.execute(
+                "CREATE INDEX IF NOT EXISTS idx_application_logs_created_at"
+                + " ON application_logs (created_at DESC)");
         SCHEMA_READY.set(true);
     }
 
+    /**
+     * Extracts exception text from a throwable proxy.
+     *
+     * @param throwableProxy the throwable proxy
+     * @return the exception string, or null
+     */
     private String extractException(IThrowableProxy throwableProxy) {
         if (throwableProxy == null) {
             return null;
@@ -101,6 +137,12 @@ public class DatabaseLogAppender extends AppenderBase<ILoggingEvent> {
         return ThrowableProxyUtil.asString(throwableProxy);
     }
 
+    /**
+     * Truncates a value to the maximum VARCHAR length.
+     *
+     * @param value the value to truncate
+     * @return the truncated value, or null
+     */
     private String trim(String value) {
         if (value == null || value.length() <= MAX_VARCHAR) {
             return value;
@@ -108,6 +150,12 @@ public class DatabaseLogAppender extends AppenderBase<ILoggingEvent> {
         return value.substring(0, MAX_VARCHAR);
     }
 
+    /**
+     * Truncates a value to the maximum TEXT length.
+     *
+     * @param value the value to truncate
+     * @return the truncated value, or null
+     */
     private String trimText(String value) {
         if (value == null || value.length() <= MAX_TEXT) {
             return value;
@@ -115,6 +163,13 @@ public class DatabaseLogAppender extends AppenderBase<ILoggingEvent> {
         return value.substring(0, MAX_TEXT);
     }
 
+    /**
+     * Reads an MDC value from the logging event.
+     *
+     * @param eventObject the logging event
+     * @param key         the MDC key
+     * @return the MDC value, or null
+     */
     private String mdcValue(ILoggingEvent eventObject, String key) {
         if (eventObject.getMDCPropertyMap() == null) {
             return null;
@@ -122,4 +177,3 @@ public class DatabaseLogAppender extends AppenderBase<ILoggingEvent> {
         return eventObject.getMDCPropertyMap().get(key);
     }
 }
-

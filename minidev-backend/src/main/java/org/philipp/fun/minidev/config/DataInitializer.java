@@ -9,16 +9,31 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Profile;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
+/**
+ * Seeds the database with default users when the {@code dev} profile is active.
+ */
 @Configuration
 @Profile("dev")
 public class DataInitializer {
 
+    /**
+     * Creates a {@link CommandLineRunner} bean that inserts default admin and
+     * user accounts if none exist.
+     *
+     * @param userRepository   the user repository
+     * @param passwordEncoder  the password encoder
+     * @return a command-line runner that initialises data
+     */
     @Bean
-    public CommandLineRunner initData(UserRepository userRepository, PasswordEncoder passwordEncoder) {
+    public CommandLineRunner initData(
+            UserRepository userRepository,
+            PasswordEncoder passwordEncoder) {
         return ignoredArgs -> {
             if (userRepository.count() == 0) {
-                userRepository.save(new User("admin", passwordEncoder.encode("password"), "Admin", Role.ADMIN));
-                userRepository.save(new User("user", passwordEncoder.encode("password"), "User", Role.USER));
+                userRepository.save(new User("admin",
+                        passwordEncoder.encode("password"), "Admin", Role.ADMIN));
+                userRepository.save(new User("user",
+                        passwordEncoder.encode("password"), "User", Role.USER));
             }
         };
     }

@@ -1,11 +1,21 @@
 package org.philipp.fun.minidev.dto;
 
+import org.philipp.fun.minidev.model.Role;
+
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
-import org.philipp.fun.minidev.model.Role;
 
+/**
+ * Request DTO for updating an existing user.
+ *
+ * @param username    the new username (must not be blank)
+ * @param password    the new password (optional; 8-128 characters)
+ * @param displayName the new display name (must not be blank)
+ * @param role        the new role (must not be null)
+ */
 public record UpdateUserRequest(
+
         @NotBlank(message = "Username must not be blank")
         @Size(max = 100, message = "Username must be at most 100 characters")
         String username,
@@ -21,4 +31,3 @@ public record UpdateUserRequest(
         Role role
 ) {
 }
-
