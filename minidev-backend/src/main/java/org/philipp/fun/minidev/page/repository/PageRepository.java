@@ -25,5 +25,8 @@ public interface PageRepository extends JpaRepository<Page, Long> {
      * @param role the role to filter by
      * @return list of matching pages
      */
-    List<Page> findByEnabledTrueAndRoleRequiredIsNullOrRoleRequiredOrderByNavOrderAsc(String role);
+    @org.springframework.data.jpa.repository.Query(
+            "SELECT p FROM Page p WHERE p.enabled = true AND (p.roleRequired IS NULL OR p.roleRequired = :role) ORDER BY p.navOrder ASC")
+    List<Page> findByEnabledTrueAndRoleRequiredIsNullOrRoleRequiredOrderByNavOrderAsc(
+            @org.springframework.data.repository.query.Param("role") String role);
 }
