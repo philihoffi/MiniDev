@@ -33,7 +33,7 @@ public class AssembleHtmlStage extends BaseElement {
                 <style>
                     * { margin: 0; padding: 0; box-sizing: border-box; }
                     html, body { width: 100%; height: 100%; overflow: hidden; background: #000; }
-                    canvas { display: block; }
+                    canvas { display: block; width: 100%; height: 100%; }
                     %%CSS%%
                 </style>
             </head>

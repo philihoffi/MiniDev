@@ -112,13 +112,14 @@ pipelines:
               - Add slight randomness to element properties for organic feel
 
               TECHNICAL REQUIREMENTS:
-              1. HTML5 <canvas> element that fills the entire viewport
-              2. High-DPI/Retina support: scale canvas by window.devicePixelRatio
-              3. Handle window resize gracefully
-              4. Use requestAnimationFrame with timestamp-based delta timing
-              5. Fully self-contained — NO external dependencies, libraries, fonts, or network requests
-              6. Clean, readable code with descriptive variable names
-              7. Canvas context MUST be properly sized for device pixel ratio
+               1. HTML5 <canvas> element with CSS `width: 100%; height: 100%` to fill the viewport
+               2. Set canvas drawing buffer using `canvas.clientWidth * devicePixelRatio` and `canvas.clientHeight * devicePixelRatio` — NEVER use `window.innerWidth / innerHeight`
+               3. Scale the canvas context by `devicePixelRatio` (ctx.scale(dpr, dpr))
+               4. Handle window resize gracefully (recalculate from canvas.clientWidth/clientHeight)
+               5. Use requestAnimationFrame with timestamp-based delta timing
+               6. Fully self-contained — NO external dependencies, libraries, fonts, or network requests
+               7. Clean, readable code with descriptive variable names
+               8. Canvas context MUST be properly sized for device pixel ratio
 
               PERFORMANCE RULES:
               - Pre-calculate values that don't change per frame
@@ -140,6 +141,8 @@ pipelines:
 
               Bring this vision to life with rich visual detail, smooth organic animation, and polished code.
               The result should feel like a premium, living wallpaper — subtle, atmospheric, and beautiful.
+
+              IMPORTANT CANVAS SIZING: The canvas MUST have CSS `width: 100%; height: 100%` to fill the viewport. Use `canvas.clientWidth` and `canvas.clientHeight` (NOT `window.innerWidth/innerHeight`) to set the drawing buffer, multiplied by `devicePixelRatio`. Scale the context by `dpr`.
             response-schema:
               type: object
               properties:
@@ -180,10 +183,11 @@ pipelines:
               - Loop: Does the animation feel continuous and seamless?
 
               CODE QUALITY (1-10):
-              - Performance: Efficient use of canvas API, minimal allocations per frame?
-              - Structure: Clean, readable code with meaningful variable names?
-              - Robustness: Handles resize, high-DPI, edge cases?
-              - Best practices: requestAnimationFrame usage, no memory leaks?
+               - Performance: Efficient use of canvas API, minimal allocations per frame?
+               - Structure: Clean, readable code with meaningful variable names?
+               - Robustness: Handles resize, high-DPI, edge cases?
+               - Canvas sizing: Uses CSS `width:100%;height:100%` on canvas, `canvas.clientWidth/clientHeight * dpr` for buffer, `ctx.scale(dpr,dpr)`?
+               - Best practices: requestAnimationFrame usage, no memory leaks?
 
               THEME ADHERENCE (1-10):
               - Does the code accurately implement the creative brief?
@@ -299,6 +303,8 @@ pipelines:
                   {{code}}
 
                   Improve this code. Keep its strengths, fix its weaknesses, elevate the overall quality.
+
+                  IMPORTANT: Preserve or fix the canvas sizing — CSS must have `width:100%;height:100%`, use `canvas.clientWidth/clientHeight * devicePixelRatio` for the drawing buffer, and scale context by `dpr`.
                 response-schema:
                   type: object
                   properties:
@@ -352,7 +358,7 @@ pipelines:
 
           OUTPUT: Valid JSON matching {html, css, js}. Return ALL code, not just changes.
         user-prompt: |
-          Polish the animation quality of this wallpaper code. Focus only on motion — do NOT change colors, layout, or visual elements.
+          Polish the animation quality of this wallpaper code. Focus only on motion — do NOT change colors, layout, or visual elements. Preserve the canvas sizing logic exactly (CSS `width:100%;height:100%`, `canvas.clientWidth/clientHeight * devicePixelRatio`, `ctx.scale(dpr,dpr)`).
 
           Theme: '{{theme}}'
           Mood: {{creativeBriefMood}}
@@ -414,7 +420,7 @@ pipelines:
 
           OUTPUT: Valid JSON matching {html, css, js}. Return ALL code, not just changes.
         user-prompt: |
-          Polish the visual quality of this wallpaper code. Focus only on colors, atmosphere, and depth — do NOT change animation or element structure.
+          Polish the visual quality of this wallpaper code. Focus only on colors, atmosphere, and depth — do NOT change animation or element structure. Preserve the canvas sizing logic exactly (CSS `width:100%;height:100%`, `canvas.clientWidth/clientHeight * devicePixelRatio`, `ctx.scale(dpr,dpr)`).
 
           Theme: '{{theme}}'
           Description: {{creativeBriefDescription}}
