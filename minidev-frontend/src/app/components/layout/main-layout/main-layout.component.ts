@@ -65,7 +65,7 @@ export class MainLayoutComponent implements OnInit {
     });
   }
 
-  @HostListener('document:click', [''])
+  @HostListener('document:click', ['$event'])
   public onDocumentClick(event: Event): void {
     const target = event.target as HTMLElement;
     if (!target.closest('.user-menu-wrapper')) {
